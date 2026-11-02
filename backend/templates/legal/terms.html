@@ -1,0 +1,27 @@
+{% extends "legal/base.html" %}
+{% block content %}
+<h2>The service</h2>
+<p>Micro Bargain lists time-limited offers published by independent local shops. The shop, not Micro Bargain, sells the goods and is responsible for their quality, weight, freshness and legal compliance (including FSSAI where applicable).</p>
+
+<h2>Customers</h2>
+<ul>
+  <li>A reservation holds stock for {{ hold_minutes }} minutes. Pay the shop on pickup and tell them your 4-digit pickup code.</li>
+  <li>Orders paid online are confirmed only after the shop accepts. If the shop does not accept in time, or cancels, you are refunded in full.</li>
+  <li>Share your pickup code only with the shop or delivery person at handover.</li>
+  <li>Repeated no-shows or misuse may lead to your account being restricted.</li>
+</ul>
+
+<h2>Merchants</h2>
+<ul>
+  <li>Prices, quantities and descriptions you publish must be true. The "normal price" must be the price you really charge.</li>
+  <li>You must honour every reservation and accepted order unless the stock is genuinely unavailable.</li>
+  <li>A platform commission (currently {{ commission }}% by default) applies to completed sales and is settled as agreed. Paid plans and promotions are prepaid and non-refundable except where we remove them.</li>
+  <li>We may suspend shops that receive repeated valid complaints or that misuse the platform.</li>
+</ul>
+
+<h2>Liability</h2>
+<p>We work to keep the app available and accurate but cannot guarantee uninterrupted service. Our liability for any claim is limited to the amount you paid through the app for the order concerned.</p>
+
+<h2>Disputes</h2>
+<p>Raise any problem through <b>Help &amp; Support</b> in the app first. These terms are governed by Indian law; courts at {{ city }}, Rajasthan have jurisdiction.</p>
+{% endblock %}

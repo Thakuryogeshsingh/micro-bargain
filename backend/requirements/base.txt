@@ -1,0 +1,15 @@
+Django>=5.1,<5.2
+djangorestframework>=3.15,<3.17
+djangorestframework-simplejwt>=5.3,<6
+django-environ>=0.11
+django-cors-headers>=4.4
+django-filter>=24.2
+drf-spectacular>=0.27
+django-redis>=5.4
+psycopg[binary]>=3.2
+celery>=5.4,<6
+redis>=5.0
+Pillow>=10.4
+firebase-admin>=6.5
+requests>=2.31
+openpyxl>=3.1

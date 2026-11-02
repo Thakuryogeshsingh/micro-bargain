@@ -1,0 +1,92 @@
+# Production stack for one VPS: Caddy (automatic HTTPS) -> Gunicorn/Django, Celery worker + beat,
+# PostGIS and Redis on the private network only.
+#
+#   cp backend/.env.example backend/.env    # fill in real secrets (see README "Deploy")
+#   DOMAIN=api.example.com docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    env_file: ./backend/.env  # POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD create the database
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  web:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: production
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment: &app_env
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60 --access-logfile -"
+    volumes:
+      - static_files:/app/staticfiles
+      - media_files:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery_worker:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: production
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment: *app_env
+    command: celery -A config worker -l info --concurrency 2
+    volumes:
+      - media_files:/app/media
+    depends_on: [web]
+
+  celery_beat:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: production
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment: *app_env
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+    depends_on: [web]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN, e.g. api.example.com}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static_files:/srv/static:ro
+      - media_files:/srv/media:ro
+      - caddy_data:/data
+    depends_on: [web]
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_files:
+  media_files:
+  caddy_data:

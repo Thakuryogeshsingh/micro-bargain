@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Django
+backend/.env
+backend/media/*
+!backend/media/.gitkeep
+backend/staticfiles/
+*.sqlite3
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/android/app/google-services.json
+mobile/ios/Runner/GoogleService-Info.plist
+
+# Secrets
+*.pem
+firebase-credentials*.json
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets: Firebase service-account keys, signing keys
+*-firebase-adminsdk-*.json
+*.jks
+*.keystore
+mobile/android/key.properties
+

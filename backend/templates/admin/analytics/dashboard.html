@@ -1,0 +1,85 @@
+{% extends "admin/base_site.html" %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  .mb-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 20px; }
+  .mb-filters label { display: block; font-size: 12px; color: var(--body-quiet-color); }
+  .mb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .mb-card { border: 1px solid var(--hairline-color); border-radius: 8px; padding: 14px; background: var(--body-bg); }
+  .mb-card .label { font-size: 12px; color: var(--body-quiet-color); text-transform: uppercase; letter-spacing: .03em; }
+  .mb-card .value { font-size: 24px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .mb-card.money .value::before { content: "₹"; font-weight: 400; margin-right: 2px; }
+  .mb-card.alert { border-color: #d97706; }
+  .mb-section { margin: 28px 0 10px; }
+  .mb-downloads a { margin-right: 14px; }
+  .mb-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  .mb-cols table { width: 100%; }
+</style>
+{% endblock %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Home</a> › Business dashboard</div>{% endblock %}
+{% block content %}
+<form method="get" class="mb-filters">
+  <div><label>From</label><input type="date" name="date_from" value="{{ filters.date_from|date:'Y-m-d' }}"></div>
+  <div><label>To</label><input type="date" name="date_to" value="{{ filters.date_to|date:'Y-m-d' }}"></div>
+  <div><label>City</label><input type="text" name="city" value="{{ filters.city|default:'' }}" placeholder="All cities"></div>
+  <div><label>Category</label>
+    <select name="category"><option value="">All categories</option>
+      {% for c in categories %}<option value="{{ c.id }}" {% if filters.category == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div><input type="submit" value="Apply" class="default"></div>
+</form>
+
+<p class="mb-downloads">Excel:
+  {% for kind in reports %}<a href="{% url 'admin-report-download' kind %}?{{ query }}">{{ kind|title }} report</a>{% endfor %}
+</p>
+
+<h2 class="mb-section">Needs attention</h2>
+<div class="mb-grid">
+  <div class="mb-card {% if metrics.pending_merchant_approvals %}alert{% endif %}"><div class="label">Pending merchant approvals</div><div class="value">{{ metrics.pending_merchant_approvals }}</div><a href="{% url 'admin:merchants_merchantprofile_changelist' %}?status__exact=pending">Review →</a></div>
+  <div class="mb-card {% if metrics.pending_shop_approvals %}alert{% endif %}"><div class="label">Pending shop approvals</div><div class="value">{{ metrics.pending_shop_approvals }}</div><a href="{% url 'admin:shops_shop_changelist' %}?status__exact=pending">Review →</a></div>
+</div>
+
+<h2 class="mb-section">Marketplace</h2>
+<div class="mb-grid">
+  <div class="mb-card"><div class="label">Customers (total)</div><div class="value">{{ metrics.total_customers }}</div></div>
+  <div class="mb-card"><div class="label">New customers</div><div class="value">{{ metrics.new_customers }}</div></div>
+  <div class="mb-card"><div class="label">Merchants</div><div class="value">{{ metrics.total_merchants }}</div></div>
+  <div class="mb-card"><div class="label">Active shops</div><div class="value">{{ metrics.active_shops }}</div></div>
+  <div class="mb-card"><div class="label">Live deals now</div><div class="value">{{ metrics.active_deals }}</div></div>
+  <div class="mb-card"><div class="label">Deals created</div><div class="value">{{ metrics.deals_created }}</div></div>
+  <div class="mb-card"><div class="label">Expired deals</div><div class="value">{{ metrics.expired_deals }}</div></div>
+  <div class="mb-card"><div class="label">Reservations</div><div class="value">{{ metrics.total_reservations }}</div></div>
+  <div class="mb-card"><div class="label">Pickups completed</div><div class="value">{{ metrics.completed_reservations }}</div></div>
+  <div class="mb-card"><div class="label">Orders completed</div><div class="value">{{ metrics.completed_orders }}</div></div>
+  <div class="mb-card"><div class="label">Orders cancelled</div><div class="value">{{ metrics.cancelled_orders }}</div></div>
+</div>
+
+<h2 class="mb-section">Money</h2>
+<div class="mb-grid">
+  <div class="mb-card money"><div class="label">Transaction value</div><div class="value">{{ metrics.total_transaction_value }}</div></div>
+  <div class="mb-card money"><div class="label">Customer savings</div><div class="value">{{ metrics.customer_savings }}</div></div>
+  <div class="mb-card money"><div class="label">Platform revenue</div><div class="value">{{ metrics.platform_revenue }}</div></div>
+  <div class="mb-card money"><div class="label">Commission</div><div class="value">{{ metrics.commission_revenue }}</div></div>
+  <div class="mb-card money"><div class="label">Subscriptions</div><div class="value">{{ metrics.subscription_revenue }}</div></div>
+  <div class="mb-card money"><div class="label">Promotions</div><div class="value">{{ metrics.advertisement_revenue }}</div></div>
+</div>
+
+<div class="mb-cols">
+  <div>
+    <h2 class="mb-section">Top deals (purchased)</h2>
+    <table><thead><tr><th>Product</th><th>Shop</th><th>Discount</th><th>Sold</th></tr></thead><tbody>
+      {% for d in deals.most_purchased %}<tr><td>{{ d.product }}</td><td>{{ d.shop }}</td><td>{{ d.discount_pct }}%</td><td>{{ d.quantity_sold }}</td></tr>
+      {% empty %}<tr><td colspan="4">No deals in this period.</td></tr>{% endfor %}
+    </tbody></table>
+    <p>Average discount {{ deals.average_discount_pct|floatformat:1 }}% · conversion {{ deals.conversion_pct }}%</p>
+  </div>
+  <div>
+    <h2 class="mb-section">Popular categories</h2>
+    <table><thead><tr><th>Category</th><th>Purchases</th></tr></thead><tbody>
+      {% for c in customers.popular_categories|slice:":8" %}<tr><td>{{ c.category }}</td><td>{{ c.purchases }}</td></tr>
+      {% empty %}<tr><td colspan="2">No purchases in this period.</td></tr>{% endfor %}
+    </tbody></table>
+    <p>Active customers {{ customers.active_customers }} · repeat rate {{ customers.repeat_rate_pct }}%</p>
+  </div>
+</div>
+{% endblock %}

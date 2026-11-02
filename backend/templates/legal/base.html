@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · Micro Bargain</title>
+  <style>
+    body { font-family: system-ui, "Noto Sans Devanagari", sans-serif; max-width: 760px; margin: 0 auto; padding: 16px; line-height: 1.6; color: #1b1b1b; background: #fff; }
+    h1 { color: #2e7d32; font-size: 1.6rem; }
+    h2 { font-size: 1.15rem; margin-top: 1.6em; }
+    .meta { color: #666; font-size: .9rem; }
+    nav a { margin-right: 12px; color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <nav><a href="/legal/privacy/">Privacy</a><a href="/legal/terms/">Terms</a><a href="/legal/refunds/">Refunds</a></nav>
+  <h1>{{ title }}</h1>
+  <p class="meta">Last updated: {{ updated }} · Contact: {{ contact_email }}</p>
+  {% block content %}{% endblock %}
+</body>
+</html>

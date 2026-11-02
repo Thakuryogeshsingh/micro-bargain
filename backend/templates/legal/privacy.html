@@ -1,0 +1,30 @@
+{% extends "legal/base.html" %}
+{% block content %}
+<p>Micro Bargain ("we") runs a marketplace that connects customers with local shops in {{ city }}. This policy explains what personal data we collect and why, as required by the Digital Personal Data Protection Act, 2023.</p>
+
+<h2>What we collect</h2>
+<ul>
+  <li><b>Mobile number and name</b>: to log you in with an OTP and to show shops who placed a booking.</li>
+  <li><b>Location</b>: to show deals near you and, if you allow notifications, to alert you about new deals nearby. We store the last known location of your phone, not a history.</li>
+  <li><b>Delivery addresses</b>: only if you choose home delivery.</li>
+  <li><b>Orders, reservations, reviews and support messages</b>: to provide the service and resolve disputes.</li>
+  <li><b>Shop details and documents</b> (merchants): to verify the shop before it can sell.</li>
+  <li><b>Device token</b>: to send push notifications.</li>
+</ul>
+<p>Payments are processed by Razorpay. We never see or store your card, UPI PIN or bank details.</p>
+
+<h2>Who we share it with</h2>
+<ul>
+  <li>The shop you book from sees your name and a masked phone number (the full number only for home delivery, after the shop accepts).</li>
+  <li>Service providers who run parts of the app for us: SMS (MSG91), push notifications (Google Firebase), payments (Razorpay), hosting.</li>
+  <li>Authorities, when the law requires it.</li>
+</ul>
+<p>We do not sell your data.</p>
+
+<h2>How long we keep it</h2>
+<p>Account data is kept while your account is active. Order and payment records are kept for 8 years as required by tax and accounting law.</p>
+
+<h2>Your rights</h2>
+<p>You can see and correct your profile in the app, turn notifications and location off in your phone settings, and delete your account from <b>Profile → Delete account</b>. Deleting removes your name, number, addresses and devices; past orders stay in anonymised form for accounting.</p>
+<p>For any privacy request or grievance, write to our Grievance Officer at {{ contact_email }}. We reply within 7 days.</p>
+{% endblock %}

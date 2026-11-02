@@ -1,0 +1,124 @@
+from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
+from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.reservations.serializers import PickupSerializer, ReasonSerializer
+from apps.shops.models import Shop
+from common.permissions import IsCustomer, IsMerchant
+
+from . import services
+from .models import Coupon, Order
+from .serializers import CouponCheckSerializer, MerchantOrderSerializer, OrderCreateSerializer, OrderSerializer
+
+
+def visible_orders(user):
+    """Customers see their own orders; merchants see their shops' orders."""
+    qs = Order.objects.select_related("shop", "customer", "coupon").prefetch_related("items")
+    if not user.is_authenticated:  # only during API schema generation
+        return qs.none()
+    if user.is_customer:
+        return qs.filter(customer=user)
+    if user.is_merchant:
+        return qs.filter(shop__merchant__user=user)
+    raise PermissionDenied("Only customers and merchants have orders.")
+
+
+def serializer_for(user):
+    return MerchantOrderSerializer if getattr(user, "is_merchant", False) else OrderSerializer
+
+
+class OrderCreateView(APIView):
+    """Online orders come back as pending_payment: then call POST /payments/create/ {purpose: "order", id}."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(request=OrderCreateSerializer, responses={201: OrderSerializer})
+    def post(self, request):
+        body = OrderCreateSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        data = body.validated_data
+        address = None
+        if "address" in data:
+            address = get_object_or_404(request.user.addresses.all(), pk=data["address"])
+        order = services.create_order(
+            request.user, data["items"], data["fulfilment"], data["payment_method"], address,
+            data.get("coupon_code", ""), data.get("note", ""),
+        )
+        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+class CouponCheckView(APIView):
+    """Preview a coupon on the cart screen before placing the order."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(request=CouponCheckSerializer, responses={200: OpenApiTypes.OBJECT})
+    def post(self, request):
+        body = CouponCheckSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        data = body.validated_data
+        coupon = get_object_or_404(Coupon, code=data["code"].strip().upper())
+        shop = get_object_or_404(Shop, pk=data["shop"])
+        discount = services.coupon_discount(coupon, request.user, shop, data["subtotal"])
+        return Response({"code": coupon.code, "discount": discount, "description": coupon.description})
+
+
+class OrderListView(generics.ListAPIView):
+    filterset_fields = ["status", "fulfilment", "payment_status"]
+
+    def get_queryset(self):
+        return visible_orders(self.request.user)
+
+    def get_serializer_class(self):
+        return serializer_for(self.request.user)
+
+
+class OrderDetailView(generics.RetrieveAPIView):
+    def get_queryset(self):
+        return visible_orders(self.request.user)
+
+    def get_serializer_class(self):
+        return serializer_for(self.request.user)
+
+
+class MerchantOrderActionView(APIView):
+    """accept / ready / complete / reject for the shop that owns the order."""
+
+    permission_classes = [IsMerchant]
+    action = None
+
+    @extend_schema(
+        request=PickupSerializer, responses=MerchantOrderSerializer,
+        description="accept, ready: no body. complete: {pickup_code}. reject: {reason}.",
+    )
+    def post(self, request, pk):
+        order = get_object_or_404(visible_orders(request.user), pk=pk)
+        if self.action == "accept":
+            order = services.accept(order)
+        elif self.action == "ready":
+            order = services.mark_ready(order)
+        elif self.action == "complete":
+            body = PickupSerializer(data=request.data)
+            body.is_valid(raise_exception=True)
+            order = services.complete(order, body.validated_data["pickup_code"])
+        else:
+            body = ReasonSerializer(data=request.data)
+            body.is_valid(raise_exception=True)
+            order = services.cancel_by_shop(order, body.validated_data.get("reason", ""))
+        return Response(MerchantOrderSerializer(order).data)
+
+
+class OrderCancelView(APIView):
+    permission_classes = [IsCustomer]
+
+    @extend_schema(request=ReasonSerializer, responses=OrderSerializer)
+    def post(self, request, pk):
+        order = get_object_or_404(visible_orders(request.user), pk=pk)
+        body = ReasonSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        order = services.cancel_by_customer(order, body.validated_data.get("reason", ""))
+        return Response(OrderSerializer(order).data)
