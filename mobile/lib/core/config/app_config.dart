@@ -17,4 +17,8 @@ class AppConfig {
   // Used when location permission is denied: Bharatpur city centre.
   static const double fallbackLatitude = 27.2152;
   static const double fallbackLongitude = 77.4890;
+
+  /// The pilot city. People farther than [serviceAreaKm] from it are shown its shops (nothing exists near them yet).
+  static const String serviceCity = 'Bharatpur';
+  static const double serviceAreaKm = 40;
 }

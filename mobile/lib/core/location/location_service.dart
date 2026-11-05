@@ -16,9 +16,15 @@ class LatLng {
   final bool isFallback;
 }
 
-/// Current position, or Bharatpur centre if location is off or permission is denied.
-Future<LatLng> currentLocation() async {
-  const fallback = LatLng(AppConfig.fallbackLatitude, AppConfig.fallbackLongitude, isFallback: true);
+const _fallback = LatLng(AppConfig.fallbackLatitude, AppConfig.fallbackLongitude, isFallback: true);
+
+/// Current position, or Bharatpur centre if location is off, permission is denied, or it takes too long
+/// (e.g. nobody answers the browser's "allow location?" prompt).
+Future<LatLng> currentLocation() =>
+    _gpsLocation().timeout(const Duration(seconds: 15), onTimeout: () => _fallback);
+
+Future<LatLng> _gpsLocation() async {
+  const fallback = _fallback;
   try {
     if (!await Geolocator.isLocationServiceEnabled()) return fallback;
     var permission = await Geolocator.checkPermission();
@@ -44,4 +50,15 @@ void chooseBrowseLocation(WidgetRef ref, LatLng? place) {
   ref.invalidate(locationProvider);
 }
 
-final locationProvider = FutureProvider<LatLng>((ref) => _chosenPlace ?? currentLocation());
+/// Where to look for shops: the chosen place, else the phone's position. Outside the service area (the pilot
+/// runs in Bharatpur) there are no shops nearby, so show the service city instead of an empty screen.
+final locationProvider = FutureProvider<LatLng>((ref) async {
+  final chosen = _chosenPlace;
+  if (chosen != null) return chosen;
+  final here = await currentLocation();
+  final km = Geolocator.distanceBetween(here.latitude, here.longitude, AppConfig.fallbackLatitude, AppConfig.fallbackLongitude) / 1000;
+  if (!here.isFallback && km > AppConfig.serviceAreaKm) {
+    return const LatLng(AppConfig.fallbackLatitude, AppConfig.fallbackLongitude, label: AppConfig.serviceCity);
+  }
+  return here;
+});
