@@ -409,20 +409,24 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final minimal = AppTheme.minimal;
     final tile = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.card,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: minimal
+            ? AppTheme.softShadow()
+            : [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(children: [
           if (icon != null)
             Container(
               padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, size: 18, color: color),
+              decoration: BoxDecoration(
+                  color: minimal ? AppTheme.chip : color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 18, color: minimal ? AppTheme.ink : color),
             ),
           const SizedBox(width: 8),
           Expanded(child: Text(label, style: theme.textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis)),
@@ -431,7 +435,8 @@ class StatTile extends StatelessWidget {
         CountUp(
           value: value,
           format: format ?? (v) => '${v.round()}',
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: AppTheme.ink),
+          style: theme.textTheme.titleLarge?.copyWith(
+              fontSize: minimal ? 24 : null, fontWeight: FontWeight.w900, letterSpacing: -0.6, color: AppTheme.ink),
         ),
       ]),
     );

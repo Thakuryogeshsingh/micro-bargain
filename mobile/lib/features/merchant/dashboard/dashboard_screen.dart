@@ -42,21 +42,27 @@ class DashboardScreen extends ConsumerWidget {
           SliverAppBar(
             pinned: true,
             expandedHeight: 168,
-            backgroundColor: AppTheme.primaryDark,
-            foregroundColor: Colors.white,
-            title: Text(tr('डैशबोर्ड'), style: const TextStyle(color: Colors.white)),
-            actions: const [IconTheme(data: IconThemeData(color: Colors.white), child: NotificationBell())],
+            backgroundColor: AppTheme.minimal ? AppTheme.background : AppTheme.primaryDark,
+            foregroundColor: AppTheme.minimal ? AppTheme.ink : Colors.white,
+            title: Text(tr('डैशबोर्ड'), style: TextStyle(color: AppTheme.minimal ? AppTheme.ink : Colors.white)),
+            actions: [
+              IconTheme(data: IconThemeData(color: AppTheme.minimal ? AppTheme.ink : Colors.white), child: const NotificationBell()),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(gradient: AppTheme.heroGradient),
+                decoration: AppTheme.minimal ? BoxDecoration(color: AppTheme.background) : BoxDecoration(gradient: AppTheme.heroGradient),
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
                 alignment: Alignment.bottomLeft,
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${tr('नमस्ते, {0}', [user?.displayName ?? ''])} 👋',
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                  Text(tr('नमस्ते, {0}', [user?.displayName ?? '']),
+                      style: TextStyle(
+                          color: AppTheme.minimal ? AppTheme.ink : Colors.white,
+                          fontSize: AppTheme.minimal ? 28 : 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.8)),
                   const SizedBox(height: 4),
                   Text(tr('अपनी दुकान की डील डालें और पास के ग्राहकों तक पहुंचें'),
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85))),
+                      style: TextStyle(color: AppTheme.minimal ? AppTheme.muted : Colors.white.withValues(alpha: 0.85))),
                 ]),
               ),
             ),
