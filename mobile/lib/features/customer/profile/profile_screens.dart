@@ -39,7 +39,7 @@ Future<void> deleteAccount(BuildContext context, WidgetRef ref) async {
 
 /// Privacy policy, terms and refund policy links (opened in the browser).
 List<Widget> legalTiles() => [
-      for (final page in {'privacy': tr('प्राइवेसी पॉलिसी'), 'terms': tr('नियम और शर्तें'), 'refunds': tr('रिफंड पॉलिसी')}.entries)
+      for (final page in {'privacy': tr('प्राइवेसी पॉलिसी'), 'terms': tr('नियम और शर्तें'), 'refunds': tr('रिफंड पॉलिसी'), 'photo-credits': tr('फोटो क्रेडिट')}.entries)
         ListTile(
           dense: true,
           leading: const Icon(Icons.description_outlined),

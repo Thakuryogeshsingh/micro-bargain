@@ -18,7 +18,17 @@ def health_check(request):
     return JsonResponse({"status": "ok"})
 
 
-LEGAL_PAGES = {"privacy": "Privacy Policy", "terms": "Terms of Use", "refunds": "Cancellation & Refund Policy"}
+LEGAL_PAGES = {
+    "privacy": "Privacy Policy", "terms": "Terms of Use", "refunds": "Cancellation & Refund Policy", "photo-credits": "Photo credits",
+}
+
+
+def _photo_credits():
+    """Authors and licences of the demo photos (CC BY / BY-SA require this attribution)."""
+    import json
+
+    manifest = settings.BASE_DIR / "apps" / "shops" / "demo_images" / "manifest.json"
+    return json.loads(manifest.read_text(encoding="utf-8")).get("credits", []) if manifest.exists() else []
 
 
 def deal_share_page(request, pk):
@@ -40,6 +50,7 @@ def legal_page(request, page):
         "contact_email": settings.SUPPORT_EMAIL, "hold_minutes": settings.RESERVATION_HOLD_MINUTES,
         "commission": settings.DEFAULT_COMMISSION_PERCENT, "complaint_hours": settings.QUALITY_COMPLAINT_HOURS,
         "reply_hours": settings.QUALITY_SHOP_REPLY_HOURS, "wallet_percent": settings.WALLET_MAX_PERCENT_OF_ORDER,
+        "credits": _photo_credits() if page == "photo-credits" else [],
     })
 
 

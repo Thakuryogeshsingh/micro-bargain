@@ -1,0 +1,15 @@
+{% extends "legal/base.html" %}
+{% block content %}
+<p>Sample product, shop and category photos in the app come from <a href="https://commons.wikimedia.org/">Wikimedia Commons</a>.
+Thank you to the photographers below. Photos have been cropped and resized. Shops' own photos belong to the shops.</p>
+<table style="width:100%;border-collapse:collapse;font-size:.9rem">
+  <tr style="text-align:left;border-bottom:1px solid #ddd"><th>Photo</th><th>Author</th><th>Licence</th></tr>
+  {% for c in credits %}
+  <tr style="border-bottom:1px solid #f0f0f0">
+    <td><a href="{{ c.source_page }}">{{ c.title|default:c.file }}</a></td>
+    <td>{{ c.author }}</td>
+    <td>{{ c.license }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

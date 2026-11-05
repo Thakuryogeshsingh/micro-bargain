@@ -23,6 +23,12 @@ def _celery_eager():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _media_in_tmp(settings, tmp_path):
+    # Uploaded files (reviews, complaints, demo photos) go to a throwaway folder, not backend/media.
+    settings.MEDIA_ROOT = tmp_path / "media"
+
+
 @pytest.fixture
 def api_client():
     return APIClient()

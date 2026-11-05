@@ -42,6 +42,29 @@ class TestSeedDemo:
         call_command("seed_demo")
         assert Deal.objects.filter(status=Deal.Status.ACTIVE).count() == PRODUCTS
 
+    def test_photos_attached_and_restored_after_disk_wipe(self, api_client, settings):
+        import shutil
+
+        from apps.categories.models import Category
+        from apps.products.models import ProductImage
+
+        call_command("seed_demo")
+        assert ProductImage.objects.filter(product__shop__in=demo_shops()).count() == PRODUCTS
+        assert all(s.cover_image for s in demo_shops())
+        assert Category.objects.exclude(icon="").count() == 10
+        deal = api_client.get("/api/v1/deals/nearby/", {"latitude": 27.2063, "longitude": 77.4972, "radius": 5000}).data["results"][0]
+        assert deal["image"]
+
+        shutil.rmtree(settings.MEDIA_ROOT)  # the free server's disk after a restart
+        call_command("seed_demo")
+        image = ProductImage.objects.filter(product__shop__in=demo_shops()).first().image
+        assert image.storage.exists(image.name)
+        assert ProductImage.objects.filter(product__shop__in=demo_shops()).count() == PRODUCTS  # restored, not duplicated
+
+    def test_photo_credits_page(self, client):
+        body = client.get("/legal/photo-credits/").content.decode()
+        assert "Wikimedia Commons" in body and "CC BY" in body
+
     def test_task_only_runs_when_enabled(self, settings):
         settings.SEED_DEMO = False
         refresh_demo_deals()
