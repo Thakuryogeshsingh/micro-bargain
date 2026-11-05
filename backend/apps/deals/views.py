@@ -1,6 +1,7 @@
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -92,6 +93,30 @@ class DealActionView(APIView):
             deal = services.change_status(deal, request.user, new_status[self.action])
         code = status.HTTP_201_CREATED if self.action == "duplicate" else status.HTTP_200_OK
         return Response(MerchantDealSerializer(deal, context={"request": request}).data, status=code)
+
+
+class RepeatYesterdayView(APIView):
+    """POST /deals/repeat-yesterday/: put yesterday's deals live again in one tap."""
+
+    permission_classes = [IsMerchant]
+
+    @extend_schema(request=None, responses={200: OpenApiTypes.OBJECT})
+    def post(self, request):
+        created, skipped = services.repeat_yesterday(request.user)
+        return Response({"created": len(created), "skipped": skipped})
+
+
+class PriceSuggestionView(APIView):
+    """GET /deals/price-suggestion/?product=<id>: suggested offer price for a quick sale."""
+
+    permission_classes = [IsMerchant]
+
+    @extend_schema(parameters=[OpenApiParameter("product", int)], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        from apps.products.models import Product
+
+        product = get_object_or_404(Product.objects.filter(shop__merchant__user=request.user), pk=request.query_params.get("product") or 0)
+        return Response(services.price_suggestion(product))
 
 
 # ---------- customer ----------

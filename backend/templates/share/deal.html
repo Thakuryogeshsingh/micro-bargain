@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ deal.product.name }} — ₹{{ deal.offer_price }} | Micro Bargain</title>
+  <meta property="og:title" content="{{ deal.product.name }} सिर्फ ₹{{ deal.offer_price }}/{{ deal.unit }} ({{ discount }}% छूट)">
+  <meta property="og:description" content="{{ deal.shop.name }}, {{ deal.shop.city }} — Micro Bargain पर पास की दुकानों की ताज़ा डील">
+  <style>
+    body { margin: 0; font-family: system-ui, "Noto Sans Devanagari", sans-serif; background: #F7F4EC; color: #17201C; }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 20px; }
+    .card { background: #fff; border-radius: 24px; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,.08); text-align: center; }
+    .emoji { font-size: 72px; }
+    .badge { display: inline-block; background: linear-gradient(135deg,#FF8A00,#FF3D54); color: #fff; font-weight: 800; padding: 6px 14px; border-radius: 20px; }
+    .price { font-size: 34px; font-weight: 900; margin: 12px 0 0; }
+    .old { color: #888; text-decoration: line-through; }
+    .btn { display: block; margin-top: 18px; background: #0F3D2E; color: #fff; text-decoration: none; padding: 16px; border-radius: 30px; font-weight: 800; }
+    .muted { color: #6B7470; }
+  </style>
+</head>
+<body><div class="wrap"><div class="card">
+  <div class="emoji">🛍️</div>
+  <span class="badge">{{ discount }}% OFF</span>
+  <h1>{{ deal.product.name }}</h1>
+  <p class="price">₹{{ deal.offer_price }}<small>/{{ deal.unit }}</small> <span class="old">₹{{ deal.normal_price }}</span></p>
+  <p>{{ deal.shop.name }} · {{ deal.shop.address_line }}, {{ deal.shop.city }}</p>
+  {% if live %}<p class="muted">⏱ {{ deal.expires_at|timeuntil }} बाकी</p>{% else %}<p class="muted">यह डील खत्म हो चुकी है</p>{% endif %}
+  <a class="btn" href="microbargain://deal/{{ deal.id }}">ऐप में खोलें</a>
+</div></div></body>
+</html>

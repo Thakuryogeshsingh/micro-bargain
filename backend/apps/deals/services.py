@@ -378,3 +378,49 @@ def bought_together(deal, limit=6):
     else:
         candidates = candidates.order_by("-discount_percent")
     return list(candidates[:limit])
+
+
+# ---------- merchant helpers ----------
+
+def repeat_yesterday(user):
+    """Re-publish yesterday's deals of this merchant as fresh deals starting now (same price, stock and duration).
+    Returns (created, skipped): a deal is skipped when its product is inactive or a rule (plan limit, stock) blocks it."""
+    yesterday = timezone.localdate() - timedelta(days=1)
+    previous = Deal.objects.filter(
+        shop__merchant__user=user, published_at__date=yesterday
+    ).select_related("shop", "product").order_by("published_at")
+    created, skipped, seen = [], 0, set()
+    for deal in previous:
+        if deal.product_id in seen or Deal.objects.filter(product=deal.product, status=Status.ACTIVE).exists():
+            skipped += 1
+            continue
+        seen.add(deal.product_id)
+        try:
+            copy = duplicate_deal(deal, user)
+            created.append(publish_deal(copy, user))
+        except BusinessRuleError:
+            skipped += 1
+    return created, skipped
+
+
+def price_suggestion(product):
+    """Suggest an offer price from this product's past deals: the smallest discount that usually sold out."""
+    from decimal import ROUND_HALF_UP, Decimal
+
+    past = Deal.objects.filter(product=product, published_at__isnull=False, status__in=FINAL_OR_SOLD)
+    sold_well = [d for d in past if d.quantity_total and d.quantity_sold / d.quantity_total >= Decimal("0.7")]
+    if sold_well:
+        discount = min(d.discount_percent for d in sold_well)
+        reason = "past"
+    else:
+        category = Deal.objects.filter(product__category=product.category, published_at__isnull=False, quantity_sold__gt=0)
+        values = [d.discount_percent for d in category[:50]]
+        discount = sum(values) / len(values) if values else Decimal("30")
+        reason = "category" if values else "default"
+    discount = max(Decimal("10"), min(Decimal("70"), Decimal(discount))).quantize(Decimal("1"))
+    price = (product.standard_price * (100 - discount) / 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return {"normal_price": product.standard_price, "offer_price": price, "discount_percent": discount,
+            "reason": reason, "based_on": len(sold_well)}
+
+
+FINAL_OR_SOLD = (Status.EXPIRED, Status.ENDED, Status.SOLD_OUT)

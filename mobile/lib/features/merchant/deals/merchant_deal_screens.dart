@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
+import '../../../core/config/app_config.dart';
+import '../../../shared/widgets/voice.dart';
 import '../merchant_providers.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -23,6 +26,13 @@ class MerchantDealsScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(tr('मेरी डील')),
+          actions: [
+            TextButton.icon(
+              onPressed: () => repeatYesterday(context, ref),
+              icon: const Icon(Icons.replay_rounded),
+              label: Text(tr('कल वाली')),
+            ),
+          ],
           bottom: TabBar(tabs: [Tab(text: tr('लाइव')), Tab(text: tr('ड्राफ्ट / रुकी')), Tab(text: tr('पुरानी'))]),
         ),
         floatingActionButton: FloatingActionButton.extended(
@@ -54,6 +64,10 @@ class _DealList extends ConsumerWidget {
 
   Future<void> _act(BuildContext context, WidgetRef ref, Deal deal, String action) async {
     final api = ref.read(apiProvider);
+    if (action == 'share') {
+      shareDeal(d: deal);
+      return;
+    }
     if (action == 'update-stock') {
       final value = await askText(context, tr('कुल स्टॉक ({0})', [unitLabel(deal.unit)]), keyboard: const TextInputType.numberWithOptions(decimal: true));
       if (value == null || value.isEmpty || !context.mounted) return;
@@ -88,6 +102,7 @@ class _DealList extends ConsumerWidget {
             if (!{'expired', 'ended'}.contains(d.status)) 'update-stock': tr('स्टॉक बदलें'),
             if (!{'expired', 'ended'}.contains(d.status)) 'end': tr('बंद करें'),
             'duplicate': tr('दोबारा लगाएं (कॉपी)'),
+            if (d.status == 'active') 'share': tr('WhatsApp पर शेयर'),
           };
           return Card(
             child: ListTile(
@@ -121,6 +136,51 @@ class DealFormScreen extends ConsumerStatefulWidget {
 class _DealFormScreenState extends ConsumerState<DealFormScreen> {
   final _form = GlobalKey<FormState>();
   Product? _product;
+  Map<String, dynamic>? _suggestion;
+
+  Future<void> _loadSuggestion(Product product) async {
+    try {
+      final data = Map<String, dynamic>.from(
+          await ref.read(apiProvider).get('/deals/price-suggestion/', query: {'product': product.id}));
+      if (mounted && _product?.id == product.id) setState(() => _suggestion = data);
+    } on ApiException {
+      // A suggestion is optional.
+    }
+  }
+
+  void _applySuggestion() {
+    final s = _suggestion!;
+    setState(() {
+      _normal.text = qty(parseNum(s['normal_price']));
+      _offer.text = qty(parseNum(s['offer_price']));
+    });
+  }
+
+  /// "2 किलो टमाटर 20 रुपये" -> product, quantity and offer price filled in.
+  Future<void> _voice() async {
+    final text = await listenOnce(context, hint: tr('जैसे: "2 किलो टमाटर 20 रुपये"'));
+    if (text == null || !mounted) return;
+    final spoken = parseSpokenDeal(text);
+    final products = (ref.read(merchantProductsProvider).value ?? []).where((p) => p.isActive).toList();
+    Product? match;
+    for (final p in products) {
+      final name = p.name.toLowerCase().replaceAll(RegExp(r'\(.*?\)'), '').trim();
+      if (name.isNotEmpty && (spoken.productText.contains(name) || name.split(' ').any((w) => w.length > 1 && spoken.productText.contains(w)))) {
+        match = p;
+        break;
+      }
+    }
+    setState(() {
+      if (match != null) {
+        _product = match;
+        _normal.text = qty(match.standardPrice);
+      }
+      if (spoken.quantity != null) _quantity.text = qty(spoken.quantity!);
+      if (spoken.price != null) _offer.text = qty(spoken.price!);
+    });
+    if (match != null) _loadSuggestion(match);
+    showMessage(context, match == null ? tr('प्रोडक्ट नहीं मिला: "{0}" — सूची से चुनें', [text]) : tr('सुना: "{0}"', [text]));
+  }
   final _normal = TextEditingController();
   final _offer = TextEditingController();
   final _quantity = TextEditingController();
@@ -171,7 +231,13 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
     final products = ref.watch(merchantProductsProvider);
     final shop = ref.watch(myShopProvider).value;
     return Scaffold(
-      appBar: AppBar(title: Text(tr('नई डील'))),
+      appBar: AppBar(title: Text(tr('नई डील')), actions: [
+        IconButton(
+          tooltip: tr('बोलकर डील बनाएं'),
+          icon: const Icon(Icons.mic_rounded),
+          onPressed: _voice,
+        ),
+      ]),
       body: AsyncView(
         value: products,
         onRetry: () => ref.invalidate(merchantProductsProvider),
@@ -198,10 +264,13 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                 initialValue: _product,
                 decoration: InputDecoration(labelText: tr('प्रोडक्ट')),
                 items: [for (final p in active) DropdownMenuItem(value: p, child: Text('${p.name} (${unitLabel(p.unit)})'))],
-                onChanged: (p) => setState(() {
-                  _product = p;
-                  _normal.text = qty(p!.standardPrice);
-                }),
+                onChanged: (p) {
+                  setState(() {
+                    _product = p;
+                    _normal.text = qty(p!.standardPrice);
+                  });
+                  _loadSuggestion(p!);
+                },
                 validator: (p) => p == null ? tr('चुनें') : null,
               ),
               const SizedBox(height: 12),
@@ -228,6 +297,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   ),
                 ),
               ]),
+              if (_suggestion != null) _SuggestionCard(data: _suggestion!, onApply: _applySuggestion),
               if (_discount > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
@@ -268,6 +338,67 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+
+/// Puts all of yesterday's deals live again.
+Future<void> repeatYesterday(BuildContext context, WidgetRef ref) async {
+  if (!await confirm(context, tr('कल वाली सभी डील दोबारा लाइव करें?'))) return;
+  if (!context.mounted) return;
+  Map<String, dynamic>? result;
+  final ok = await runAction(context, () async {
+    result = Map<String, dynamic>.from(await ref.read(apiProvider).post('/deals/repeat-yesterday/'));
+  });
+  if (!ok || !context.mounted) return;
+  ref.invalidate(merchantDealsProvider);
+  ref.invalidate(dashboardProvider);
+  showMessage(
+    context,
+    result!['created'] == 0
+        ? tr('कल की कोई नई डील नहीं मिली')
+        : tr('{0} डील फिर से लाइव हो गईं 🎉', [result!['created']]),
+  );
+}
+
+/// Opens WhatsApp with the deal and its public link, for the shop's status or customer groups.
+void shareDeal({required Deal d}) {
+  final link = '${AppConfig.siteUrl}/d/${d.id}/';
+  final text = '🔥 ${d.productName} ${tr('सिर्फ')} ${rupees(d.offerPrice)}/${unitLabel(d.unit)} '
+      '(${d.discountPercent.round()}% OFF) — ${d.shop.name}\n$link';
+  launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'), mode: LaunchMode.externalApplication);
+}
+
+class _SuggestionCard extends StatelessWidget {
+  const _SuggestionCard({required this.data, required this.onApply});
+
+  final Map<String, dynamic> data;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final reason = switch (data['reason']) {
+      'past' => tr('पिछली बार इतनी छूट पर जल्दी बिका'),
+      'category' => tr('इस कैटेगरी में आम तौर पर इतनी छूट चलती है'),
+      _ => tr('शुरुआत के लिए अच्छी छूट'),
+    };
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [
+        const Text('💡', style: TextStyle(fontSize: 24)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(tr('सुझाव: {0} ({1}% छूट)', [rupees(parseNum(data['offer_price'])), parseNum(data['discount_percent']).round()]),
+                style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF92400E))),
+            Text(reason, style: const TextStyle(fontSize: 12, color: Color(0xFF92400E))),
+          ]),
+        ),
+        TextButton(onPressed: onApply, child: Text(tr('लगाएं'))),
+      ]),
     );
   }
 }

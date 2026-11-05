@@ -21,6 +21,16 @@ def health_check(request):
 LEGAL_PAGES = {"privacy": "Privacy Policy", "terms": "Terms of Use", "refunds": "Cancellation & Refund Policy"}
 
 
+def deal_share_page(request, pk):
+    """Public page for a shared deal link; the app opens it directly when installed."""
+    from django.shortcuts import get_object_or_404
+
+    from apps.deals.models import Deal
+
+    deal = get_object_or_404(Deal.objects.select_related("product", "shop").exclude(status="draft"), pk=pk)
+    return render(request, "share/deal.html", {"deal": deal, "discount": round(deal.discount_percent), "live": deal.is_live})
+
+
 def legal_page(request, page):
     """Public policy pages, linked from the app and the Play Store listing. Have a lawyer review them before launch."""
     if page not in LEGAL_PAGES:
@@ -61,6 +71,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health_check),
     path("legal/<str:page>/", legal_page, name="legal"),
+    path("d/<int:pk>/", deal_share_page, name="deal-share"),
     path("api/v1/", include(api_v1_patterns)),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
