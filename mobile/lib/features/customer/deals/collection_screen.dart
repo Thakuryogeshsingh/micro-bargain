@@ -6,6 +6,7 @@ import '../../../core/i18n/i18n.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
+import '../cart/cart_bar.dart';
 import '../customer_providers.dart';
 import '../home/home_screen.dart';
 
@@ -20,7 +21,8 @@ class CollectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deals = ref.watch(collectionDealsProvider(query));
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: Text(title), actions: const [CartIconButton()]),
+      bottomNavigationBar: const SafeArea(child: CartBar()),
       body: deals.when(
         loading: () => const SingleChildScrollView(child: DealListSkeleton()),
         error: (e, _) => ErrorView(message: e.toString(), onRetry: () => ref.invalidate(collectionDealsProvider(query))),

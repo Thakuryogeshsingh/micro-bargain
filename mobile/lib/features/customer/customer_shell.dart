@@ -7,6 +7,7 @@ import '../../core/update/update_checker.dart';
 import '../../shared/widgets/floating_nav.dart';
 import '../../shared/widgets/tab_shell.dart';
 import 'bookings/bookings_screen.dart';
+import 'cart/cart_bar.dart';
 import 'home/home_screen.dart';
 import 'profile/profile_screens.dart';
 import 'shops/shop_screens.dart';
@@ -18,6 +19,7 @@ class CustomerShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return TabShell(
       pages: const [HomeScreen(), BookingsScreen(), FavoritesScreen(), ProfileScreen()],
+      aboveNav: const CartBar(),
       items: [
         FloatingNavItem(Icons.home_outlined, Icons.home_rounded, tr('डील')),
         FloatingNavItem(Icons.receipt_long_outlined, Icons.receipt_long_rounded, tr('बुकिंग')),

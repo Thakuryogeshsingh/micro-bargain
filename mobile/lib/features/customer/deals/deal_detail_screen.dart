@@ -15,6 +15,7 @@ import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../../shared/widgets/share.dart';
 import '../cart/cart.dart';
+import '../cart/cart_bar.dart';
 import '../customer_providers.dart';
 import '../home/home_screen.dart';
 
@@ -122,38 +123,41 @@ class _DealBodyState extends ConsumerState<_DealBody> {
     return Scaffold(
       bottomNavigationBar: deal.isLive
           ? SafeArea(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                decoration: BoxDecoration(color: AppTheme.card, boxShadow: AppTheme.softShadow(0.1)),
-                child: Row(children: [
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(56, 52), padding: EdgeInsets.zero),
-                    onPressed: _addToCart,
-                    child: const Icon(Icons.add_shopping_cart_rounded),
-                  ),
-                  const SizedBox(width: 10),
-                  if (deal.canPickup)
-                    Expanded(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(gradient: AppTheme.heroGradient, borderRadius: BorderRadius.circular(14)),
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent),
-                          onPressed: _busy ? null : _reserve,
-                          child: _busy
-                              ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                              : Text('${tr('रिज़र्व करें · दुकान पर पैसे दें')}  ${rupees(total)}',
-                                  maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: FilledButton(onPressed: _addToCart, child: Text(tr('कार्ट में डालें (ऑनलाइन पेमेंट)'))),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const CartBar(),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                  decoration: BoxDecoration(color: AppTheme.card, boxShadow: AppTheme.softShadow(0.1)),
+                  child: Row(children: [
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(56, 52), padding: EdgeInsets.zero),
+                      onPressed: _addToCart,
+                      child: const Icon(Icons.add_shopping_cart_rounded),
                     ),
-                ]),
-              ),
+                    const SizedBox(width: 10),
+                    if (deal.canPickup)
+                      Expanded(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(gradient: AppTheme.heroGradient, borderRadius: BorderRadius.circular(14)),
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent),
+                            onPressed: _busy ? null : _reserve,
+                            child: _busy
+                                ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                                : Text('${tr('रिज़र्व करें · दुकान पर पैसे दें')}  ${rupees(total)}',
+                                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: FilledButton(onPressed: _addToCart, child: Text(tr('कार्ट में डालें (ऑनलाइन पेमेंट)'))),
+                      ),
+                  ]),
+                ),
+              ]),
             )
-          : null,
+          : const SafeArea(child: CartBar()),
       body: CustomScrollView(slivers: [
         SliverAppBar(
           pinned: true,

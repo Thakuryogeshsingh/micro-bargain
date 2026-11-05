@@ -21,10 +21,13 @@ class TabSwitcher extends InheritedWidget {
 /// Bottom-tab home for customers and merchants. Back goes to the previously opened tab; on the first tab it
 /// asks before leaving the app.
 class TabShell extends StatefulWidget {
-  const TabShell({super.key, required this.pages, required this.items, this.onReady});
+  const TabShell({super.key, required this.pages, required this.items, this.onReady, this.aboveNav});
 
   final List<Widget> pages;
   final List<FloatingNavItem> items;
+
+  /// Shown just above the bottom bar on every tab (the customer app's cart strip).
+  final Widget? aboveNav;
 
   /// Called once after the first frame (update check, order alerts...).
   final void Function(BuildContext context)? onReady;
@@ -81,7 +84,10 @@ class _TabShellState extends State<TabShell> {
         child: Scaffold(
           extendBody: true, // content scrolls under the floating bar
           body: IndexedStack(index: _tab, children: widget.pages),
-          bottomNavigationBar: FloatingNavBar(index: _tab, onTap: _goTo, items: widget.items),
+          bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
+            ?widget.aboveNav,
+            FloatingNavBar(index: _tab, onTap: _goTo, items: widget.items),
+          ]),
         ),
       ),
     );

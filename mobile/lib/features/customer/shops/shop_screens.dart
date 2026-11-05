@@ -13,6 +13,7 @@ import '../../../shared/widgets/shop_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../../shared/widgets/visuals.dart';
 import '../customer_providers.dart';
+import '../cart/cart_bar.dart';
 import '../home/home_screen.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -40,6 +41,7 @@ class ShopScreen extends ConsumerWidget {
 
         final (_, pastel) = productLook(shop.name, shop.categoryName);
         return Scaffold(
+          bottomNavigationBar: const SafeArea(child: CartBar()),
           body: CustomScrollView(slivers: [
             SliverAppBar(
               pinned: true,
@@ -54,6 +56,7 @@ class ShopScreen extends ConsumerWidget {
                       color: shop.isFavorite ? const Color(0xFFFF4D6D) : Colors.white),
                   onPressed: toggleFavorite,
                 ),
+                const CartIconButton(color: Colors.white),
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Stack(fit: StackFit.expand, children: [

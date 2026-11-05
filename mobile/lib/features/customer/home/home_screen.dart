@@ -18,6 +18,7 @@ import '../../../shared/widgets/location_picker.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../notifications/notifications_screen.dart';
 import '../cart/cart.dart';
+import '../cart/cart_bar.dart';
 import '../customer_providers.dart';
 import '../deals/collection_screen.dart';
 import '../offers/offers.dart';
@@ -73,8 +74,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cart = ref.watch(cartProvider);
-    final cartTotal = cart.fold<double>(0, (s, l) => s + l.total);
     final favoriteShops = {for (final s in ref.watch(favoritesProvider).value ?? <ShopSummary>[]) s.id};
 
     Future<void> toggleFavorite(int shopId, bool isFav) async {
@@ -90,17 +89,6 @@ class HomeScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      floatingActionButton: AnimatedScale(
-        scale: cart.isEmpty ? 0 : 1,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutBack,
-        child: FloatingActionButton.extended(
-          heroTag: 'cart-fab',
-          onPressed: () => context.push('/cart'),
-          icon: Badge(label: Text('${cart.length}'), child: const Icon(Icons.shopping_bag_rounded)),
-          label: Text(rupees(cartTotal), style: const TextStyle(fontWeight: FontWeight.w800)),
-        ),
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(locationProvider);
@@ -219,6 +207,11 @@ class _Header extends ConsumerWidget {
               Container(
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
                 child: const IconTheme(data: IconThemeData(color: Colors.white), child: NotificationBell()),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
+                child: const CartIconButton(color: Colors.white),
               ),
             ]),
             const SizedBox(height: 18),
