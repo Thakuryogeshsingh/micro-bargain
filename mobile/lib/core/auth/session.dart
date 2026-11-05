@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/api_client.dart';
+import '../storage/prefs.dart';
 import '../../shared/models/user.dart';
 
 enum SessionStatus { unknown, signedOut, signedIn }
@@ -31,27 +34,45 @@ class SessionController extends Notifier<SessionState> {
       return;
     }
     try {
-      final user = AppUser.fromJson(await _api.get('/auth/profile/'));
-      state = SessionState(SessionStatus.signedIn, user);
-    } on ApiException catch (e) {
-      if (e.code == 'network') {
-        // Offline at startup: keep the session; screens show their own retry.
-        state = const SessionState(SessionStatus.signedIn);
+      state = SessionState(SessionStatus.signedIn, await _loadUser());
+    } on ApiException {
+      if (await ref.read(tokenStorageProvider).refresh == null) {
+        // The server rejected the login (expired or logged out elsewhere).
+        state = const SessionState(SessionStatus.signedOut);
         return;
       }
-      await signOutLocally();
+      // Offline or the server is waking up: stay signed in as the last known user and try again shortly.
+      state = SessionState(SessionStatus.signedIn, _cachedUser());
+      Future.delayed(const Duration(seconds: 20), () async {
+        try {
+          if (state.status == SessionStatus.signedIn) state = SessionState(SessionStatus.signedIn, await _loadUser());
+        } on ApiException {
+          // Screens show their own retry.
+        }
+      });
     }
+  }
+
+  Future<AppUser> _loadUser() async {
+    final json = Map<String, dynamic>.from(await _api.get('/auth/profile/'));
+    await Prefs.set('user', jsonEncode(json));
+    return AppUser.fromJson(json);
+  }
+
+  AppUser? _cachedUser() {
+    final raw = Prefs.get('user');
+    return raw == null ? null : AppUser.fromJson(Map<String, dynamic>.from(jsonDecode(raw)));
   }
 
   Future<void> signIn(Map<String, dynamic> verifyResponse) async {
     await ref.read(tokenStorageProvider).save(verifyResponse['access'], verifyResponse['refresh']);
+    await Prefs.set('user', jsonEncode(verifyResponse['user']));
     state = SessionState(SessionStatus.signedIn, AppUser.fromJson(verifyResponse['user']));
   }
 
   /// Re-read the profile, e.g. after becoming a merchant or editing the name.
   Future<void> reloadUser() async {
-    final user = AppUser.fromJson(await _api.get('/auth/profile/'));
-    state = SessionState(SessionStatus.signedIn, user);
+    state = SessionState(SessionStatus.signedIn, await _loadUser());
   }
 
   Future<void> signOut({String? deviceToken}) async {

@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../auth/session.dart';
 import '../config/app_config.dart';
+import '../storage/prefs.dart';
 import '../../core/i18n/i18n.dart';
 
 /// An error from the API, already unwrapped from {"error": {code, message, details}}.
@@ -38,20 +39,37 @@ class TokenStorage {
   Future<String?> get access => _read('access_token');
   Future<String?> get refresh => _read('refresh_token');
 
+  // The encrypted store comes back empty on some phones after a restart or update, which logged people
+  // out. A copy in the app's private settings keeps them signed in until they log out themselves.
   Future<String?> _read(String key) async {
     try {
-      return await _storage.read(key: key);
+      final value = await _storage.read(key: key);
+      if (value != null) return value;
     } catch (_) {
-      return null; // unreadable (e.g. restored from another phone's backup): sign in again
+      // Unreadable encrypted store: use the copy.
     }
+    return Prefs.get(key);
   }
 
   Future<void> save(String access, String refresh) async {
-    await _storage.write(key: 'access_token', value: access);
-    await _storage.write(key: 'refresh_token', value: refresh);
+    await Prefs.set('access_token', access);
+    await Prefs.set('refresh_token', refresh);
+    try {
+      await _storage.write(key: 'access_token', value: access);
+      await _storage.write(key: 'refresh_token', value: refresh);
+    } catch (_) {
+      // The copy above is enough.
+    }
   }
 
-  Future<void> clear() => _storage.deleteAll();
+  Future<void> clear() async {
+    await Prefs.remove('access_token');
+    await Prefs.remove('refresh_token');
+    await Prefs.remove('user');
+    try {
+      await _storage.deleteAll();
+    } catch (_) {}
+  }
 }
 
 /// Thin wrapper around Dio: adds the JWT, refreshes it once on 401, and turns errors into [ApiException].
@@ -95,13 +113,21 @@ class ApiClient {
     final refresh = await tokens.refresh;
     if (refresh == null) return false;
     try {
-      final response = await Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl))
-          .post('/auth/refresh/', data: {'refresh': refresh});
+      final response = await Dio(BaseOptions(
+        baseUrl: AppConfig.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 70),
+        receiveTimeout: const Duration(seconds: 70),
+      )).post('/auth/refresh/', data: {'refresh': refresh});
       await tokens.save(response.data['access'], response.data['refresh'] ?? refresh);
       return true;
-    } on DioException {
-      await tokens.clear();
-      onSessionExpired?.call();
+    } on DioException catch (e) {
+      // Log out only when the server rejects the token. No internet, or the free server still waking
+      // up (502/503), must not throw the person out.
+      final status = e.response?.statusCode;
+      if (status == 400 || status == 401) {
+        await tokens.clear();
+        onSessionExpired?.call();
+      }
       return false;
     }
   }

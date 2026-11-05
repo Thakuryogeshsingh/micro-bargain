@@ -19,6 +19,8 @@ class Prefs {
 
   static Future<void> set(String key, String value) async => _prefs?.setString(key, value);
 
+  static Future<void> remove(String key) async => _prefs?.remove(key);
+
   /// Older versions saved these in the encrypted store; copy them over once so nobody is asked again.
   static Future<void> _moveFromSecureStorage() async {
     final prefs = _prefs!;
