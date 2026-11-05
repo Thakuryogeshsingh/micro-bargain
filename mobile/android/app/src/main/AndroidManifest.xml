@@ -47,6 +47,11 @@
             android:process=":crash"
             android:exported="false"
             android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+        <!-- Graphics: Flutter's Vulkan renderer (Impeller) crashes on some MediaTek/Mali phones (e.g. Tecno, Infinix,
+             itel on Android 16) when the screen is redrawn after a permission popup. Use the long-proven OpenGL
+             renderer on every phone; if a future Flutter drops that switch, Impeller still uses OpenGL, not Vulkan. -->
+        <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
+        <meta-data android:name="io.flutter.embedding.android.ImpellerBackend" android:value="opengles" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

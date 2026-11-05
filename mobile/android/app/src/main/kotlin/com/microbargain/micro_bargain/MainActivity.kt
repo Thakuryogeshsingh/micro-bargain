@@ -70,9 +70,12 @@ class MainActivity : FlutterActivity() {
             prefs.edit().putLong("shown_until", exit.timestamp).apply()
             val trace = try {
                 exit.traceInputStream?.use { stream ->
-                    // ANR traces are text; native tombstones are binary, so keep their readable parts.
                     val bytes = stream.readBytes()
-                    Regex("[\\x20-\\x7E]{6,}").findAll(String(bytes, Charsets.ISO_8859_1)).take(400).joinToString("\n") { it.value }
+                    if (exit.reason == ApplicationExitInfo.REASON_CRASH_NATIVE) {
+                        Tombstone.describe(bytes)
+                    } else {
+                        String(bytes, Charsets.UTF_8).take(20000) // ANR traces are text
+                    }
                 } ?: ""
             } catch (_: Throwable) {
                 ""
