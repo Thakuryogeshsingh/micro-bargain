@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 
@@ -40,6 +41,9 @@ class Address(TimeStampedModel):
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     is_default = models.BooleanField(default=False)
+    # Set when the address belongs to someone else (ordering for family/friends).
+    contact_name = models.CharField(max_length=120, blank=True)
+    contact_phone = models.CharField(max_length=10, blank=True, validators=[RegexValidator(r"^[6-9]\d{9}$", "Enter a 10-digit mobile number")])
 
     class Meta:
         ordering = ["-is_default", "-created_at"]
@@ -81,6 +85,7 @@ class WalletEntry(models.Model):
         CASHBACK = "cashback", "Cashback"
         USED = "used", "Used on an order"
         RETURNED = "returned", "Returned (order cancelled)"
+        REFUND = "refund", "Refund (quality complaint)"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet_entries")
     kind = models.CharField(max_length=10, choices=Kind.choices)

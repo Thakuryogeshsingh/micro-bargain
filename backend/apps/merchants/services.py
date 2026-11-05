@@ -66,14 +66,75 @@ def dashboard_stats(user):
     stats["shop_id"] = shops[0].id if shops else None
     stats["shop_status"] = shops[0].status if shops else None
     stats["shop_rejection_reason"] = shops[0].rejection_reason if shops else ""
+    stats["onboarding_submitted"] = profile.onboarding_submitted_at is not None
+    from apps.quality.models import QualityComplaint
+
+    stats["open_complaints"] = QualityComplaint.objects.filter(shop__merchant=profile, status="open").count()
+    stats["quality_score"] = shops[0].quality_score if shops else 100
     return stats
 
 
-def review_merchant(profile, reviewer, approve, reason=""):
+def review_merchant(profile, reviewer, approve, reason="", notify=True):
     profile.status = MerchantProfile.Status.APPROVED if approve else MerchantProfile.Status.REJECTED
     profile.rejection_reason = "" if approve else reason
     profile.reviewed_at = timezone.now()
     profile.reviewed_by = reviewer
     profile.save(update_fields=["status", "rejection_reason", "reviewed_at", "reviewed_by", "updated_at"])
     record(reviewer, f"merchant.{profile.status}", profile, reason)
+    if notify:
+        from apps.notifications import services as notifications
+
+        if approve:
+            notifications.notify(profile.user, notifications.Kind.MERCHANT_APPROVED, "प्रोफ़ाइल अप्रूव हो गई 🎉",
+                                 "बधाई! आपका दुकानदार अकाउंट अप्रूव हो गया। अब डील डालें और बेचना शुरू करें।")
+        else:
+            notifications.notify(profile.user, notifications.Kind.SHOP_REJECTED, "प्रोफ़ाइल अप्रूव नहीं हुई",
+                                 reason or "विवरण ठीक करके दोबारा जमा करें।")
     return profile
+
+
+REQUIRED_DOCUMENTS = ("shop_photo", "id_proof")
+
+
+def onboarding_status(profile):
+    """The steps a new shop owner completes before the team reviews the shop."""
+    shop = profile.shops.first()
+    documents = list(shop.documents.values("id", "doc_type", "status", "remarks")) if shop else []
+    uploaded = {d["doc_type"] for d in documents}
+    steps = [
+        {"key": "owner", "done": bool(profile.owner_name)},
+        {"key": "shop", "done": shop is not None},
+        {"key": "documents", "done": set(REQUIRED_DOCUMENTS) <= uploaded},
+        {"key": "payout", "done": bool(profile.upi_id or (profile.bank_account_number and profile.bank_ifsc))},
+    ]
+    return {
+        "steps": steps,
+        "complete": all(step["done"] for step in steps),
+        "required_documents": list(REQUIRED_DOCUMENTS),
+        "documents": documents,
+        "submitted_at": profile.onboarding_submitted_at,
+        "merchant_status": profile.status,
+        "shop_id": shop.id if shop else None,
+        "shop_status": shop.status if shop else None,
+        "rejection_reason": (shop.rejection_reason if shop else "") or profile.rejection_reason,
+    }
+
+
+@transaction.atomic
+def submit_onboarding(profile):
+    status = onboarding_status(profile)
+    if not status["complete"]:
+        missing = ", ".join(step["key"] for step in status["steps"] if not step["done"])
+        raise BusinessRuleError(f"Complete these steps first: {missing}.", "onboarding_incomplete")
+    shop = profile.shops.first()
+    if shop.status == shop.Status.REJECTED:  # fixed and sent again
+        shop.status = shop.Status.PENDING
+        shop.rejection_reason = ""
+        shop.save(update_fields=["status", "rejection_reason", "updated_at"])
+    if profile.status == MerchantProfile.Status.REJECTED:
+        profile.status = MerchantProfile.Status.PENDING
+        profile.rejection_reason = ""
+    profile.onboarding_submitted_at = timezone.now()
+    profile.save(update_fields=["status", "rejection_reason", "onboarding_submitted_at", "updated_at"])
+    record(profile.user, "merchant.onboarding_submitted", profile)
+    return onboarding_status(profile)

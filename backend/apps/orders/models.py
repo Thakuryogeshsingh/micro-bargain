@@ -87,6 +87,8 @@ class Order(TimeStampedModel):
 
     # Delivery address is copied so later edits to the address book do not change past orders.
     delivery_address = models.CharField(max_length=400, blank=True)
+    recipient_name = models.CharField(max_length=120, blank=True)  # someone else receives the delivery
+    recipient_phone = models.CharField(max_length=10, blank=True)
     delivery_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     delivery_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 

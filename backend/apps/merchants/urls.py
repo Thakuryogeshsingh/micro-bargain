@@ -9,4 +9,5 @@ urlpatterns = [
     path("profile/", views.MerchantProfileView.as_view(), name="profile"),
     path("profile/update/", views.MerchantProfileUpdateView.as_view(), name="profile-update"),
     path("dashboard/", views.MerchantDashboardView.as_view(), name="dashboard"),
+    path("onboarding/", views.OnboardingView.as_view(), name="onboarding"),
 ]

@@ -19,5 +19,6 @@ class MerchantProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id", "phone", "owner_name", "business_category", "business_category_name",
             "status", "rejection_reason", "created_at",
+            "upi_id", "bank_account_name", "bank_account_number", "bank_ifsc", "onboarding_submitted_at",
         ]
-        read_only_fields = ["id", "status", "rejection_reason", "created_at"]
+        read_only_fields = ["id", "status", "rejection_reason", "created_at", "onboarding_submitted_at"]

@@ -68,6 +68,32 @@ class WalletView(APIView):
         })
 
 
+class RefundsView(APIView):
+    """GET /customers/refunds/: every refund, to the bank (online payments) or to the wallet (cancellations, complaints)."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        from apps.payments.models import Refund
+
+        from .models import WalletEntry
+
+        bank = Refund.objects.filter(payment__user=request.user, payment__order__isnull=False).select_related("payment__order")
+        wallet = request.user.wallet_entries.filter(kind__in=[WalletEntry.Kind.REFUND, WalletEntry.Kind.RETURNED])
+        rows = [
+            {"method": "bank", "amount": r.amount, "status": r.status, "reason": r.reason,
+             "reference": r.payment.order.order_number, "created_at": r.created_at}
+            for r in bank
+        ] + [
+            {"method": "wallet", "amount": e.amount, "status": "processed", "reason": e.get_kind_display(),
+             "reference": e.reference, "created_at": e.created_at}
+            for e in wallet
+        ]
+        rows.sort(key=lambda row: row["created_at"], reverse=True)
+        return Response({"total": sum((row["amount"] for row in rows), 0), "refunds": rows})
+
+
 class ImpactView(APIView):
     """GET /customers/impact/: money saved and food rescued (for the profile badge)."""
 

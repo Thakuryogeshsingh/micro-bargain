@@ -53,6 +53,7 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.releases",
     "apps.reviews",
+    "apps.quality",
     "apps.advertisements",
     "apps.subscriptions",
     "apps.commissions",
@@ -236,6 +237,8 @@ CELERY_BEAT_SCHEDULE = {
     "refresh-demo-deals": {"task": "apps.shops.tasks.refresh_demo_deals", "schedule": 3600.0},
     "happy-hours": {"task": "apps.deals.tasks.run_happy_hours", "schedule": 300.0},
     "deal-ending-alerts": {"task": "apps.notifications.tasks.deal_ending_alerts", "schedule": 600.0},
+    "quality-auto-refunds": {"task": "apps.quality.tasks.auto_refund_unanswered", "schedule": 1800.0},
+    "quality-scores": {"task": "apps.quality.tasks.refresh_quality_scores", "schedule": 21600.0},
 }
 
 # Demo/test servers only: fill the database with sample Bharatpur shops and keep their deals live.
@@ -268,6 +271,15 @@ PICKUP_GRACE_MINUTES = 30
 MAX_PICKUP_AHEAD_HOURS = 24
 
 # Bargain Plus (customer membership): free delivery and an extra discount on every order.
+# Quality assurance: complain within this many hours of pickup/delivery; the shop must answer within the next.
+QUALITY_COMPLAINT_HOURS = 48
+QUALITY_SHOP_REPLY_HOURS = 24
+# A shop is "Quality Assured" at this score or above, with enough recent purchases to mean something.
+QUALITY_ASSURED_SCORE = 95
+QUALITY_ASSURED_MIN_PURCHASES = 5
+# Home delivery only within this distance of the shop (ordering for someone in another city uses that city's shops).
+DELIVERY_MAX_KM = 15
+
 PLUS_PRICE_RUPEES = 49
 PLUS_DAYS = 30
 PLUS_EXTRA_PERCENT = 5

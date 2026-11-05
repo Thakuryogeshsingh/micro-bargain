@@ -44,6 +44,8 @@ class Shop(TimeStampedModel):
 
     rating_avg = models.DecimalField(max_digits=3, decimal_places=2, default=0)
     rating_count = models.PositiveIntegerField(default=0)
+    quality_score = models.PositiveSmallIntegerField(default=100, help_text="% of last-30-day purchases without an upheld complaint")
+    quality_purchases_30d = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-created_at"]

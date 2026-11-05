@@ -60,6 +60,7 @@ class PublicShopSerializer(serializers.ModelSerializer):
     # Present when the query added deal stats (nearby list, shop page).
     live_deals_count = serializers.IntegerField(read_only=True, default=0)
     max_discount = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True, default=None)
+    quality_assured = serializers.SerializerMethodField()
 
     class Meta:
         model = Shop
@@ -68,7 +69,12 @@ class PublicShopSerializer(serializers.ModelSerializer):
             "address_line", "landmark", "city", "pincode", "latitude", "longitude",
             "opening_time", "closing_time", "prep_minutes", "happy_hour_enabled", "happy_hour_percent", "offers_pickup", "offers_delivery",
             "rating_avg", "rating_count", "distance_m", "is_favorite", "live_deals_count", "max_discount",
+            "quality_score", "quality_assured",
         ]
+
+    def get_quality_assured(self, obj) -> bool:
+        return (obj.quality_score >= settings.QUALITY_ASSURED_SCORE
+                and obj.quality_purchases_30d >= settings.QUALITY_ASSURED_MIN_PURCHASES)
 
     def get_distance_m(self, obj) -> int | None:
         distance = getattr(obj, "distance", None)

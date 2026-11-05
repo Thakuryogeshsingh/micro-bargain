@@ -11,5 +11,6 @@ urlpatterns = [
     path("referral/", views.ReferralView.as_view(), name="referral"),
     path("impact/", views.ImpactView.as_view(), name="impact"),
     path("wallet/", views.WalletView.as_view(), name="wallet"),
+    path("refunds/", views.RefundsView.as_view(), name="refunds"),
     path("plus/", views.PlusView.as_view(), name="plus"),
 ]

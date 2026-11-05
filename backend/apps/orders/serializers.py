@@ -59,7 +59,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "id", "order_number", "status", "fulfilment", "payment_method", "payment_status",
             "shop", "shop_name", "shop_phone", "shop_latitude", "shop_longitude", "items",
             "subtotal", "savings", "coupon_code", "coupon_discount", "plus_discount", "wallet_used", "delivery_fee", "total_amount", "refunded_amount",
-            "delivery_address", "delivery_latitude", "delivery_longitude", "pickup_code", "note",
+            "delivery_address", "delivery_latitude", "delivery_longitude", "recipient_name", "recipient_phone", "pickup_code", "note",
             "expires_at", "confirmed_at", "ready_at", "completed_at", "cancelled_at", "cancel_reason", "created_at",
         ]
 

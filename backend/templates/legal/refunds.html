@@ -1,17 +1,40 @@
 {% extends "legal/base.html" %}
 {% block content %}
+<h2>Quick summary</h2>
+<ul>
+  <li>Bad, stale, damaged, wrong or short items: report in the app within <b>{{ complaint_hours }} hours</b> with a photo.</li>
+  <li>The shop must answer within <b>{{ reply_hours }} hours</b>. If it does not, you get a <b>full refund automatically</b>.</li>
+  <li>Complaint refunds go to your <b>Micro Bargain wallet instantly</b> and can be used on your next order.</li>
+  <li>Cancelled online orders are refunded to your <b>original payment method in 5 to 7 working days</b>.</li>
+</ul>
+
+<h2>Quality complaints (all purchases)</h2>
+<ol>
+  <li>Open the order or booking in the app and tap <b>"Report quality problem"</b>.</li>
+  <li>Choose the problem (stale/rotten, damaged, expired, wrong item, less quantity, other), add a clear photo and a short note.</li>
+  <li>The shop can refund you fully or partly, or disagree. If the shop disagrees, the Micro Bargain team reviews the photo and decides within 48 hours.</li>
+  <li>Approved refunds are credited to your wallet at once. Only one complaint can be made per purchase.</li>
+</ol>
+<p>This applies to cash and online payments alike, so you are protected even when you paid the shop directly.</p>
+
 <h2>Online payments</h2>
 <ul>
   <li><b>Shop cancels or does not respond:</b> full refund, started automatically.</li>
   <li><b>You cancel before the shop accepts:</b> full refund, started automatically.</li>
   <li><b>After the shop accepts:</b> cancellation is not available in the app; contact the shop or raise a support ticket.</li>
-  <li><b>Wrong, short or spoiled items:</b> raise a support ticket within 24 hours with a photo. Approved refunds may be full or partial.</li>
-  <li>Refunds go back to the original payment method within 5 to 7 working days (bank timelines apply).</li>
+  <li>Wallet money used on a cancelled order goes back to your wallet straight away.</li>
+  <li>Bank refunds reach your account in 5 to 7 working days (bank timelines apply).</li>
 </ul>
 
-<h2>Cash payments</h2>
-<p>For reservations and cash orders you pay the shop directly; any refund is given by the shop. Our support team will help resolve disputes.</p>
+<h2>Wallet</h2>
+<p>Wallet money (cashback and refunds) can be used for up to {{ wallet_percent }}% of an order's items. It cannot be withdrawn to a bank account and has no cash value outside the app.</p>
+
+<h2>Track your refunds</h2>
+<p>All refunds and complaints are listed in the app under <b>Profile &rarr; Refunds &amp; complaints</b>.</p>
 
 <h2>Merchant plans and promotions</h2>
 <p>Prepaid and non-refundable, except when we reject or remove a promotion, in which case it is refunded in full.</p>
+
+<h2>Need help?</h2>
+<p>Raise a support ticket in the app or email <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
 {% endblock %}

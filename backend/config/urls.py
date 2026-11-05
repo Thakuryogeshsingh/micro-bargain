@@ -36,9 +36,10 @@ def legal_page(request, page):
     if page not in LEGAL_PAGES:
         raise Http404
     return render(request, f"legal/{page}.html", {
-        "title": LEGAL_PAGES[page], "updated": "2 November 2026", "city": "Bharatpur",
+        "title": LEGAL_PAGES[page], "updated": "5 November 2026", "city": "Bharatpur",
         "contact_email": settings.SUPPORT_EMAIL, "hold_minutes": settings.RESERVATION_HOLD_MINUTES,
-        "commission": settings.DEFAULT_COMMISSION_PERCENT,
+        "commission": settings.DEFAULT_COMMISSION_PERCENT, "complaint_hours": settings.QUALITY_COMPLAINT_HOURS,
+        "reply_hours": settings.QUALITY_SHOP_REPLY_HOURS, "wallet_percent": settings.WALLET_MAX_PERCENT_OF_ORDER,
     })
 
 
@@ -57,6 +58,7 @@ api_v1_patterns = [
     path("payments/", include("apps.payments.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("reviews/", include("apps.reviews.urls")),
+    path("quality/", include("apps.quality.urls")),
     path("advertisements/", include("apps.advertisements.urls")),
     path("subscriptions/", include("apps.subscriptions.urls")),
     path("commissions/", include("apps.commissions.urls")),

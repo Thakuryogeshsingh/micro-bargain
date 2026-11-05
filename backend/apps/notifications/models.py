@@ -56,6 +56,8 @@ class Notification(TimeStampedModel):
         PLUS_ACTIVE = "plus_active", "Bargain Plus active"
         DEAL_ENDING = "deal_ending", "Deal ending soon"
         CASHBACK = "cashback", "Cashback credited"
+        QUALITY_COMPLAINT = "quality_complaint", "Quality complaint"
+        MERCHANT_APPROVED = "merchant_approved", "Merchant account approved"
 
     DEAL_KINDS = (Kind.NEARBY_DEAL, Kind.FAVORITE_SHOP_DEAL)
 

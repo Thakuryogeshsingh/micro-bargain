@@ -27,7 +27,7 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = [
             "id", "label", "address_line", "landmark", "city", "state", "pincode",
-            "latitude", "longitude", "is_default", "created_at",
+            "latitude", "longitude", "is_default", "contact_name", "contact_phone", "created_at",
         ]
         read_only_fields = ["id", "created_at"]
 

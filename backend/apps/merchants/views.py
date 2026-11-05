@@ -37,6 +37,20 @@ class MerchantDashboardView(APIView):
         return Response(services.dashboard_stats(request.user))
 
 
+class OnboardingView(APIView):
+    """GET: onboarding checklist. POST: submit for review once every step is done."""
+
+    permission_classes = [IsMerchant]
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        return Response(services.onboarding_status(get_object_or_404(MerchantProfile, user=request.user)))
+
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
+    def post(self, request):
+        return Response(services.submit_onboarding(get_object_or_404(MerchantProfile, user=request.user)))
+
+
 class MerchantProfileUpdateView(generics.UpdateAPIView):
     serializer_class = MerchantProfileSerializer
     permission_classes = [IsMerchant]

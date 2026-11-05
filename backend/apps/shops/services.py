@@ -50,7 +50,7 @@ def review_shop(shop, reviewer, approve, reason=""):
     shop.save(update_fields=["status", "rejection_reason", "reviewed_at", "updated_at"])
     record(reviewer, f"shop.{shop.status}", shop, reason)
     if approve and shop.merchant.status == MerchantProfile.Status.PENDING:
-        review_merchant(shop.merchant, reviewer, approve=True)
+        review_merchant(shop.merchant, reviewer, approve=True, notify=False)  # the shop notification covers it
     notifications.shop_reviewed(shop)
     return shop
 

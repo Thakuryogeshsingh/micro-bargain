@@ -4,6 +4,7 @@ Flow: customer orders (stock held) -> pays online, or chooses cash -> shop accep
 out for delivery -> completes with the customer's 4-digit code (stock sold, commission recorded).
 Unpaid or unanswered orders are cancelled automatically and their stock released; paid ones are refunded.
 """
+import math
 import secrets
 import string
 from datetime import timedelta
@@ -139,6 +140,13 @@ def create_order(customer, items, fulfilment, payment_method, address=None, coup
             raise BusinessRuleError("All items in an order must be from the same shop.", "multiple_shops")
         if fulfilment == Order.Fulfilment.DELIVERY and not shop.offers_delivery:
             raise BusinessRuleError("This shop does not deliver.", "fulfilment_unavailable")
+        if fulfilment == Order.Fulfilment.DELIVERY:
+            km = _km_between(shop.location.y, shop.location.x, float(address.latitude), float(address.longitude))
+            if km > settings.DELIVERY_MAX_KM:
+                raise BusinessRuleError(
+                    f"This shop delivers only within {settings.DELIVERY_MAX_KM} km. Choose a shop near the delivery address.",
+                    "too_far",
+                )
 
         lines = []
         for item in items:
@@ -185,6 +193,8 @@ def create_order(customer, items, fulfilment, payment_method, address=None, coup
             delivery_address=_address_text(address) if fulfilment == Order.Fulfilment.DELIVERY else "",
             delivery_latitude=address.latitude if fulfilment == Order.Fulfilment.DELIVERY else None,
             delivery_longitude=address.longitude if fulfilment == Order.Fulfilment.DELIVERY else None,
+            recipient_name=address.contact_name if fulfilment == Order.Fulfilment.DELIVERY else "",
+            recipient_phone=address.contact_phone if fulfilment == Order.Fulfilment.DELIVERY else "",
             subtotal=subtotal, savings=savings, coupon=coupon, coupon_discount=discount, plus_discount=plus_off,
             delivery_fee=delivery_fee, total_amount=total, pickup_code=f"{secrets.randbelow(10000):04d}", note=note,
             expires_at=now + timedelta(minutes=settings.ORDER_PAYMENT_MINUTES if online else settings.ORDER_ACCEPT_MINUTES),
@@ -195,6 +205,13 @@ def create_order(customer, items, fulfilment, payment_method, address=None, coup
         if not online:
             _tell_shop_new_order(order)
     return order
+
+
+def _km_between(lat1, lng1, lat2, lng2):
+    """Great-circle (haversine) distance in km."""
+    lat1, lng1, lat2, lng2 = map(math.radians, (lat1, lng1, lat2, lng2))
+    a = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2
+    return 6371 * 2 * math.asin(math.sqrt(a))
 
 
 def _address_text(address):
