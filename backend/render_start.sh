@@ -5,10 +5,8 @@ set -e
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput >/dev/null
 
-# Admin login for the Django admin (there is no shell on the free plan). Ignored if it already exists.
-if [ -n "$DJANGO_SUPERUSER_PHONE" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-  python manage.py createsuperuser --noinput >/dev/null 2>&1 || true
-fi
+# Admin login from DJANGO_SUPERUSER_PHONE / DJANGO_SUPERUSER_PASSWORD (created, or password updated).
+python manage.py ensure_admin || true
 
 # Demo server: sample shops and fresh live deals on every start (the free plan restarts after sleeping).
 if [ "$SEED_DEMO" = "True" ]; then
