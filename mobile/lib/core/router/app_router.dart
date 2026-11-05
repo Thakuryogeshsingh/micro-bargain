@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/admin_account_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
@@ -46,6 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         case SessionStatus.signedOut:
           return onAuth ? null : '/login';
         case SessionStatus.signedIn:
+          if (session.isAdmin) return here == '/admin-account' ? null : '/admin-account';
           final home = session.isMerchant ? '/merchant' : '/customer';
           if (onAuth || here == '/splash') return home;
           // Becoming a merchant switches apps.
@@ -57,6 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(path: '/admin-account', builder: (_, _) => const AdminAccountScreen()),
       GoRoute(path: '/otp', builder: (_, state) => OtpScreen(phone: state.extra as String)),
 
       // Shared

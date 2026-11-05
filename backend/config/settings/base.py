@@ -232,7 +232,11 @@ CELERY_BEAT_SCHEDULE = {
     "expire-reservations": {"task": "apps.reservations.tasks.expire_reservations", "schedule": 60.0},
     "expire-orders": {"task": "apps.orders.tasks.expire_orders", "schedule": 60.0},
     "expire-subscriptions-and-ads": {"task": "apps.subscriptions.tasks.expire_paid_services", "schedule": 300.0},
+    "refresh-demo-deals": {"task": "apps.shops.tasks.refresh_demo_deals", "schedule": 3600.0},
 }
+
+# Demo/test servers only: fill the database with sample Bharatpur shops and keep their deals live.
+SEED_DEMO = env.bool("SEED_DEMO", default=False)
 
 # Push notifications. "console" logs pushes (development); "fcm" sends through Firebase Cloud Messaging
 # using the service-account JSON at FCM_CREDENTIALS_FILE.

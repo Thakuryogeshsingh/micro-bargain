@@ -48,6 +48,9 @@ services:
         value: fake
       - key: SERVE_MEDIA
         value: "True"
+      # Sample shops and live deals around Bharatpur for demos. Set to "False" before real use.
+      - key: SEED_DEMO
+        value: "True"
       # Admin login for /admin/. Render asks for the phone when the Blueprint is created;
       # the password is generated (see Environment tab).
       - key: DJANGO_SUPERUSER_PHONE
