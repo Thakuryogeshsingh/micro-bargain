@@ -4,6 +4,7 @@ import '../../core/config/app_config.dart';
 import '../../core/location/location_service.dart';
 import '../../core/network/api_client.dart';
 import '../../shared/models/models.dart';
+import '../../shared/widgets/visuals.dart';
 
 class DealFilters {
   DealFilters({this.radius = AppConfig.defaultSearchRadiusMeters, this.category, this.sort = 'distance', this.query = ''});
@@ -32,7 +33,11 @@ final dealFiltersProvider = NotifierProvider<DealFiltersController, DealFilters>
 
 final categoriesProvider = FutureProvider<List<Category>>((ref) async {
   final data = await ref.watch(apiProvider).get('/categories/') as List;
-  return [for (final c in data) Category.fromJson(c)];
+  final categories = [for (final c in data) Category.fromJson(c)];
+  for (final c in categories) {
+    if (c.icon.isNotEmpty) categoryPhotos[c.name] = categoryPhotos[c.nameHi] = c.icon;
+  }
+  return categories;
 });
 
 final nearbyDealsProvider = FutureProvider.autoDispose<List<Deal>>((ref) async {

@@ -14,6 +14,7 @@ import '../../../shared/widgets/contact_actions.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../../shared/widgets/share.dart';
+import '../../../shared/widgets/visuals.dart';
 import '../cart/cart.dart';
 import '../cart/cart_bar.dart';
 import '../customer_providers.dart';
@@ -200,7 +201,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(color: AppTheme.featured, borderRadius: BorderRadius.circular(20)),
-                    child: Text(tr('⭐ फीचर्ड'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    child: Text(plain(tr('⭐ फीचर्ड')), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                   ),
                 ),
             ]),
@@ -415,7 +416,7 @@ class _BoughtTogether extends ConsumerWidget {
     if (deals.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const SizedBox(height: 18),
-      Text('🛒 ${tr('अक्सर साथ खरीदते हैं')}',
+      Text(tr('अक्सर साथ खरीदते हैं'),
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.ink)),
       const SizedBox(height: 10),
       SizedBox(

@@ -154,13 +154,13 @@ class DealCard extends StatelessWidget {
                 if (deal.isHappyHour)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(tr('🌙 हैप्पी आवर'),
+                    child: Text(plain(tr('🌙 हैप्पी आवर')),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF7C3AED))),
                   ),
                 if (deal.isFeatured)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(tr('⭐ फीचर्ड'),
+                    child: Text(plain(tr('⭐ फीचर्ड')),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB45309))),
                   ),
                 Text(deal.productName,
@@ -284,7 +284,7 @@ class DealGridCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(color: const Color(0xFF7C3AED), borderRadius: BorderRadius.circular(20)),
-                      child: Text(tr('🌙 हैप्पी आवर'),
+                      child: Text(plain(tr('🌙 हैप्पी आवर')),
                           style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                     ),
                   ),

@@ -23,6 +23,7 @@ import '../customer_providers.dart';
 import '../deals/collection_screen.dart';
 import '../offers/offers.dart';
 import '../../../shared/widgets/shop_card.dart';
+import '../../../shared/widgets/visuals.dart';
 import '../../../shared/widgets/voice.dart';
 
 // i18n:off (translated where used)
@@ -36,18 +37,6 @@ const _sorts = {
 // i18n:on
 
 /// Emoji for each category, keyed by the Hindi name the server sends.
-const _categoryEmoji = {
-  'फल': '🍎',
-  'सब्ज़ी': '🥬',
-  'किराना': '🛒',
-  'डेयरी': '🥛',
-  'बेकरी': '🍞',
-  'नमकीन-स्नैक्स': '🥨',
-  'पेय': '🥤',
-  'मीट और सीफ़ूड': '🍗',
-  'घरेलू सामान': '🧴',
-  'अन्य लोकल सामान': '🛍️',
-};
 
 /// Adds one unit of a deal to the cart (asking first if the cart holds another shop's items).
 Future<void> quickAdd(BuildContext context, WidgetRef ref, Deal deal) async {
@@ -103,7 +92,7 @@ class HomeScreen extends ConsumerWidget {
           const SliverToBoxAdapter(child: _Banners()),
           SliverToBoxAdapter(child: _SectionTitle(tr('कैटेगरी'))),
           const SliverToBoxAdapter(child: _CategoryPills()),
-          SliverToBoxAdapter(child: _SectionTitle('✨ ${tr('आपके लिए खास')}')),
+          SliverToBoxAdapter(child: _SectionTitle(tr('आपके लिए खास'))),
           const SliverToBoxAdapter(child: CollectionTiles()),
           const SliverToBoxAdapter(child: _TopDeals()),
           const SliverToBoxAdapter(child: _Leaderboard()),
@@ -189,15 +178,15 @@ class _Header extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${tr('नमस्ते, {0}', [user?.name.split(' ').first ?? ''])} 👋',
+                  Text(tr('नमस्ते, {0}', [user?.name.split(' ').first ?? '']),
                       maxLines: 1, overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
                   Text(
                     location.value?.label != null
-                        ? '📍 ${location.value!.label} ▾'
+                        ? '${location.value!.label} ▾'
                         : location.value?.isFallback == true
-                            ? tr('📍 भरतपुर (लोकेशन बंद है)')
-                            : tr('📍 आपके आस-पास {0}', [distance(filters.radius)]),
+                            ? plain(tr('📍 भरतपुर (लोकेशन बंद है)'))
+                            : plain(tr('📍 आपके आस-पास {0}', [distance(filters.radius)])),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
@@ -306,7 +295,6 @@ class _OfferBannersState extends ConsumerState<_OfferBanners> {
   final _controller = PageController(viewportFraction: 0.9);
   int _page = 0;
 
-  static const _art = ['🍓🥑🥕', '🥛🧀🍞', '🍎🍇🍉', '🥬🍅🧅'];
   static const _gradients = [
     [Color(0xFFFF7A59), Color(0xFFFFB443)],
     [Color(0xFF7C3AED), Color(0xFFDB2777)],
@@ -325,7 +313,7 @@ class _OfferBannersState extends ConsumerState<_OfferBanners> {
     final offers = ref.watch(offersProvider(null)).value ?? [];
     if (offers.isEmpty) return const SizedBox.shrink();
     return Column(children: [
-      _SectionTitle('🎁 ${tr('खास ऑफ़र')}'),
+      _SectionTitle(tr('खास ऑफ़र')),
       SizedBox(
         height: 150,
         child: PageView.builder(
@@ -366,7 +354,7 @@ class _OfferBannersState extends ConsumerState<_OfferBanners> {
                       ),
                     ]),
                   ),
-                  Text(_art[i % _art.length], style: const TextStyle(fontSize: 38)),
+                  Icon(Icons.local_offer_rounded, size: 52, color: Colors.white.withValues(alpha: 0.85)),
                 ]),
               ),
             );
@@ -401,7 +389,7 @@ class _Dots extends StatelessWidget {
       ]);
 }
 
-/// Category pills with an emoji bubble; the selected one is filled with the theme colour.
+/// Category pills with a round photo; the selected one is filled with the theme colour.
 class _CategoryPills extends ConsumerWidget {
   const _CategoryPills();
 
@@ -411,8 +399,8 @@ class _CategoryPills extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider).value ?? [];
     void select(int? id) => ref.read(dealFiltersProvider.notifier).update((f) => f.copyWith(category: () => id));
     final tiles = [
-      (id: null as int?, emoji: '✨', label: tr('सभी')),
-      for (final c in categories) (id: c.id as int?, emoji: _categoryEmoji[c.nameHi] ?? '🛍️', label: c.label),
+      (id: null as int?, photo: '', label: tr('सभी')),
+      for (final c in categories) (id: c.id as int?, photo: c.icon, label: c.label),
     ];
     return SizedBox(
       height: 50,
@@ -441,7 +429,10 @@ class _CategoryPills extends ConsumerWidget {
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: active ? Colors.white.withValues(alpha: 0.18) : AppTheme.chip,
-                    child: Text(tile.emoji, style: const TextStyle(fontSize: 18)),
+                    backgroundImage: tile.photo.isEmpty ? null : CachedNetworkImageProvider(tile.photo),
+                    child: tile.photo.isEmpty
+                        ? Icon(Icons.apps_rounded, size: 20, color: active ? Colors.white : AppTheme.primaryDark)
+                        : null,
                   ),
                   const SizedBox(width: 8),
                   Text(tile.label,
@@ -465,7 +456,7 @@ class _FilterRow extends ConsumerWidget {
     final count = ref.watch(nearbyShopsProvider).value?.length;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _SectionTitle(
-        '🏪 ${tr('पास की दुकानें')}',
+        tr('पास की दुकानें'),
         trailing: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
@@ -585,7 +576,7 @@ class _TopDeals extends ConsumerWidget {
     if (deals.isEmpty) return const SizedBox.shrink();
     return Column(children: [
       _SectionTitle(
-        '⚡ ${tr('आज की टॉप डील्स')}',
+        tr('आज की टॉप डील्स'),
         trailing: TextButton(
           onPressed: () => context.push('/collection', extra: {'title': tr('सबसे बड़ी छूट'), 'query': 'sort=discount'}),
           child: Text(tr('सभी देखें')),
@@ -617,14 +608,14 @@ class _TopDeals extends ConsumerWidget {
 class _Leaderboard extends ConsumerWidget {
   const _Leaderboard();
 
-  static const _medals = ['🥇', '🥈', '🥉'];
+  static const _medalColors = [Color(0xFFF5B301), Color(0xFF9CA3AF), Color(0xFFB45309)];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rows = ref.watch(leaderboardProvider).value ?? const [];
     if (rows.isEmpty) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _SectionTitle('🏆 ${tr('इस हफ़्ते के टॉप दुकानदार')}'),
+      _SectionTitle(tr('इस हफ़्ते के टॉप दुकानदार')),
       SizedBox(
         height: 112,
         child: ListView.separated(
@@ -650,7 +641,12 @@ class _Leaderboard extends ConsumerWidget {
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Text(rank <= 3 ? _medals[rank - 1] : '#$rank', style: const TextStyle(fontSize: 22)),
+                      CircleAvatar(
+                        radius: 13,
+                        backgroundColor: rank <= 3 ? _medalColors[rank - 1] : AppTheme.chip,
+                        child: Text('$rank',
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: rank <= 3 ? Colors.white : AppTheme.ink)),
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(shop['name'], maxLines: 1, overflow: TextOverflow.ellipsis,

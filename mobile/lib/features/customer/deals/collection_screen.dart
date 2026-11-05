@@ -50,11 +50,11 @@ class CollectionScreen extends ConsumerWidget {
 }
 
 /// The collections offered on the home screen.
-List<(String emoji, String title, String query, List<Color> colors)> homeCollections() => [
-      ('💸', tr('₹50 से कम'), 'max_price=50&sort=price', const [Color(0xFF22C55E), Color(0xFF15803D)]),
-      ('🔥', tr('सबसे बड़ी छूट'), 'sort=discount', const [Color(0xFFFF7A59), Color(0xFFE11D48)]),
-      ('⏰', tr('जल्द खत्म'), 'sort=ending_soon', const [Color(0xFFF59E0B), Color(0xFFEA580C)]),
-      ('✨', tr('नई डील'), 'sort=newest', const [Color(0xFF8B5CF6), Color(0xFF6366F1)]),
+List<(IconData icon, String title, String query, List<Color> colors)> homeCollections() => [
+      (Icons.currency_rupee_rounded, tr('₹50 से कम'), 'max_price=50&sort=price', const [Color(0xFF22C55E), Color(0xFF15803D)]),
+      (Icons.local_fire_department_rounded, tr('सबसे बड़ी छूट'), 'sort=discount', const [Color(0xFFFF7A59), Color(0xFFE11D48)]),
+      (Icons.timer_outlined, tr('जल्द खत्म'), 'sort=ending_soon', const [Color(0xFFF59E0B), Color(0xFFEA580C)]),
+      (Icons.fiber_new_rounded, tr('नई डील'), 'sort=newest', const [Color(0xFF8B5CF6), Color(0xFF6366F1)]),
     ];
 
 class CollectionTiles extends StatelessWidget {
@@ -71,7 +71,7 @@ class CollectionTiles extends StatelessWidget {
         itemCount: collections.length,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
-          final (emoji, title, query, colors) = collections[i];
+          final (icon, title, query, colors) = collections[i];
           return FadeSlideIn(
             index: i,
             offset: 0.3,
@@ -85,7 +85,7 @@ class CollectionTiles extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text(emoji, style: const TextStyle(fontSize: 30)),
+                  Icon(icon, size: 30, color: Colors.white),
                   Text(title,
                       maxLines: 2,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, height: 1.15)),

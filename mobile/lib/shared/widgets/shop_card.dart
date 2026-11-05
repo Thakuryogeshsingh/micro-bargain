@@ -8,18 +8,6 @@ import '../models/models.dart';
 import 'motion.dart';
 import 'visuals.dart';
 
-const _categoryArt = {
-  'Fruits': '🍎🍌🍇',
-  'Vegetables': '🥬🍅🥕',
-  'Grocery': '🌾🍚🫘',
-  'Dairy Products': '🥛🧀🧈',
-  'Bakery': '🍞🥐🍪',
-  'Snacks': '🥨🍿🥜',
-  'Beverages': '🥤🧃🍵',
-  'Meat and Seafood': '🍗🐟🥚',
-  'Household Essentials': '🧴🧽🧻',
-};
-
 /// Green "4.3 ★" badge used on shop cards.
 class RatingBadge extends StatelessWidget {
   const RatingBadge(this.rating, {super.key, this.count = 0});
@@ -55,8 +43,6 @@ class ShopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (_, pastel) = productLook(shop.name, shop.categoryName);
-    final art = _categoryArt[shop.categoryName] ?? '🛍️🧺🏪';
     return FadeSlideIn(
       index: index,
       child: Pressable(
@@ -73,11 +59,7 @@ class ShopCard extends StatelessWidget {
                   tag: 'shop-cover-${shop.id}',
                   child: shop.coverImage != null
                       ? CachedNetworkImage(imageUrl: shop.coverImage!, fit: BoxFit.cover)
-                      : Container(
-                          color: pastel,
-                          alignment: Alignment.center,
-                          child: Text(art, style: const TextStyle(fontSize: 54, letterSpacing: 6)),
-                        ),
+                      : ProductArt(name: shop.name, category: shop.categoryName, size: double.infinity),
                 ),
                 if (shop.maxDiscount != null && shop.maxDiscount! > 0)
                   Positioned(
@@ -147,7 +129,7 @@ class ShopCard extends StatelessWidget {
                   Divider(color: AppTheme.muted.withValues(alpha: 0.15)),
                   const SizedBox(height: 4),
                   Row(children: [
-                    const Text('🔥', style: TextStyle(fontSize: 16)),
+                    const Icon(Icons.local_fire_department_rounded, size: 18, color: AppTheme.deal),
                     const SizedBox(width: 6),
                     Text(tr('{0} डील लाइव', [shop.liveDealsCount]),
                         style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primary)),

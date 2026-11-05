@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -78,7 +79,13 @@ const _pastels = [
   return (emoji ?? fallback?.$1 ?? '🛍️', AppTheme.dark ? Color.lerp(color, const Color(0xFF1A201E), 0.82)! : color);
 }
 
-/// Big emoji on a soft colour, standing in for a product photo.
+/// Category photos from the server (English and Hindi category name -> URL), filled when categories load.
+final categoryPhotos = <String, String>{};
+
+/// Removes a leading emoji from an (older) translated text, e.g. "⭐ फीचर्ड" -> "फीचर्ड".
+String plain(String text) => text.replaceFirst(RegExp(r'^[^\p{L}\p{N}₹]+', unicode: true), '');
+
+/// Stand-in for a missing product photo: the category's photo, or a calm icon tile.
 class ProductArt extends StatelessWidget {
   const ProductArt({super.key, required this.name, this.category = '', this.size = 88});
 
@@ -88,15 +95,22 @@ class ProductArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (emoji, color) = productLook(name, category);
-    return Container(
+    final photo = categoryPhotos[category];
+    final tile = Container(
       width: size,
       height: size,
-      color: color,
+      color: AppTheme.chip,
       alignment: Alignment.center,
       child: LayoutBuilder(
-        builder: (_, box) => Text(emoji, style: TextStyle(fontSize: (box.maxHeight.isFinite ? box.maxHeight : 160) * 0.45)),
+        builder: (_, box) => Icon(Icons.shopping_basket_outlined,
+            color: AppTheme.muted.withValues(alpha: 0.6), size: (box.maxHeight.isFinite ? box.maxHeight : 160) * 0.38),
       ),
+    );
+    if (photo == null || photo.isEmpty) return tile;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CachedNetworkImage(imageUrl: photo, fit: BoxFit.cover, placeholder: (_, _) => tile, errorWidget: (_, _, _) => tile),
     );
   }
 }

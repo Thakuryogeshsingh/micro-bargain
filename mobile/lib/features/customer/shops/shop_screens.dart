@@ -39,7 +39,6 @@ class ShopScreen extends ConsumerWidget {
           }
         }
 
-        final (_, pastel) = productLook(shop.name, shop.categoryName);
         return Scaffold(
           bottomNavigationBar: const SafeArea(child: CartBar()),
           body: CustomScrollView(slivers: [
@@ -64,7 +63,7 @@ class ShopScreen extends ConsumerWidget {
                     tag: 'shop-cover-${shop.id}',
                     child: shop.coverImage != null
                         ? CachedNetworkImage(imageUrl: shop.coverImage!, fit: BoxFit.cover)
-                        : Container(color: pastel, alignment: Alignment.center, child: const Text('🏪', style: TextStyle(fontSize: 80))),
+                        : ProductArt(name: shop.name, category: shop.categoryName, size: double.infinity),
                   ),
                   const DecoratedBox(
                     decoration: BoxDecoration(

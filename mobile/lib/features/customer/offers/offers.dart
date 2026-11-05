@@ -106,7 +106,7 @@ class OffersStrip extends ConsumerWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-        child: Text('🎁 ${tr('ऑफ़र')}', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        child: Text(tr('ऑफ़र'), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
       ),
       SizedBox(
         height: 156,
