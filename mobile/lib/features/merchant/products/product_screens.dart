@@ -38,7 +38,7 @@ class ProductsScreen extends ConsumerWidget {
                   ListTile(
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: DealImage(p.images.isEmpty ? null : p.images.first, size: 48),
+                      child: DealImage(p.images.isEmpty ? null : p.images.first, size: 48, name: p.name),
                     ),
                     title: Text(p.name + (p.isActive ? '' : tr(' (बंद)'))),
                     subtitle: Text('${rupees(p.standardPrice)}/${unitLabel(p.unit)}'),

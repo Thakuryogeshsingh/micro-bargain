@@ -76,7 +76,7 @@ class OfferCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppTheme.card.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white54),
                   ),
@@ -225,7 +225,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(16)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Text(r['code'],
                           style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 3, color: Color(0xFF7C3AED))),

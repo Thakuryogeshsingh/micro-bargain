@@ -11,6 +11,7 @@ import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../customer/profile/profile_screens.dart';
 import '../../settings/language_screen.dart';
+import '../../settings/theme_screen.dart';
 import '../merchant_providers.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -42,6 +43,7 @@ class MoreScreen extends ConsumerWidget {
         item(Icons.campaign_outlined, tr('प्रमोशन (डील ऊपर दिखाएं)'), '/merchant/promotions'),
         item(Icons.workspace_premium_outlined, tr('प्लान'), '/merchant/plans', subtitle: tr('ज़्यादा डील, बिक्री रिपोर्ट, फीचर्ड लिस्टिंग')),
         const LanguageTile(),
+        const ThemeTile(),
         item(Icons.support_agent, tr('मदद और शिकायत'), '/support'),
         ListTile(leading: const Icon(Icons.logout), title: Text(tr('लॉग आउट')), onTap: () => logout(context, ref)),
         ...legalTiles(),

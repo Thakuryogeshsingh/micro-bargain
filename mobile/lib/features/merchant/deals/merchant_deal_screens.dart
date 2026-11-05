@@ -91,7 +91,7 @@ class _DealList extends ConsumerWidget {
           };
           return Card(
             child: ListTile(
-              leading: ClipRRect(borderRadius: BorderRadius.circular(6), child: DealImage(d.image, size: 52)),
+              leading: ClipRRect(borderRadius: BorderRadius.circular(6), child: DealImage(d.image, size: 52, name: d.productName, category: d.categoryName)),
               title: Text(d.productName),
               subtitle: Text(
                 '${rupees(d.offerPrice)} (${rupees(d.normalPrice)}) · ${d.discountPercent.round()}% off\n'

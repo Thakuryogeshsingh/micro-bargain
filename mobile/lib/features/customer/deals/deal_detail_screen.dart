@@ -76,7 +76,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
     setState(() => _busy = false);
     if (created != null) {
       ref.invalidate(myReservationsProvider);
-      context.pushReplacement('/reservation/${created!['id']}');
+      context.pushReplacement('/success', extra: {'route': '/reservation/${created!['id']}', 'order': false});
     }
   }
 
@@ -121,7 +121,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
           ? SafeArea(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                decoration: BoxDecoration(color: Colors.white, boxShadow: AppTheme.softShadow(0.1)),
+                decoration: BoxDecoration(color: AppTheme.card, boxShadow: AppTheme.softShadow(0.1)),
                 child: Row(children: [
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(minimumSize: const Size(56, 52), padding: EdgeInsets.zero),
@@ -160,14 +160,14 @@ class _DealBodyState extends ConsumerState<_DealBody> {
           leading: Padding(
             padding: const EdgeInsets.all(8),
             child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.ink), onPressed: () => context.pop()),
+              backgroundColor: AppTheme.card,
+              child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: AppTheme.ink), onPressed: () => context.pop()),
             ),
           ),
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [StretchMode.zoomBackground],
             background: Stack(fit: StackFit.expand, children: [
-              Hero(tag: 'deal-image-${deal.id}', child: DealImage(deal.image, size: double.infinity)),
+              Hero(tag: 'deal-image-${deal.id}', child: DealImage(deal.image, size: double.infinity, name: deal.productName, category: deal.categoryName)),
               Positioned(left: 16, bottom: 16, child: DiscountBadge(deal.discountPercent, large: true)),
               if (deal.isFeatured)
                 Positioned(
@@ -209,7 +209,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: const Color(0xFFF1F5F2), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: AppTheme.chip, borderRadius: BorderRadius.circular(20)),
                     child: Text('${qty(deal.quantityAvailable)} ${unitLabel(deal.unit)}',
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                   ),
@@ -226,7 +226,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                   onTap: () => context.push('/shop/${deal.shop.id}'),
                   child: Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.05)),
+                    decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.05)),
                     child: Row(children: [
                       Container(
                         width: 48,
@@ -258,7 +258,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                   index: 5,
                   child: Container(
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: AppTheme.radius),
+                    decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Text(tr('मात्रा'), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
@@ -292,10 +292,10 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                     index: 6,
                     child: Container(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: AppTheme.radius),
+                      decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
-                          const Icon(Icons.schedule_rounded, color: AppTheme.primary),
+                          Icon(Icons.schedule_rounded, color: AppTheme.primary),
                           const SizedBox(width: 8),
                           Text(tr('कब लेने आएंगे?'), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                         ]),

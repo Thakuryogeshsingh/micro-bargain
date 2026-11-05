@@ -140,11 +140,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               ? Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    const Icon(Icons.notifications_active_rounded, size: 18, color: AppTheme.primary),
+                    Icon(Icons.notifications_active_rounded, size: 18, color: AppTheme.primary),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(tr('टेस्ट मोड: OTP नोटिफ़िकेशन से अपने आप भर गया'),
-                          style: const TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
                     ),
                   ]),
                 )

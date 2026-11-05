@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+        decoration: BoxDecoration(gradient: AppTheme.heroGradient),
         alignment: Alignment.center,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ScaleTransition(
@@ -33,8 +33,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             child: Container(
               width: 110,
               height: 110,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: AppTheme.softShadow(0.3)),
-              child: const Icon(Icons.storefront_rounded, size: 64, color: AppTheme.primary),
+              decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(32), boxShadow: AppTheme.softShadow(0.3)),
+              child: Icon(Icons.storefront_rounded, size: 64, color: AppTheme.primary),
             ),
           ),
           const SizedBox(height: 20),

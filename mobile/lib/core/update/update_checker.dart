@@ -45,7 +45,7 @@ class _UpdateDialog extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Container(
           padding: const EdgeInsets.symmetric(vertical: 24),
-          decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+          decoration: BoxDecoration(gradient: AppTheme.heroGradient),
           child: Column(children: [
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: 1),

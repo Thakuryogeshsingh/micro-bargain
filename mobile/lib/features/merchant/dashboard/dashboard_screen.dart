@@ -41,7 +41,7 @@ class DashboardScreen extends ConsumerWidget {
             actions: const [IconTheme(data: IconThemeData(color: Colors.white), child: NotificationBell())],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+                decoration: BoxDecoration(gradient: AppTheme.heroGradient),
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
                 alignment: Alignment.bottomLeft,
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [

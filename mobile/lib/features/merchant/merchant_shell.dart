@@ -8,6 +8,7 @@ import 'more/more_screens.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/network/api_client.dart';
 import '../../core/update/update_checker.dart';
+import '../../shared/widgets/floating_nav.dart';
 
 class MerchantShell extends StatefulWidget {
   const MerchantShell({super.key});
@@ -33,15 +34,16 @@ class _MerchantShellState extends State<MerchantShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(index: _tab, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: [
-          NavigationDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: tr('डैशबोर्ड')),
-          NavigationDestination(icon: const Icon(Icons.local_offer_outlined), selectedIcon: const Icon(Icons.local_offer), label: tr('डील')),
-          NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: tr('बुकिंग')),
-          NavigationDestination(icon: const Icon(Icons.menu), label: tr('और')),
+      bottomNavigationBar: FloatingNavBar(
+        index: _tab,
+        onTap: (i) => setState(() => _tab = i),
+        items: [
+          FloatingNavItem(Icons.dashboard_outlined, Icons.dashboard_rounded, tr('डैशबोर्ड')),
+          FloatingNavItem(Icons.local_offer_outlined, Icons.local_offer_rounded, tr('डील')),
+          FloatingNavItem(Icons.receipt_long_outlined, Icons.receipt_long_rounded, tr('बुकिंग')),
+          FloatingNavItem(Icons.menu_rounded, Icons.menu_open_rounded, tr('और')),
         ],
       ),
     );

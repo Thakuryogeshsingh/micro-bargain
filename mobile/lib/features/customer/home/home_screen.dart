@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,13 +11,14 @@ import '../../../core/location/location_service.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/format.dart';
+import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../notifications/notifications_screen.dart';
 import '../cart/cart.dart';
-import '../offers/offers.dart';
 import '../customer_providers.dart';
+import '../offers/offers.dart';
 
 // i18n:off (translated where used)
 const _sorts = {
@@ -42,6 +44,26 @@ const _categoryEmoji = {
   'अन्य लोकल सामान': '🛍️',
 };
 
+/// Adds one unit of a deal to the cart (asking first if the cart holds another shop's items).
+Future<void> quickAdd(BuildContext context, WidgetRef ref, Deal deal) async {
+  HapticFeedback.lightImpact();
+  final cart = ref.read(cartProvider.notifier);
+  final step = (deal.unit == 'kg' || deal.unit == 'litre') ? 0.5 : 1.0;
+  final existing = ref.read(cartProvider).where((l) => l.deal.id == deal.id).firstOrNull;
+  final quantity = (existing?.quantity ?? 0) + step;
+  if (quantity > deal.quantityAvailable) {
+    showMessage(context, tr('बस इतना ही स्टॉक बचा है'));
+    return;
+  }
+  if (!cart.add(deal, quantity)) {
+    final replace = await confirm(context, tr('कार्ट में दूसरी दुकान का सामान है'),
+        message: tr('एक ऑर्डर में एक ही दुकान का सामान आ सकता है। पुराना कार्ट हटा कर यह डालें?'), ok: tr('हाँ, बदलें'));
+    if (!replace) return;
+    cart.replaceWith(deal, step);
+  }
+  if (context.mounted) showMessage(context, '${deal.productName} · ${tr('कार्ट में जोड़ा गया')}');
+}
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -49,45 +71,46 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
     final cartTotal = cart.fold<double>(0, (s, l) => s + l.total);
+    final favoriteShops = {for (final s in ref.watch(favoritesProvider).value ?? <ShopSummary>[]) s.id};
+
+    Future<void> toggleFavorite(Deal deal) async {
+      final api = ref.read(apiProvider);
+      final isFav = favoriteShops.contains(deal.shop.id);
+      HapticFeedback.lightImpact();
+      final ok = await runAction(context, () async {
+        isFav ? await api.delete('/shops/${deal.shop.id}/favorite/') : await api.post('/shops/${deal.shop.id}/favorite/');
+      }, success: isFav ? tr('पसंदीदा से हटाया') : tr('पसंदीदा में जोड़ा — नई डील पर सूचना मिलेगी'));
+      if (ok) ref.invalidate(favoritesProvider);
+    }
 
     return Scaffold(
       floatingActionButton: AnimatedScale(
         scale: cart.isEmpty ? 0 : 1,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutBack,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: AppTheme.dealGradient,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [BoxShadow(color: AppTheme.deal.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6))],
-          ),
-          child: FloatingActionButton.extended(
-            heroTag: 'cart-fab',
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            onPressed: () => context.push('/cart'),
-            icon: const Icon(Icons.shopping_bag_rounded),
-            label: Text(tr('कार्ट ({0}) · {1}', [cart.length, rupees(cartTotal)]),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-          ),
+        child: FloatingActionButton.extended(
+          heroTag: 'cart-fab',
+          onPressed: () => context.push('/cart'),
+          icon: Badge(label: Text('${cart.length}'), child: const Icon(Icons.shopping_bag_rounded)),
+          label: Text(rupees(cartTotal), style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
       ),
       body: RefreshIndicator(
-        edgeOffset: 120,
         onRefresh: () async {
           ref.invalidate(locationProvider);
           ref.invalidate(bannersProvider);
+          ref.invalidate(offersProvider(null));
           await ref.read(nearbyDealsProvider.future);
         },
         child: CustomScrollView(slivers: [
-          const _Header(),
+          const SliverToBoxAdapter(child: _Header()),
+          const SliverToBoxAdapter(child: _OfferBanners()),
           const SliverToBoxAdapter(child: _Banners()),
-          const SliverToBoxAdapter(child: OffersStrip()),
-          const SliverToBoxAdapter(child: _CategoryStrip()),
+          SliverToBoxAdapter(child: _SectionTitle(tr('कैटेगरी'))),
+          const SliverToBoxAdapter(child: _CategoryPills()),
           const SliverToBoxAdapter(child: _FilterRow()),
           ref.watch(nearbyDealsProvider).when(
-                loading: () => const SliverToBoxAdapter(child: DealListSkeleton()),
+                loading: () => const SliverToBoxAdapter(child: DealListSkeleton(count: 3)),
                 error: (e, _) => SliverFillRemaining(
                   hasScrollBody: false,
                   child: ErrorView(message: e.toString(), onRetry: () => ref.invalidate(nearbyDealsProvider)),
@@ -102,23 +125,53 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                       )
-                    : SliverList.builder(
-                        itemCount: deals.length,
-                        itemBuilder: (_, i) => DealCard(
-                          deal: deals[i],
-                          index: i,
-                          onTap: () => context.push('/deal/${deals[i].id}'),
+                    : SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        sliver: SliverGrid.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 14,
+                            crossAxisSpacing: 14,
+                            childAspectRatio: 0.66,
+                          ),
+                          itemCount: deals.length,
+                          itemBuilder: (_, i) => DealGridCard(
+                            deal: deals[i],
+                            index: i,
+                            favorite: favoriteShops.contains(deals[i].shop.id),
+                            onFavorite: () => toggleFavorite(deals[i]),
+                            onAdd: () => quickAdd(context, ref, deals[i]),
+                            onTap: () => context.push('/deal/${deals[i].id}'),
+                          ),
                         ),
                       ),
               ),
-          const SliverToBoxAdapter(child: SizedBox(height: 96)),
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ]),
       ),
     );
   }
 }
 
-/// Green gradient header: greeting, location, bell and search. Collapses to a slim bar on scroll.
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text, {this.trailing});
+
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 12, 8),
+        child: Row(children: [
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: AppTheme.ink)),
+          ),
+          ?trailing,
+        ]),
+      );
+}
+
+/// Rounded dark header: location, bell and search.
 class _Header extends ConsumerWidget {
   const _Header();
 
@@ -127,47 +180,52 @@ class _Header extends ConsumerWidget {
     final user = ref.watch(sessionProvider).user;
     final filters = ref.watch(dealFiltersProvider);
     final location = ref.watch(locationProvider);
-    const white = Colors.white;
-    return SliverAppBar(
-      pinned: true,
-      expandedHeight: 196,
-      backgroundColor: AppTheme.primaryDark,
-      foregroundColor: white,
-      title: Text(tr('पास की डील'), style: const TextStyle(color: white, fontWeight: FontWeight.w700)),
-      actions: [
-        IconButton(
-          tooltip: tr('लोकेशन ताज़ा करें'),
-          onPressed: () => ref.invalidate(locationProvider),
-          icon: const Icon(Icons.my_location_rounded, color: white),
-        ),
-        const IconTheme(data: IconThemeData(color: white), child: NotificationBell()),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.parallax,
-        background: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 2, 16, 0),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  '${tr('नमस्ते, {0}', [user?.name.split(' ').first ?? ''])} 👋',
-                  style: const TextStyle(color: white, fontSize: 15, fontWeight: FontWeight.w600),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.heroGradient,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Pressable(
+                onTap: () => ref.invalidate(locationProvider),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
+                  child: const Icon(Icons.location_on_rounded, color: Colors.white),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  location.value?.isFallback == true
-                      ? tr('📍 भरतपुर (लोकेशन बंद है)')
-                      : tr('📍 आपके आस-पास {0}', [distance(filters.radius)]),
-                  style: TextStyle(color: white.withValues(alpha: 0.85), fontSize: 13),
-                ),
-              ]),
-            ),
-          ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${tr('नमस्ते, {0}', [user?.name.split(' ').first ?? ''])} 👋',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
+                  Text(
+                    location.value?.isFallback == true
+                        ? tr('📍 भरतपुर (लोकेशन बंद है)')
+                        : tr('📍 आपके आस-पास {0}', [distance(filters.radius)]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                ]),
+              ),
+              Container(
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
+                child: const IconTheme(data: IconThemeData(color: Colors.white), child: NotificationBell()),
+              ),
+            ]),
+            const SizedBox(height: 18),
+            _SearchBar(initial: filters.query),
+          ]),
         ),
       ),
-      bottom: PreferredSize(preferredSize: const Size.fromHeight(64), child: _SearchBar(initial: filters.query)),
     );
   }
 }
@@ -188,20 +246,20 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-      child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), boxShadow: AppTheme.softShadow(0.12)),
+    final sort = ref.watch(dealFiltersProvider).sort;
+    return Row(children: [
+      Expanded(
         child: TextField(
           controller: _controller,
           textInputAction: TextInputAction.search,
           onSubmitted: _search,
           decoration: InputDecoration(
             hintText: tr('सब्ज़ी, फल, दूध, दुकान खोजें…'),
-            prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primary),
+            prefixIcon: Icon(Icons.search_rounded, color: AppTheme.muted),
             isDense: true,
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
             suffixIcon: IconButton(
               icon: const Icon(Icons.close_rounded),
               onPressed: () {
@@ -213,13 +271,134 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
           ),
         ),
       ),
-    );
+      const SizedBox(width: 10),
+      PopupMenuButton<String>(
+        initialValue: sort,
+        tooltip: tr(_sorts[sort]!),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        onSelected: (s) => ref.read(dealFiltersProvider.notifier).update((f) => f.copyWith(sort: s)),
+        itemBuilder: (_) => [for (final e in _sorts.entries) PopupMenuItem(value: e.key, child: Text(tr(e.value)))],
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.tune_rounded, color: Colors.white),
+        ),
+      ),
+    ]);
   }
 }
 
-/// Round emoji tiles for categories; the selected one is highlighted with a green ring.
-class _CategoryStrip extends ConsumerWidget {
-  const _CategoryStrip();
+/// Big swipeable offer banners (coupons); tapping copies the code.
+class _OfferBanners extends ConsumerStatefulWidget {
+  const _OfferBanners();
+
+  @override
+  ConsumerState<_OfferBanners> createState() => _OfferBannersState();
+}
+
+class _OfferBannersState extends ConsumerState<_OfferBanners> {
+  final _controller = PageController(viewportFraction: 0.9);
+  int _page = 0;
+
+  static const _art = ['🍓🥑🥕', '🥛🧀🍞', '🍎🍇🍉', '🥬🍅🧅'];
+  static const _gradients = [
+    [Color(0xFFFF7A59), Color(0xFFFFB443)],
+    [Color(0xFF7C3AED), Color(0xFFDB2777)],
+    [Color(0xFF0EA5E9), Color(0xFF22C55E)],
+    [Color(0xFFF43F5E), Color(0xFFF59E0B)],
+  ];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final offers = ref.watch(offersProvider(null)).value ?? [];
+    if (offers.isEmpty) return const SizedBox.shrink();
+    return Column(children: [
+      _SectionTitle('🎁 ${tr('खास ऑफ़र')}'),
+      SizedBox(
+        height: 150,
+        child: PageView.builder(
+          controller: _controller,
+          itemCount: offers.length,
+          onPageChanged: (i) => setState(() => _page = i),
+          itemBuilder: (context, i) {
+            final o = offers[i];
+            return Pressable(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: o['code']));
+                showMessage(context, tr('कूपन {0} कॉपी हुआ — कार्ट में लगाएं', [o['code']]));
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: _gradients[i % _gradients.length]),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: AppTheme.softShadow(0.12),
+                ),
+                child: Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text(tr('खास ऑफ़र'), style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.w600)),
+                      Text(offerTitle(o),
+                          style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, height: 1.1)),
+                      const SizedBox(height: 4),
+                      Text(offerCondition(o),
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12)),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                        child: Text(o['code'],
+                            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: _gradients[i % _gradients.length][0])),
+                      ),
+                    ]),
+                  ),
+                  Text(_art[i % _art.length], style: const TextStyle(fontSize: 38)),
+                ]),
+              ),
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 10),
+      _Dots(count: offers.length, index: _page),
+    ]);
+  }
+}
+
+class _Dots extends StatelessWidget {
+  const _Dots({required this.count, required this.index});
+
+  final int count;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) => Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        for (var i = 0; i < count; i++)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: i == index ? 20 : 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: i == index ? AppTheme.primary : AppTheme.muted.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+      ]);
+}
+
+/// Category pills with an emoji bubble; the selected one is filled with the theme colour.
+class _CategoryPills extends ConsumerWidget {
+  const _CategoryPills();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -231,11 +410,12 @@ class _CategoryStrip extends ConsumerWidget {
       for (final c in categories) (id: c.id as int?, emoji: _categoryEmoji[c.nameHi] ?? '🛍️', label: c.label),
     ];
     return SizedBox(
-      height: 116,
-      child: ListView.builder(
+      height: 50,
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: tiles.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final tile = tiles[i];
           final active = selected == tile.id;
@@ -244,36 +424,23 @@ class _CategoryStrip extends ConsumerWidget {
             offset: 0.3,
             child: Pressable(
               onTap: () => select(active && tile.id != null ? null : tile.id),
-              child: SizedBox(
-                width: 78,
-                child: Column(children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    width: 56,
-                    height: 56,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: active ? AppTheme.primary.withValues(alpha: 0.14) : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: active ? AppTheme.primary : Colors.transparent, width: 2),
-                      boxShadow: AppTheme.softShadow(active ? 0.0 : 0.06),
-                    ),
-                    child: Text(tile.emoji, style: const TextStyle(fontSize: 26)),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                padding: const EdgeInsets.fromLTRB(5, 5, 14, 5),
+                decoration: BoxDecoration(
+                  color: active ? AppTheme.primaryDark : AppTheme.card,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: AppTheme.softShadow(active ? 0.15 : 0.05),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: active ? Colors.white.withValues(alpha: 0.18) : AppTheme.chip,
+                    child: Text(tile.emoji, style: const TextStyle(fontSize: 18)),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    tile.label,
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      height: 1.15,
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                      color: active ? AppTheme.primaryDark : Colors.black87,
-                    ),
-                  ),
+                  const SizedBox(width: 8),
+                  Text(tile.label,
+                      style: TextStyle(fontWeight: FontWeight.w700, color: active ? Colors.white : AppTheme.ink)),
                 ]),
               ),
             ),
@@ -291,55 +458,44 @@ class _FilterRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filters = ref.watch(dealFiltersProvider);
     final count = ref.watch(nearbyDealsProvider).value?.length;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(tr('पास की डील'), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(width: 8),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-            child: count == null
-                ? const SizedBox.shrink()
-                : Container(
-                    key: ValueKey(count),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(gradient: AppTheme.dealGradient, borderRadius: BorderRadius.circular(12)),
-                    child: Text('$count', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                  ),
-          ),
-          const Spacer(),
-          PopupMenuButton<String>(
-            initialValue: filters.sort,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            onSelected: (s) => ref.read(dealFiltersProvider.notifier).update((f) => f.copyWith(sort: s)),
-            itemBuilder: (_) => [for (final e in _sorts.entries) PopupMenuItem(value: e.key, child: Text(tr(e.value)))],
-            child: Chip(avatar: const Icon(Icons.tune_rounded, size: 18), label: Text(tr(_sorts[filters.sort]!))),
-          ),
-        ]),
-        const SizedBox(height: 4),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            for (final r in AppConfig.searchRadiiMeters)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
-                  label: Text(distance(r)),
-                  selected: filters.radius == r,
-                  showCheckmark: false,
-                  avatar: filters.radius == r ? const Icon(Icons.near_me_rounded, size: 16) : null,
-                  onSelected: (_) => ref.read(dealFiltersProvider.notifier).update((f) => f.copyWith(radius: r)),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _SectionTitle(
+        tr('पास की डील'),
+        trailing: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+          child: count == null
+              ? const SizedBox.shrink()
+              : Container(
+                  key: ValueKey(count),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(12)),
+                  child: Text('$count', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                 ),
-              ),
-          ]),
         ),
-      ]),
-    );
+      ),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        child: Row(children: [
+          for (final r in AppConfig.searchRadiiMeters)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(distance(r)),
+                selected: filters.radius == r,
+                showCheckmark: false,
+                avatar: filters.radius == r ? const Icon(Icons.near_me_rounded, size: 16) : null,
+                onSelected: (_) => ref.read(dealFiltersProvider.notifier).update((f) => f.copyWith(radius: r)),
+              ),
+            ),
+        ]),
+      ),
+    ]);
   }
 }
 
+/// Paid shop banners (promotions) near the customer.
 class _Banners extends ConsumerStatefulWidget {
   const _Banners();
 
@@ -349,7 +505,6 @@ class _Banners extends ConsumerStatefulWidget {
 
 class _BannersState extends ConsumerState<_Banners> {
   final _controller = PageController(viewportFraction: 0.9);
-  int _page = 0;
 
   @override
   void dispose() {
@@ -363,62 +518,45 @@ class _BannersState extends ConsumerState<_Banners> {
     if (banners.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 14),
-      child: Column(children: [
-        SizedBox(
-          height: 150,
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: banners.length,
-            onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (context, i) {
-              final b = banners[i];
-              return Pressable(
-                onTap: () {
-                  ref.read(apiProvider).post('/advertisements/${b['id']}/click/');
-                  context.push('/shop/${b['shop_id']}');
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow()),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(fit: StackFit.expand, children: [
-                    if (b['banner_image'] != null)
-                      CachedNetworkImage(imageUrl: b['banner_image'], fit: BoxFit.cover)
-                    else
-                      const DecoratedBox(decoration: BoxDecoration(gradient: AppTheme.heroGradient)),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.transparent, Colors.black54], begin: Alignment.center, end: Alignment.bottomCenter),
-                      ),
+      child: SizedBox(
+        height: 150,
+        child: PageView.builder(
+          controller: _controller,
+          itemCount: banners.length,
+          itemBuilder: (context, i) {
+            final b = banners[i];
+            return Pressable(
+              onTap: () {
+                ref.read(apiProvider).post('/advertisements/${b['id']}/click/');
+                context.push('/shop/${b['shop_id']}');
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), boxShadow: AppTheme.softShadow()),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(fit: StackFit.expand, children: [
+                  if (b['banner_image'] != null)
+                    CachedNetworkImage(imageUrl: b['banner_image'], fit: BoxFit.cover)
+                  else
+                    DecoratedBox(decoration: BoxDecoration(gradient: AppTheme.heroGradient)),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Colors.transparent, Colors.black54], begin: Alignment.center, end: Alignment.bottomCenter),
                     ),
-                    Positioned(
-                      left: 14,
-                      right: 14,
-                      bottom: 12,
-                      child: Text('${b['title']} · ${b['shop_name']}',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
-                    ),
-                  ]),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          for (var i = 0; i < banners.length; i++)
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: i == _page ? 18 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: i == _page ? AppTheme.primary : Colors.black12,
-                borderRadius: BorderRadius.circular(3),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 14,
+                    child: Text('${b['title']} · ${b['shop_name']}',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                  ),
+                ]),
               ),
-            ),
-        ]),
-      ]),
+            );
+          },
+        ),
+      ),
     );
   }
 }

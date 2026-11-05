@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Fades and slides its child up into place. Items in a list pass their [index] to appear one after another.
 class FadeSlideIn extends StatefulWidget {
@@ -115,9 +116,9 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
         blendMode: BlendMode.srcATop,
         shaderCallback: (rect) {
           final x = rect.width * (_controller.value * 2 - 0.5);
-          return const LinearGradient(
-            colors: [Color(0xFFE6EBE6), Color(0xFFF7F9F7), Color(0xFFE6EBE6)],
-            stops: [0.0, 0.5, 1.0],
+          return LinearGradient(
+            colors: [AppTheme.chip, AppTheme.card, AppTheme.chip],
+            stops: const [0.0, 0.5, 1.0],
           ).createShader(Rect.fromLTWH(x - rect.width / 2, 0, rect.width, rect.height));
         },
         child: child,
@@ -139,7 +140,7 @@ class SkeletonBox extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: width,
         height: height,
-        decoration: BoxDecoration(color: const Color(0xFFE6EBE6), borderRadius: BorderRadius.circular(radius)),
+        decoration: BoxDecoration(color: AppTheme.chip, borderRadius: BorderRadius.circular(radius)),
       );
 }
 
@@ -158,7 +159,7 @@ class DealListSkeleton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             child: Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+              decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(18)),
               child: const Row(children: [
                 SkeletonBox(width: 104, height: 104, radius: 14),
                 SizedBox(width: 12),

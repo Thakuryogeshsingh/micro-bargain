@@ -12,6 +12,7 @@ import '../../../core/push/push_service.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
 import '../../settings/language_screen.dart';
+import '../../settings/theme_screen.dart';
 import '../customer_providers.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -124,6 +125,7 @@ class ProfileScreen extends ConsumerWidget {
           onTap: () => context.push('/referral'),
         ),
         const LanguageTile(),
+        const ThemeTile(),
         ListTile(
           leading: const Icon(Icons.support_agent),
           title: Text(tr('मदद और शिकायत')),

@@ -6,6 +6,9 @@ import '../../../core/network/api_client.dart';
 import '../../../core/payments/checkout.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/motion.dart';
+import '../../../shared/widgets/deal_card.dart';
+import '../../../core/theme/app_theme.dart';
 import '../customer_providers.dart';
 import '../offers/offers.dart';
 import 'cart.dart';
@@ -72,13 +75,12 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       if (paid && mounted) showMessage(context, tr('पेमेंट हो गया ✅'));
     }
     ref.invalidate(myOrdersProvider);
-    if (mounted) context.pushReplacement('/order/${order!['id']}');
+    if (mounted) context.pushReplacement('/success', extra: {'route': '/order/${order!['id']}', 'order': true});
   }
 
   @override
   Widget build(BuildContext context) {
     final lines = ref.watch(cartProvider);
-    final theme = Theme.of(context);
     if (lines.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(tr('कार्ट'))),
@@ -97,18 +99,27 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(tr('कार्ट · {0}', [shop.name]))),
       body: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
-        for (final l in lines)
-          ListTile(
-            title: Text(l.deal.productName),
-            subtitle: Text('${qty(l.quantity)} ${unitLabel(l.deal.unit)} × ${rupees(l.deal.offerPrice)}'),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(rupees(l.total), style: theme.textTheme.titleMedium),
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => ref.read(cartProvider.notifier).remove(l.deal.id),
+        for (var i = 0; i < lines.length; i++)
+          FadeSlideIn(
+            index: i,
+            child: Dismissible(
+              key: ValueKey(lines[i].deal.id),
+              direction: DismissDirection.endToStart,
+              onDismissed: (_) => ref.read(cartProvider.notifier).remove(lines[i].deal.id),
+              background: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.only(right: 24),
+                alignment: Alignment.centerRight,
+                decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: AppTheme.radius),
+                child: const Icon(Icons.delete_rounded, color: Colors.white, size: 28),
               ),
-            ]),
+              child: _CartLineTile(line: lines[i]),
+            ),
           ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
+          child: Text(tr('हटाने के लिए बाएं स्वाइप करें'), style: TextStyle(color: AppTheme.muted, fontSize: 12)),
+        ),
         const Divider(),
         SectionTitle(tr('कैसे लेंगे?')),
         RadioGroup<String>(
@@ -224,6 +235,58 @@ class _AddressPicker extends ConsumerWidget {
           ),
         ]);
       },
+    );
+  }
+}
+
+
+/// One cart line: product art, name, unit price and a +/- stepper.
+class _CartLineTile extends ConsumerWidget {
+  const _CartLineTile({required this.line});
+
+  final CartLine line;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final deal = line.deal;
+    final step = (deal.unit == 'kg' || deal.unit == 'litre') ? 0.5 : 1.0;
+    final cart = ref.read(cartProvider.notifier);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.05)),
+      child: Row(children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: DealImage(deal.image, size: 64, name: deal.productName, category: deal.categoryName),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(deal.productName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.ink)),
+            Text('${rupees(deal.offerPrice)}/${unitLabel(deal.unit)}', style: TextStyle(color: AppTheme.muted, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(rupees(line.total), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppTheme.ink)),
+          ]),
+        ),
+        Container(
+          decoration: BoxDecoration(color: AppTheme.chip, borderRadius: BorderRadius.circular(30)),
+          child: Row(children: [
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.remove_rounded),
+              onPressed: () => line.quantity - step <= 0 ? cart.remove(deal.id) : cart.add(deal, line.quantity - step),
+            ),
+            Text(qty(line.quantity), style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.ink)),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.add_rounded),
+              onPressed: line.quantity + step <= deal.quantityAvailable ? () => cart.add(deal, line.quantity + step) : null,
+            ),
+          ]),
+        ),
+      ]),
     );
   }
 }

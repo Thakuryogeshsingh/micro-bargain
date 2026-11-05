@@ -24,6 +24,10 @@ import '../../features/notifications/notifications_screen.dart';
 import '../../features/support/support_screens.dart';
 import '../../shared/models/models.dart';
 import '../../features/settings/language_screen.dart';
+import '../../features/settings/onboarding_screen.dart';
+import '../../features/settings/theme_screen.dart';
+import '../../features/customer/bookings/success_screen.dart';
+import '../theme/theme_controller.dart';
 import '../auth/session.dart';
 import '../i18n/i18n.dart';
 
@@ -32,6 +36,7 @@ class _SessionListenable extends ChangeNotifier {
   _SessionListenable(Ref ref) {
     ref.listen(sessionProvider, (_, _) => notifyListeners());
     ref.listen(languageProvider, (_, _) => notifyListeners());
+    ref.listen(onboardedProvider, (_, _) => notifyListeners());
   }
 }
 
@@ -45,6 +50,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final here = state.matchedLocation;
       // First launch: pick a language before anything else.
       if (ref.read(languageProvider) == null) return here == '/language' ? null : '/language';
+      // Then the welcome slides, once.
+      if (!ref.read(onboardedProvider)) return here == '/welcome' ? null : '/welcome';
       final session = ref.read(sessionProvider);
       final onAuth = here == '/login' || here == '/otp';
       switch (session.status) {
@@ -69,6 +76,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/language', builder: (_, _) => const LanguageScreen()),
+      GoRoute(path: '/welcome', builder: (_, _) => const OnboardingScreen()),
+      GoRoute(path: '/theme', builder: (_, _) => const ThemeScreen()),
+      GoRoute(
+        path: '/success',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return SuccessScreen(detailRoute: extra['route'] as String, isOrder: extra['order'] == true);
+        },
+      ),
       GoRoute(path: '/admin-account', builder: (_, _) => const AdminAccountScreen()),
       GoRoute(
         path: '/otp',

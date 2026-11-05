@@ -17,7 +17,7 @@ class AdminAccountScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.admin_panel_settings_rounded, size: 72, color: AppTheme.primary),
+            Icon(Icons.admin_panel_settings_rounded, size: 72, color: AppTheme.primary),
             const SizedBox(height: 16),
             Text(tr('यह एडमिन अकाउंट है'), style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),

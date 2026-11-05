@@ -62,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+        decoration: BoxDecoration(gradient: AppTheme.heroGradient),
         child: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 24), children: [
             FadeSlideIn(
@@ -76,11 +76,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     width: 92,
                     height: 92,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppTheme.card,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: AppTheme.softShadow(0.25),
                     ),
-                    child: const Icon(Icons.storefront_rounded, size: 52, color: AppTheme.primary),
+                    child: Icon(Icons.storefront_rounded, size: 52, color: AppTheme.primary),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -102,7 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.card,
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: AppTheme.softShadow(0.2),
                 ),
@@ -176,7 +176,7 @@ class _RoleCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           gradient: selected ? AppTheme.heroGradient : null,
-          color: selected ? null : const Color(0xFFF1F5F2),
+          color: selected ? null : AppTheme.chip,
           borderRadius: BorderRadius.circular(18),
           boxShadow: selected ? [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))] : null,
         ),

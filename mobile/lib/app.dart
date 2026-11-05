@@ -8,6 +8,7 @@ import 'core/network/api_client.dart';
 import 'core/push/push_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'features/notifications/notifications_screen.dart';
 
 final _messengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -29,24 +30,33 @@ class MicroBargainApp extends ConsumerWidget {
     });
 
     final language = ref.watch(languageProvider) ?? 'hi';
+    final theme = ref.watch(themeProvider);
+    AppTheme.palette = theme.palette;
     return MaterialApp.router(
-      // A new key rebuilds every screen, so all tr() texts switch to the new language at once.
-      key: ValueKey(language),
+      // A new key rebuilds every screen, so all tr() texts and theme colours switch at once.
+      key: ValueKey('$language-${theme.paletteKey}-${theme.mode.name}'),
       locale: Locale(language),
       supportedLocales: [for (final l in languages) Locale(l.code)],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       title: 'Micro Bargain',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.build(theme.palette, Brightness.light),
+      darkTheme: AppTheme.build(theme.palette, Brightness.dark),
+      themeMode: theme.mode,
       scaffoldMessengerKey: _messengerKey,
       routerConfig: ref.watch(routerProvider),
-      // Very large system font sizes clipped text in fixed-height cards; allow up to 115%.
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 0.9, maxScaleFactor: 1.15),
-        ),
-        child: child!,
-      ),
+      builder: (context, child) {
+        final brightness = Theme.of(context).brightness;
+        AppTheme.dark = brightness == Brightness.dark;
+        return MediaQuery(
+          // Very large system font sizes clipped text in fixed-height cards; allow up to 115%.
+          data: MediaQuery.of(context).copyWith(
+            textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 0.9, maxScaleFactor: 1.15),
+          ),
+          // Rebuild everything when the phone switches between light and dark ("system" mode).
+          child: KeyedSubtree(key: ValueKey(brightness), child: child!),
+        );
+      },
     );
   }
 }

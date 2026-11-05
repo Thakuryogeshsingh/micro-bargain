@@ -7,24 +7,20 @@ import '../../core/utils/format.dart';
 import '../models/models.dart';
 import 'common.dart';
 import 'motion.dart';
+import 'visuals.dart';
 
-/// Product photo, or a soft gradient tile with a basket when there is none.
+/// Product photo, or the product's emoji on a pastel tile when there is none.
 class DealImage extends StatelessWidget {
-  const DealImage(this.url, {super.key, this.size = 88});
+  const DealImage(this.url, {super.key, this.size = 88, this.name = '', this.category = ''});
 
   final String? url;
   final double size;
+  final String name;
+  final String category;
 
   @override
   Widget build(BuildContext context) {
-    final placeholder = Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFFE8F7EC), Color(0xFFFFF1E4)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      ),
-      child: Icon(Icons.shopping_basket_rounded, color: AppTheme.primary.withValues(alpha: 0.45), size: size.isFinite ? size * 0.4 : 64),
-    );
+    final placeholder = ProductArt(name: name, category: category, size: size);
     if (url == null) return placeholder;
     return CachedNetworkImage(
       imageUrl: url!,
@@ -79,12 +75,12 @@ class PriceLine extends StatelessWidget {
               ?.copyWith(color: AppTheme.deal, fontWeight: FontWeight.w800, height: 1.1)),
       Padding(
         padding: const EdgeInsets.only(bottom: 2),
-        child: Text('/${unitLabel(unit)}', style: style.bodyMedium?.copyWith(color: Colors.black54)),
+        child: Text('/${unitLabel(unit)}', style: style.bodyMedium?.copyWith(color: AppTheme.muted)),
       ),
       Padding(
         padding: const EdgeInsets.only(bottom: 2),
         child: Text(rupees(normal),
-            style: style.bodyMedium?.copyWith(decoration: TextDecoration.lineThrough, color: Colors.black38)),
+            style: style.bodyMedium?.copyWith(decoration: TextDecoration.lineThrough, color: AppTheme.muted)),
       ),
     ]);
   }
@@ -92,23 +88,29 @@ class PriceLine extends StatelessWidget {
 
 /// "⏱ 1 घं 20 मि बाकी" chip; turns red in the last hour.
 class CountdownChip extends StatelessWidget {
-  const CountdownChip(this.until, {super.key});
+  const CountdownChip(this.until, {super.key, this.compact = false});
 
   final DateTime until;
+
+  /// Small solid version that sits on top of a product image.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Ticker(builder: (_) {
       final urgent = until.difference(DateTime.now()) < const Duration(hours: 1);
-      final color = urgent ? const Color(0xFFDC2626) : AppTheme.primaryDark;
+      final color = urgent ? const Color(0xFFDC2626) : (AppTheme.dark ? AppTheme.primary : AppTheme.primaryDark);
       return AnimatedContainer(
         duration: const Duration(milliseconds: 400),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+        padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 8, vertical: compact ? 3 : 4),
+        decoration: BoxDecoration(
+          color: compact ? AppTheme.card.withValues(alpha: 0.92) : color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.timer_outlined, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(timeLeft(until), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          Icon(Icons.timer_outlined, size: compact ? 12 : 14, color: color),
+          const SizedBox(width: 3),
+          Text(timeLeft(until), style: TextStyle(fontSize: compact ? 10 : 12, fontWeight: FontWeight.w700, color: color)),
         ]),
       );
     });
@@ -133,7 +135,7 @@ class DealCard extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.card,
             borderRadius: AppTheme.radius,
             boxShadow: AppTheme.softShadow(0.06),
             border: deal.isFeatured ? Border.all(color: AppTheme.featured, width: 1.6) : null,
@@ -142,7 +144,7 @@ class DealCard extends StatelessWidget {
             Stack(clipBehavior: Clip.none, children: [
               Hero(
                 tag: 'deal-image-${deal.id}',
-                child: ClipRRect(borderRadius: BorderRadius.circular(14), child: DealImage(deal.image, size: 104)),
+                child: ClipRRect(borderRadius: BorderRadius.circular(14), child: DealImage(deal.image, size: 104, name: deal.productName, category: deal.categoryName)),
               ),
               Positioned(left: 6, top: 6, child: DiscountBadge(deal.discountPercent)),
             ]),
@@ -162,7 +164,7 @@ class DealCard extends StatelessWidget {
                 PriceLine(offer: deal.offerPrice, normal: deal.normalPrice, unit: deal.unit),
                 const SizedBox(height: 6),
                 Row(children: [
-                  const Icon(Icons.storefront_rounded, size: 14, color: Colors.black45),
+                  Icon(Icons.storefront_rounded, size: 14, color: AppTheme.muted),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -171,7 +173,7 @@ class DealCard extends StatelessWidget {
                         if (deal.distanceM != null) distance(deal.distanceM),
                         if (deal.shop.ratingCount > 0) '★ ${deal.shop.rating.toStringAsFixed(1)}',
                       ].join(' · '),
-                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54),
+                      style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.muted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -203,11 +205,11 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: const Color(0xFFF1F5F2), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: AppTheme.chip, borderRadius: BorderRadius.circular(20)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 14, color: Colors.black54),
+          Icon(icon, size: 14, color: AppTheme.muted),
           const SizedBox(width: 4),
-          Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
+          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.ink)),
         ]),
       );
 }
@@ -224,4 +226,111 @@ class Stars extends StatelessWidget {
         for (var i = 1; i <= 5; i++)
           Icon(i <= rating.round() ? Icons.star_rounded : Icons.star_outline_rounded, size: size, color: Colors.amber.shade700),
       ]);
+}
+
+/// Grid tile for the home screen: big pastel image, heart, discount, price and a round "+" to add to cart.
+class DealGridCard extends StatelessWidget {
+  const DealGridCard({
+    super.key,
+    required this.deal,
+    required this.onTap,
+    required this.onAdd,
+    this.onFavorite,
+    this.favorite = false,
+    this.index = 0,
+  });
+
+  final Deal deal;
+  final VoidCallback onTap;
+  final VoidCallback onAdd;
+  final VoidCallback? onFavorite;
+  final bool favorite;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FadeSlideIn(
+      index: index,
+      child: Pressable(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.06)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: Stack(fit: StackFit.expand, children: [
+                Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Hero(
+                      tag: 'deal-image-${deal.id}',
+                      child: DealImage(deal.image, size: double.infinity, name: deal.productName, category: deal.categoryName),
+                    ),
+                  ),
+                ),
+                Positioned(left: 12, top: 12, child: DiscountBadge(deal.discountPercent)),
+                if (onFavorite != null)
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: Pressable(
+                      onTap: onFavorite,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (child, a) => ScaleTransition(scale: a, child: child),
+                        child: CircleAvatar(
+                          key: ValueKey(favorite),
+                          radius: 15,
+                          backgroundColor: AppTheme.card,
+                          child: Icon(favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 18, color: favorite ? const Color(0xFFE11D48) : AppTheme.muted),
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(left: 12, bottom: 12, child: CountdownChip(deal.expiresAt, compact: true)),
+              ]),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 8, 10),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(deal.productName,
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, color: AppTheme.ink)),
+                Text(
+                  [deal.shop.name, if (deal.distanceM != null) distance(deal.distanceM)].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+                ),
+                const SizedBox(height: 6),
+                Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(rupees(deal.normalPrice),
+                          style: TextStyle(fontSize: 11, color: AppTheme.muted, decoration: TextDecoration.lineThrough)),
+                      Text('${rupees(deal.offerPrice)}/${unitLabel(deal.unit)}',
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.ink)),
+                    ]),
+                  ),
+                  Pressable(
+                    onTap: onAdd,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(color: AppTheme.primaryDark, shape: BoxShape.circle),
+                      child: const Icon(Icons.add_rounded, color: Colors.white),
+                    ),
+                  ),
+                ]),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
