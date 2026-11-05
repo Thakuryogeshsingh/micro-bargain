@@ -41,6 +41,32 @@ def deal_share_page(request, pk):
     return render(request, "share/deal.html", {"deal": deal, "discount": round(deal.discount_percent), "live": deal.is_live})
 
 
+def shop_share_page(request, pk):
+    """Public page a shop's QR code opens: today's deals, and a button that opens the app."""
+    from django.shortcuts import get_object_or_404
+
+    from apps.deals.services import live_deals
+    from apps.shops.models import Shop
+
+    shop = get_object_or_404(Shop, pk=pk, status=Shop.Status.APPROVED)
+    deals = live_deals().filter(shop=shop).select_related("product").order_by("-discount_percent")[:30]
+    return render(request, "share/shop.html", {"shop": shop, "deals": deals})
+
+
+def shop_poster_page(request, pk):
+    """Printable A4 poster with the shop's QR code (the merchant opens it from the app and prints / saves as PDF)."""
+    import segno
+    from django.shortcuts import get_object_or_404
+    from django.utils.safestring import mark_safe
+
+    from apps.shops.models import Shop
+
+    shop = get_object_or_404(Shop, pk=pk, status=Shop.Status.APPROVED)
+    link = request.build_absolute_uri(f"/s/{shop.id}/")
+    qr = segno.make(link, error="h").svg_inline(scale=12, dark="#0A0A0A", border=2)
+    return render(request, "share/poster.html", {"shop": shop, "qr": mark_safe(qr), "link": link})
+
+
 def legal_page(request, page):
     """Public policy pages, linked from the app and the Play Store listing. Have a lawyer review them before launch."""
     if page not in LEGAL_PAGES:
@@ -70,6 +96,9 @@ api_v1_patterns = [
     path("notifications/", include("apps.notifications.urls")),
     path("reviews/", include("apps.reviews.urls")),
     path("quality/", include("apps.quality.urls")),
+    path("khata/", include("apps.khata.urls")),
+    path("daily/", include("apps.daily.urls")),
+    path("chat/", include("apps.chat.urls")),
     path("advertisements/", include("apps.advertisements.urls")),
     path("subscriptions/", include("apps.subscriptions.urls")),
     path("commissions/", include("apps.commissions.urls")),
@@ -85,6 +114,8 @@ urlpatterns = [
     path("health/", health_check),
     path("legal/<str:page>/", legal_page, name="legal"),
     path("d/<int:pk>/", deal_share_page, name="deal-share"),
+    path("s/<int:pk>/", shop_share_page, name="shop-share"),
+    path("s/<int:pk>/poster/", shop_poster_page, name="shop-poster"),
     path("api/v1/", include(api_v1_patterns)),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

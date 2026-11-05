@@ -58,6 +58,8 @@ class Notification(TimeStampedModel):
         CASHBACK = "cashback", "Cashback credited"
         QUALITY_COMPLAINT = "quality_complaint", "Quality complaint"
         MERCHANT_APPROVED = "merchant_approved", "Merchant account approved"
+        NEW_MESSAGE = "new_message", "Chat message"
+        DAILY_ORDER = "daily_order", "New daily subscription"
 
     DEAL_KINDS = (Kind.NEARBY_DEAL, Kind.FAVORITE_SHOP_DEAL)
 

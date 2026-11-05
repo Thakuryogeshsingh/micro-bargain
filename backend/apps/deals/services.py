@@ -299,7 +299,12 @@ def nearby_deals(latitude, longitude, radius, category=None, min_price=None, max
     if min_rating is not None:
         qs = qs.filter(shop__rating_avg__gte=min_rating)
     if q:
-        qs = qs.filter(Q(product__name__icontains=q) | Q(description__icontains=q) | Q(shop__name__icontains=q))
+        from .search import search_terms
+
+        match = Q()
+        for term in search_terms(q):
+            match |= Q(product__name__icontains=term) | Q(description__icontains=term) | Q(shop__name__icontains=term)
+        qs = qs.filter(match)
     if fulfilment:
         qs = qs.filter(fulfilment__in=(fulfilment, Deal.Fulfilment.BOTH))
     return qs.order_by(*SORTS[sort])
