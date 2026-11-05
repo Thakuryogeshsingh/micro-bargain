@@ -456,7 +456,7 @@ class AppNotification {
 }
 
 class Review {
-  Review({required this.id, required this.customerName, required this.rating, required this.comment, required this.reply, required this.createdAt});
+  Review({required this.id, required this.customerName, required this.rating, required this.comment, required this.reply, required this.createdAt, this.photo});
 
   factory Review.fromJson(Map<String, dynamic> j) => Review(
         id: j['id'],
@@ -465,6 +465,7 @@ class Review {
         comment: j['comment'] ?? '',
         reply: j['merchant_reply'] ?? '',
         createdAt: _t(j['created_at'])!,
+        photo: (j['photo'] ?? '') == '' ? null : j['photo'],
       );
 
   final int id;
@@ -473,6 +474,7 @@ class Review {
   final String comment;
   final String reply;
   final DateTime createdAt;
+  final String? photo;
 }
 
 double parseNum(Object? value) => _d(value);

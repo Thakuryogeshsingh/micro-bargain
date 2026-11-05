@@ -49,4 +49,4 @@ class TestPriceSuggestion:
 def test_share_page(live_deal, client):
     deal = live_deal()
     response = client.get(f"/d/{deal.id}/")
-    assert response.status_code == 200 and "microbargain://deal/" in response.content.decode()
+    assert response.status_code == 200 and "microbargain://open/deal/" in response.content.decode()

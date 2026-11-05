@@ -25,6 +25,6 @@
   <p class="price">₹{{ deal.offer_price }}<small>/{{ deal.unit }}</small> <span class="old">₹{{ deal.normal_price }}</span></p>
   <p>{{ deal.shop.name }} · {{ deal.shop.address_line }}, {{ deal.shop.city }}</p>
   {% if live %}<p class="muted">⏱ {{ deal.expires_at|timeuntil }} बाकी</p>{% else %}<p class="muted">यह डील खत्म हो चुकी है</p>{% endif %}
-  <a class="btn" href="microbargain://deal/{{ deal.id }}">ऐप में खोलें</a>
+  <a class="btn" href="microbargain://open/deal/{{ deal.id }}">ऐप में खोलें</a>
 </div></div></body>
 </html>

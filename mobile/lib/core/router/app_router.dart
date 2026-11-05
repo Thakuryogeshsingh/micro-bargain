@@ -14,7 +14,9 @@ import '../../features/customer/deals/deal_detail_screen.dart';
 import '../../features/customer/offers/offers.dart';
 import '../../features/customer/plus/plus_screens.dart';
 import '../../features/customer/profile/profile_screens.dart';
+import '../../features/customer/map/shops_map_screen.dart';
 import '../../features/customer/shops/shop_screens.dart';
+import '../../features/customer/wallet/wallet_screen.dart';
 import '../../features/merchant/alerts/order_alerts.dart';
 import '../../features/merchant/bookings/merchant_bookings_screen.dart';
 import '../../features/merchant/deals/merchant_deal_screens.dart';
@@ -45,12 +47,16 @@ class _SessionListenable extends ChangeNotifier {
 
 int _id(GoRouterState state) => int.parse(state.pathParameters['id']!);
 
+/// A shared deal link (microbargain://open/deal/5) that arrived before sign-in; opened once signed in.
+String? _pendingLink;
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: _SessionListenable(ref),
     redirect: (context, state) {
       final here = state.matchedLocation;
+      if (here.startsWith('/deal/') && ref.read(sessionProvider).status != SessionStatus.signedIn) _pendingLink = here;
       // First launch: pick a language before anything else.
       if (ref.read(languageProvider) == null) return here == '/language' ? null : '/language';
       // Then the welcome slides, once.
@@ -68,7 +74,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (onAuth && !session.isMerchant && ref.read(loginRoleProvider) == 'merchant') {
             return '/become-merchant'; // chose "shop owner" on the login screen
           }
-          if (onAuth || here == '/splash') return home;
+          if (onAuth || here == '/splash') {
+            final link = _pendingLink;
+            _pendingLink = null;
+            return link ?? home;
+          }
           // Becoming a merchant switches apps.
           if (session.isMerchant && (here == '/customer' || here == '/become-merchant')) return home;
           if (!session.isMerchant && here.startsWith('/merchant')) return home;
@@ -123,6 +133,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/referral', builder: (_, _) => const ReferralScreen()),
       GoRoute(path: '/plus', builder: (_, _) => const PlusScreen()),
+      GoRoute(path: '/wallet', builder: (_, _) => const WalletScreen()),
+      GoRoute(path: '/map', builder: (_, _) => const ShopsMapScreen()),
       GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
       GoRoute(path: '/addresses/new', builder: (_, _) => const AddressFormScreen()),
       GoRoute(path: '/become-merchant', builder: (_, _) => const MerchantRegisterScreen()),

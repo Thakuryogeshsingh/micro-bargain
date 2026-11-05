@@ -146,6 +146,21 @@ class ShopScreen extends ConsumerWidget {
                             title: Text(r.comment.isEmpty ? '—' : r.comment),
                             subtitle: Text(
                                 '${r.customerName} · ${dateTime(r.createdAt)}${r.reply.isEmpty ? '' : tr('\nदुकान: {0}', [r.reply])}'),
+                            trailing: r.photo == null
+                                ? null
+                                : GestureDetector(
+                                    onTap: () => showDialog(
+                                      context: context,
+                                      builder: (_) => Dialog(
+                                        clipBehavior: Clip.antiAlias,
+                                        child: CachedNetworkImage(imageUrl: r.photo!, fit: BoxFit.contain),
+                                      ),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: CachedNetworkImage(imageUrl: r.photo!, width: 56, height: 56, fit: BoxFit.cover),
+                                    ),
+                                  ),
                           ),
                       ]),
               ),

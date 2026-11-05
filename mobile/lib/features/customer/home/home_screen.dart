@@ -21,6 +21,7 @@ import '../customer_providers.dart';
 import '../deals/collection_screen.dart';
 import '../offers/offers.dart';
 import '../../../shared/widgets/shop_card.dart';
+import '../../../shared/widgets/voice.dart';
 
 // i18n:off (translated where used)
 const _sorts = {
@@ -116,6 +117,7 @@ class HomeScreen extends ConsumerWidget {
           SliverToBoxAdapter(child: _SectionTitle('✨ ${tr('आपके लिए खास')}')),
           const SliverToBoxAdapter(child: CollectionTiles()),
           const SliverToBoxAdapter(child: _TopDeals()),
+          const SliverToBoxAdapter(child: _Leaderboard()),
           const SliverToBoxAdapter(child: _FilterRow()),
           ref.watch(nearbyShopsProvider).when(
                 loading: () => const SliverToBoxAdapter(child: DealListSkeleton(count: 3)),
@@ -255,14 +257,26 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.close_rounded),
-              onPressed: () {
-                _controller.clear();
-                _search('');
-                FocusScope.of(context).unfocus();
-              },
-            ),
+            suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
+              IconButton(
+                tooltip: tr('बोलकर खोजें'),
+                icon: Icon(Icons.mic_rounded, color: AppTheme.accent),
+                onPressed: () async {
+                  final text = await listenOnce(context, hint: tr('जैसे: "टमाटर" या "दूध"'));
+                  if (text == null || !mounted) return;
+                  _controller.text = text;
+                  _search(text);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () {
+                  _controller.clear();
+                  _search('');
+                  FocusScope.of(context).unfocus();
+                },
+              ),
+            ]),
           ),
         ),
       ),
@@ -473,6 +487,14 @@ class _FilterRow extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
         child: Row(children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              avatar: Icon(Icons.map_rounded, size: 18, color: AppTheme.accent),
+              label: Text(tr('नक्शा')),
+              onPressed: () => context.push('/map'),
+            ),
+          ),
           for (final r in AppConfig.searchRadiiMeters)
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -589,6 +611,65 @@ class _TopDeals extends ConsumerWidget {
               onTap: () => context.push('/deal/${deals[i].id}'),
             ),
           ),
+        ),
+      ),
+    ]);
+  }
+}
+
+/// Mohalla ranking: shops that saved their customers the most this week.
+class _Leaderboard extends ConsumerWidget {
+  const _Leaderboard();
+
+  static const _medals = ['🥇', '🥈', '🥉'];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rows = ref.watch(leaderboardProvider).value ?? const [];
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _SectionTitle('🏆 ${tr('इस हफ़्ते के टॉप दुकानदार')}'),
+      SizedBox(
+        height: 112,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: rows.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 10),
+          itemBuilder: (_, i) {
+            final row = rows[i];
+            final shop = row['shop'] as Map;
+            final rank = row['rank'] as int;
+            return FadeSlideIn(
+              index: i,
+              child: Pressable(
+                onTap: () => context.push('/shop/${shop['id']}'),
+                child: Container(
+                  width: 190,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.card,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: rank == 1 ? const Color(0xFFF5B301) : AppTheme.chip),
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Text(rank <= 3 ? _medals[rank - 1] : '#$rank', style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(shop['name'], maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.ink)),
+                      ),
+                    ]),
+                    const Spacer(),
+                    Text(tr('{0} बचत कराई', [rupees(parseNum(row['savings']))]),
+                        style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF15803D))),
+                    Text(tr('{0} खरीदारी', [row['purchases']]), style: TextStyle(fontSize: 12, color: AppTheme.muted)),
+                  ]),
+                ),
+              ),
+            );
+          },
         ),
       ),
     ]);

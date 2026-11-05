@@ -129,3 +129,13 @@ final collectionDealsProvider = FutureProvider.autoDispose.family<List<Deal>, St
   });
   return [for (final d in results) Deal.fromJson(d)];
 });
+
+/// This week's top-saving shops nearby (mohalla ranking).
+final leaderboardProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final here = await ref.watch(locationProvider.future);
+  final rows = await ref.watch(apiProvider).list('/shops/leaderboard/', query: {
+    'latitude': here.latitude.toStringAsFixed(6),
+    'longitude': here.longitude.toStringAsFixed(6),
+  });
+  return [for (final r in rows) Map<String, dynamic>.from(r)];
+});

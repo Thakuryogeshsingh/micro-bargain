@@ -13,6 +13,7 @@ import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/contact_actions.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
+import '../../../shared/widgets/share.dart';
 import '../cart/cart.dart';
 import '../customer_providers.dart';
 import '../home/home_screen.dart';
@@ -163,9 +164,26 @@ class _DealBodyState extends ConsumerState<_DealBody> {
             padding: const EdgeInsets.all(8),
             child: CircleAvatar(
               backgroundColor: AppTheme.card,
-              child: IconButton(icon: Icon(Icons.arrow_back_rounded, color: AppTheme.ink), onPressed: () => context.pop()),
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_rounded, color: AppTheme.ink),
+                // Opened from a shared link there is nothing to go back to.
+                onPressed: () => context.canPop() ? context.pop() : context.go('/customer'),
+              ),
             ),
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: CircleAvatar(
+                backgroundColor: AppTheme.card,
+                child: IconButton(
+                  tooltip: tr('WhatsApp पर शेयर'),
+                  icon: Icon(Icons.share_rounded, color: AppTheme.ink),
+                  onPressed: () => shareDeal(d: deal),
+                ),
+              ),
+            ),
+          ],
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [StretchMode.zoomBackground],
             background: Stack(fit: StackFit.expand, children: [

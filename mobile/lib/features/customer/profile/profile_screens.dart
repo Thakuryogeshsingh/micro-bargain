@@ -122,6 +122,12 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const Divider(),
         ListTile(
+          leading: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF15803D)),
+          title: Text(tr('मेरा वॉलेट')),
+          subtitle: Text(tr('हर खरीद पर कैशबैक')),
+          onTap: () => context.push('/wallet'),
+        ),
+        ListTile(
           leading: const Icon(Icons.card_giftcard_rounded, color: Color(0xFF7C3AED)),
           title: Text(tr('दोस्तों को बुलाएं')),
           subtitle: Text(tr('दोस्त को बुलाएं, दोनों पाएं ₹{0}', [50])),

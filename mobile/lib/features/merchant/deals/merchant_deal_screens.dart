@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
-import '../../../core/config/app_config.dart';
+import '../../../shared/widgets/share.dart';
 import '../../../shared/widgets/voice.dart';
 import '../merchant_providers.dart';
 import '../../../core/i18n/i18n.dart';
@@ -360,14 +359,6 @@ Future<void> repeatYesterday(BuildContext context, WidgetRef ref) async {
         ? tr('कल की कोई नई डील नहीं मिली')
         : tr('{0} डील फिर से लाइव हो गईं 🎉', [result!['created']]),
   );
-}
-
-/// Opens WhatsApp with the deal and its public link, for the shop's status or customer groups.
-void shareDeal({required Deal d}) {
-  final link = '${AppConfig.siteUrl}/d/${d.id}/';
-  final text = '🔥 ${d.productName} ${tr('सिर्फ')} ${rupees(d.offerPrice)}/${unitLabel(d.unit)} '
-      '(${d.discountPercent.round()}% OFF) — ${d.shop.name}\n$link';
-  launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'), mode: LaunchMode.externalApplication);
 }
 
 class _SuggestionCard extends StatelessWidget {

@@ -12,6 +12,7 @@ import '../../../core/theme/app_theme.dart';
 import '../customer_providers.dart';
 import '../offers/offers.dart';
 import '../plus/plus_screens.dart';
+import '../wallet/wallet_screen.dart';
 import 'cart.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -29,6 +30,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
   final _coupon = TextEditingController();
   double _discount = 0;
   bool _busy = false;
+  bool _useWallet = false;
 
   // Must match the server's DELIVERY_FEE / FREE_DELIVERY_ABOVE; the server's total is what is charged.
   static const _deliveryFee = 20.0;
@@ -60,6 +62,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
         'payment_method': _payment,
         if (_fulfilment == 'delivery') 'address': _addressId,
         if (_coupon.text.trim().isNotEmpty) 'coupon_code': _coupon.text.trim(),
+        'use_wallet': _useWallet,
       }));
     });
     if (!placed || !mounted) {
@@ -67,6 +70,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       return;
     }
     ref.read(cartProvider.notifier).clear();
+    ref.invalidate(walletProvider);
     if (order!['status'] == 'pending_payment') {
       final paid = await runAction(context, () async {
         if (!await payOnline(context, api, purpose: 'order', id: order!['id'])) {
@@ -96,7 +100,11 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     final savings = lines.fold<double>(0, (s, l) => s + l.savings);
     final isPlus = ref.watch(plusProvider).value?['active'] == true;
     final fee = _fulfilment == 'delivery' && subtotal < _freeDeliveryAbove && !isPlus ? _deliveryFee : 0.0;
-    final total = subtotal - _discount + fee;
+    final beforeWallet = subtotal - _discount + fee;
+    final balance = walletBalance(ref);
+    // Same limit as the server: at most WALLET_MAX_PERCENT_OF_ORDER (50%) of the items.
+    final walletUse = _useWallet ? [balance, subtotal * 0.5, beforeWallet].reduce((a, b) => a < b ? a : b) : 0.0;
+    final total = beforeWallet - walletUse;
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('कार्ट · {0}', [shop.name]))),
@@ -181,10 +189,19 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             label: Text(tr('ऑफ़र देखें')),
           ),
         ),
+        if (balance > 0)
+          SwitchListTile(
+            secondary: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF15803D)),
+            title: Text(tr('वॉलेट इस्तेमाल करें')),
+            subtitle: Text(tr('बैलेंस {0}', [rupees(balance)])),
+            value: _useWallet,
+            onChanged: (v) => setState(() => _useWallet = v),
+          ),
         const SizedBox(height: 12),
         _row(tr('सामान'), rupees(subtotal)),
         if (_discount > 0) _row(tr('कूपन छूट'), '- ${rupees(_discount)}'),
         if (fee > 0) _row(tr('डिलीवरी'), rupees(fee)),
+        if (walletUse > 0) _row(tr('वॉलेट से'), '- ${rupees(walletUse)}'),
         _row(tr('कुल'), rupees(total), bold: true),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
