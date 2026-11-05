@@ -40,6 +40,8 @@ class ShopSummary {
     this.maxDiscount,
     this.prepMinutes = 15,
     this.categoryId,
+    this.qualityScore = 100,
+    this.qualityAssured = false,
   });
 
   factory ShopSummary.fromJson(Map<String, dynamic> j) => ShopSummary(
@@ -60,6 +62,8 @@ class ShopSummary {
         maxDiscount: j['max_discount'] == null ? null : _d(j['max_discount']),
         prepMinutes: j['prep_minutes'] ?? 15,
         categoryId: j['category'] is int ? j['category'] : null,
+        qualityScore: j['quality_score'] ?? 100,
+        qualityAssured: j['quality_assured'] ?? false,
       );
 
   final int id;
@@ -79,6 +83,8 @@ class ShopSummary {
   final double? maxDiscount;
   final int prepMinutes;
   final int? categoryId;
+  final int qualityScore;
+  final bool qualityAssured;
 }
 
 class Deal {
@@ -295,6 +301,8 @@ class Order {
     this.completedAt,
     this.customerName = '',
     this.customerPhone = '',
+    this.recipientName = '',
+    this.recipientPhone = '',
   });
 
   factory Order.fromJson(Map<String, dynamic> j) => Order(
@@ -327,6 +335,8 @@ class Order {
         completedAt: _t(j['completed_at']),
         customerName: j['customer_name'] ?? '',
         customerPhone: j['customer_phone'] ?? '',
+        recipientName: j['recipient_name'] ?? '',
+        recipientPhone: j['recipient_phone'] ?? '',
       );
 
   final int id;
@@ -358,6 +368,8 @@ class Order {
   final DateTime? completedAt;
   final String customerName;
   final String customerPhone;
+  final String recipientName;
+  final String recipientPhone;
 
   bool get isDelivery => fulfilment == 'delivery';
 }
@@ -406,6 +418,8 @@ class Address {
     required this.city,
     required this.pincode,
     required this.isDefault,
+    this.contactName = '',
+    this.contactPhone = '',
   });
 
   factory Address.fromJson(Map<String, dynamic> j) => Address(
@@ -415,6 +429,8 @@ class Address {
         city: j['city'],
         pincode: j['pincode'],
         isDefault: j['is_default'] ?? false,
+        contactName: j['contact_name'] ?? '',
+        contactPhone: j['contact_phone'] ?? '',
       );
 
   final int id;
@@ -423,6 +439,8 @@ class Address {
   final String city;
   final String pincode;
   final bool isDefault;
+  final String contactName;
+  final String contactPhone;
 }
 
 class AppNotification {

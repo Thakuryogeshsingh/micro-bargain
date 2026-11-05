@@ -4,10 +4,13 @@ import 'package:geolocator/geolocator.dart';
 import '../config/app_config.dart';
 
 class LatLng {
-  const LatLng(this.latitude, this.longitude, {this.isFallback = false});
+  const LatLng(this.latitude, this.longitude, {this.isFallback = false, this.label});
 
   final double latitude;
   final double longitude;
+
+  /// Set when the person chose a place on the map (e.g. another city) instead of their GPS position.
+  final String? label;
 
   /// True when we could not get the real position and used the city centre.
   final bool isFallback;
@@ -30,4 +33,14 @@ Future<LatLng> currentLocation() async {
   }
 }
 
-final locationProvider = FutureProvider<LatLng>((ref) => currentLocation());
+/// A place picked on the map; null means "where I am".
+class ChosenPlaceController extends Notifier<LatLng?> {
+  @override
+  LatLng? build() => null;
+
+  void choose(LatLng? place) => state = place;
+}
+
+final chosenPlaceProvider = NotifierProvider<ChosenPlaceController, LatLng?>(ChosenPlaceController.new);
+
+final locationProvider = FutureProvider<LatLng>((ref) async => ref.watch(chosenPlaceProvider) ?? await currentLocation());

@@ -19,6 +19,12 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(sessionProvider).user;
+    if (ref.watch(openOnboardingProvider)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(openOnboardingProvider.notifier).set(false);
+        if (context.mounted) context.push('/merchant/onboarding');
+      });
+    }
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new-deal-fab',
@@ -71,10 +77,24 @@ class DashboardScreen extends ConsumerWidget {
                   (tr('रेटिंग'), parseNum(s['rating_avg']), Icons.star_rounded, (double v) => '★ ${v.toStringAsFixed(1)}', AppTheme.featured, () => open('/merchant/reviews')),
                   (tr('खत्म हुई डील'), parseNum(s['expired_deals']), Icons.timer_off_rounded, null, Colors.blueGrey, () => goTab?.call(1)),
                   (tr('पूरी बिकी डील'), parseNum(s['sold_out_deals']), Icons.done_all_rounded, null, const Color(0xFFDB2777), () => goTab?.call(1)),
+                  (tr('क्वालिटी स्कोर'), parseNum(s['quality_score'] ?? 100), Icons.verified_rounded, (double v) => '${v.round()}%',
+                      const Color(0xFF15803D), () => open('/merchant/complaints')),
                 ];
                 return Column(children: [
                   const SizedBox(height: 8),
                   FadeSlideIn(child: _ShopStatusBanner(stats: s)),
+                  if ((s['open_complaints'] ?? 0) > 0)
+                    Card(
+                      color: const Color(0xFFFEE2E2),
+                      child: ListTile(
+                        leading: const Icon(Icons.report_problem_rounded, color: Color(0xFFB91C1C)),
+                        title: Text(tr('{0} क्वालिटी शिकायत जवाब का इंतज़ार कर रही है', [s['open_complaints']]),
+                            style: const TextStyle(fontWeight: FontWeight.w800)),
+                        subtitle: Text(tr('24 घंटे में जवाब न देने पर ग्राहक को पूरा रिफंड अपने आप हो जाएगा')),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => open('/merchant/complaints'),
+                      ),
+                    ),
                   if ((s['pending_reservations'] ?? 0) > 0 || (s['pending_orders'] ?? 0) > 0)
                     FadeSlideIn(
                       index: 1,
@@ -170,8 +190,10 @@ class _ShopStatusBanner extends StatelessWidget {
     final status = stats['shop_status'];
     if (status == 'approved') return const SizedBox.shrink();
     final (color, icon, title, subtitle, action) = switch (status) {
-      null => (Colors.blue, Icons.add_business_rounded, tr('अपनी दुकान की जानकारी जोड़ें'), tr('दुकान का पता और लोकेशन डालें, फिर डील बनाएं'), tr('दुकान जोड़ें')),
-      'pending' => (Colors.orange, Icons.hourglass_top_rounded, tr('दुकान वेरिफिकेशन में है'), tr('टीम जल्द जांच करेगी। दुकान की फोटो और ID अपलोड करने से जल्दी होगा।'), tr('दस्तावेज़')),
+      null => (Colors.blue, Icons.add_business_rounded, tr('दुकान सेटअप पूरा करें'), tr('4 आसान स्टेप: जानकारी, दुकान, दस्तावेज़, पेमेंट'), tr('शुरू करें')),
+      'pending' when stats['onboarding_submitted'] != true =>
+        (Colors.blue, Icons.checklist_rounded, tr('दुकान सेटअप पूरा करें'), tr('दस्तावेज़ और पेमेंट जानकारी डालकर जांच के लिए जमा करें'), tr('जारी रखें')),
+      'pending' => (Colors.orange, Icons.hourglass_top_rounded, tr('दुकान वेरिफिकेशन में है'), tr('टीम जल्द जांच करेगी। अप्रूव होते ही नोटिफिकेशन आएगा।'), tr('स्टेटस')),
       'rejected' => (Colors.red, Icons.error_outline_rounded, tr('दुकान अप्रूव नहीं हुई'), '${stats['shop_rejection_reason'] ?? ''}', tr('ठीक करें')),
       _ => (Colors.grey, Icons.block_rounded, tr('दुकान अभी बंद है'), tr('सपोर्ट से संपर्क करें'), tr('मदद')),
     };
@@ -183,7 +205,7 @@ class _ShopStatusBanner extends StatelessWidget {
         subtitle: Text(subtitle),
         trailing: FilledButton.tonal(
           style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
-          onPressed: () => context.push(status == null || status == 'pending' || status == 'rejected' ? '/merchant/shop-form' : '/support'),
+          onPressed: () => context.push(status == null || status == 'pending' || status == 'rejected' ? '/merchant/onboarding' : '/support'),
           child: Text(action),
         ),
       ),

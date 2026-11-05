@@ -11,6 +11,7 @@ import '../../../shared/widgets/tracking.dart';
 import '../../../shared/models/models.dart';
 import '../cart/cart.dart';
 import '../customer_providers.dart';
+import '../quality/quality_screens.dart';
 import '../reviews/review_sheet.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -209,6 +210,7 @@ class ReservationDetailScreen extends ConsumerWidget {
                       label: Text(tr('दुकान को रेटिंग दें')),
                     ),
                   ),
+                if (canComplain(r.status, r.completedAt)) ComplaintButton(reservationId: r.id, shopName: r.shopName),
                 TextButton.icon(
                   onPressed: () => context.push(
                     '/support/new',
@@ -365,7 +367,10 @@ class OrderDetailScreen extends ConsumerWidget {
                 if (o.isDelivery)
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(tr('पता: {0}', [o.deliveryAddress])),
+                    child: Text([
+                      tr('पता: {0}', [o.deliveryAddress]),
+                      if (o.recipientName.isNotEmpty) tr('पाने वाले: {0} ({1})', [o.recipientName, o.recipientPhone]),
+                    ].join('\n')),
                   ),
                 Card(
                   child: ListTile(
@@ -436,6 +441,7 @@ class OrderDetailScreen extends ConsumerWidget {
                       label: Text(tr('दुकान को रेटिंग दें')),
                     ),
                   ),
+                if (canComplain(o.status, o.completedAt)) ComplaintButton(orderId: o.id, shopName: o.shopName),
                 TextButton.icon(
                   onPressed: () => context.push(
                     '/support/new',

@@ -160,6 +160,9 @@ class _OrdersTab extends ConsumerWidget {
                     Text('${o.isDelivery ? tr('🛵 डिलीवरी') : tr('🛍️ पिकअप')} · ${o.paymentMethod == 'online' ? tr('ऑनलाइन ({0})', [statusLabel(o.paymentStatus)]) : tr('कैश लेना है')}'),
                     for (final item in o.items) Text('• ${item.productName} — ${qty(item.quantity)} ${unitLabel(item.unit)}'),
                     if (o.isDelivery) Text(tr('पता: {0}', [o.deliveryAddress]), style: Theme.of(context).textTheme.bodySmall),
+                    if (o.isDelivery && o.recipientName.isNotEmpty)
+                      Text(tr('पाने वाले: {0} ({1})', [o.recipientName, o.recipientPhone]),
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
                     Row(children: [
                       Text(o.customerName.isEmpty ? o.customerPhone : '${o.customerName} · ${o.customerPhone}',
                           style: Theme.of(context).textTheme.bodySmall),

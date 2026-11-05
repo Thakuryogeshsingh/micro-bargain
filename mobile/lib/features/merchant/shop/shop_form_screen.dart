@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/location_picker.dart';
 import '../../customer/customer_providers.dart';
 import '../merchant_providers.dart';
 import '../../../core/i18n/i18n.dart';
@@ -110,7 +111,7 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
     if (ok) {
       ref.invalidate(myShopProvider);
       ref.invalidate(dashboardProvider);
-      if (!_isNew) context.pop();
+      if (context.canPop()) context.pop();
     }
   }
 
@@ -198,6 +199,23 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
           label: Text(_location == null
               ? (_isNew ? tr('दुकान की लोकेशन लें (दुकान में खड़े होकर)') : tr('लोकेशन बदलें'))
               : tr('लोकेशन मिल गई ({0}, {1})', [_location!.latitude.toStringAsFixed(4), _location!.longitude.toStringAsFixed(4)])),
+        ),
+        TextButton.icon(
+          onPressed: () async {
+            final place = await pickLocationOnMap(context,
+                latitude: _location?.latitude ?? (widget.shop?['latitude'] as num?)?.toDouble(),
+                longitude: _location?.longitude ?? (widget.shop?['longitude'] as num?)?.toDouble(),
+                title: tr('मैप पर दुकान चुनें'));
+            if (place == null || !mounted) return;
+            setState(() {
+              _location = LatLng(place.latitude, place.longitude);
+              if (place.city.isNotEmpty) _text['city']!.text = place.city;
+              if (place.pincode.length == 6 && _text['pincode']!.text.isEmpty) _text['pincode']!.text = place.pincode;
+              if (_text['address_line']!.text.isEmpty && place.line.isNotEmpty) _text['address_line']!.text = place.line;
+            });
+          },
+          icon: const Icon(Icons.map_outlined),
+          label: Text(tr('या मैप पर दुकान की जगह चुनें')),
         ),
         SwitchListTile(title: Text(tr('होम डिलीवरी करते हैं')), value: _delivery, onChanged: (v) => setState(() => _delivery = v)),
         ListTile(

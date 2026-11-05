@@ -5,6 +5,7 @@ import '../../../core/auth/session.dart';
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/common.dart';
 import '../../customer/customer_providers.dart';
+import '../merchant_providers.dart';
 import '../../../core/i18n/i18n.dart';
 
 /// Turns the logged-in account into a merchant account. The router then switches to the merchant app.
@@ -28,7 +29,10 @@ class _MerchantRegisterScreenState extends ConsumerState<MerchantRegisterScreen>
           'owner_name': _owner.text.trim(),
           'business_category': _category,
         }));
-    if (ok) await ref.read(sessionProvider.notifier).reloadUser();
+    if (ok) {
+      ref.read(openOnboardingProvider.notifier).set(true);
+      await ref.read(sessionProvider.notifier).reloadUser();
+    }
   }
 
   @override

@@ -56,3 +56,13 @@ final commissionSummaryProvider = FutureProvider.autoDispose<Map<String, dynamic
 final salesProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, int>((ref, days) async {
   return Map<String, dynamic>.from(await ref.watch(apiProvider).get('/analytics/merchant-sales/', query: {'days': days}));
 });
+
+/// True right after "become a shop owner": the merchant app opens the setup steps once.
+class OpenOnboardingController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
+final openOnboardingProvider = NotifierProvider<OpenOnboardingController, bool>(OpenOnboardingController.new);

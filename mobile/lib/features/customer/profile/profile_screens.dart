@@ -11,6 +11,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/push/push_service.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/location_picker.dart';
 import '../../settings/language_screen.dart';
 import '../../settings/theme_screen.dart';
 import '../customer_providers.dart';
@@ -141,6 +142,12 @@ class ProfileScreen extends ConsumerWidget {
           onTap: () => context.push('/support'),
         ),
         ListTile(
+          leading: const Icon(Icons.currency_exchange_rounded, color: Color(0xFFDB2777)),
+          title: Text(tr('रिफंड और शिकायतें')),
+          subtitle: Text(tr('रिफंड का हाल, क्वालिटी शिकायतें और पॉलिसी')),
+          onTap: () => context.push('/refunds'),
+        ),
+        ListTile(
           leading: const Icon(Icons.storefront),
           title: Text(tr('अपनी दुकान जोड़ें')),
           subtitle: Text(tr('दुकानदार हैं? अपनी डील यहां बेचें')),
@@ -219,13 +226,32 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
   final _landmark = TextEditingController();
   final _city = TextEditingController(text: 'Bharatpur');
   final _pincode = TextEditingController();
+  final _contactName = TextEditingController();
+  final _contactPhone = TextEditingController();
   bool _default = true;
   bool _busy = false;
+  bool _forSomeoneElse = false;
+  PickedPlace? _place;
+  String _state = 'Rajasthan';
+
+  Future<void> _pickOnMap() async {
+    final here = ref.read(locationProvider).value;
+    final place = await pickLocationOnMap(context,
+        latitude: _place?.latitude ?? here?.latitude, longitude: _place?.longitude ?? here?.longitude, title: tr('पता मैप पर चुनें'));
+    if (place == null || !mounted) return;
+    setState(() {
+      _place = place;
+      if (place.city.isNotEmpty) _city.text = place.city;
+      if (place.state.isNotEmpty) _state = place.state;
+      if (place.pincode.length == 6) _pincode.text = place.pincode;
+      if (_line.text.trim().isEmpty && place.line.isNotEmpty) _line.text = place.line;
+    });
+  }
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
-    final here = await currentLocation();
+    final here = _place == null ? await currentLocation() : LatLng(_place!.latitude, _place!.longitude);
     if (!mounted) return;
     if (here.isFallback &&
         !await confirm(context, tr('लोकेशन नहीं मिली'), message: tr('डिलीवरी के लिए सही लोकेशन ज़रूरी है। फिर भी शहर के केंद्र से सेव करें?'))) {
@@ -238,8 +264,10 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
           'address_line': _line.text.trim(),
           'landmark': _landmark.text.trim(),
           'city': _city.text.trim(),
-          'state': 'Rajasthan',
+          'state': _state,
           'pincode': _pincode.text.trim(),
+          if (_forSomeoneElse) 'contact_name': _contactName.text.trim(),
+          if (_forSomeoneElse) 'contact_phone': _contactPhone.text.trim(),
           'latitude': here.latitude.toStringAsFixed(6),
           'longitude': here.longitude.toStringAsFixed(6),
           'is_default': _default,
@@ -257,9 +285,44 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
       body: Form(
         key: _form,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          Text(tr('📍 पता सेव करते समय आपकी अभी की लोकेशन ली जाएगी — घर पर रहकर सेव करें।')),
-          const SizedBox(height: 16),
-          TextFormField(controller: _label, decoration: InputDecoration(labelText: tr('नाम (घर / ऑफिस)')), validator: required),
+          Card(
+            child: ListTile(
+              leading: Icon(_place == null ? Icons.map_outlined : Icons.check_circle_rounded,
+                  color: _place == null ? null : const Color(0xFF15803D)),
+              title: Text(_place == null ? tr('📍 मैप पर लोकेशन चुनें') : tr('लोकेशन चुनी गई: {0}', [_place!.city])),
+              subtitle: Text(_place == null
+                  ? tr('किसी भी शहर का पता — नहीं चुना तो आपकी अभी की लोकेशन ली जाएगी')
+                  : tr('बदलने के लिए दबाएं')),
+              onTap: _pickOnMap,
+            ),
+          ),
+          SwitchListTile(
+            title: Text(tr('यह पता किसी और का है')),
+            subtitle: Text(tr('परिवार या दोस्त के लिए ऑर्डर — सामान उन्हें मिलेगा')),
+            value: _forSomeoneElse,
+            onChanged: (v) => setState(() {
+              _forSomeoneElse = v;
+              if (v && _label.text == tr('घर')) _label.text = '';
+            }),
+          ),
+          if (_forSomeoneElse) ...[
+            TextFormField(controller: _contactName, decoration: InputDecoration(labelText: tr('पाने वाले का नाम')), validator: required),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _contactPhone,
+              keyboardType: TextInputType.phone,
+              maxLength: 10,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(labelText: tr('पाने वाले का मोबाइल'), prefixText: '+91 '),
+              validator: (v) => RegExp(r'^[6-9]\d{9}$').hasMatch(v ?? '') ? null : tr('10 अंकों का मोबाइल नंबर'),
+            ),
+          ],
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _label,
+            decoration: InputDecoration(labelText: _forSomeoneElse ? tr('नाम (जैसे: मम्मी का घर)') : tr('नाम (घर / ऑफिस)')),
+            validator: required,
+          ),
           const SizedBox(height: 12),
           TextFormField(controller: _line, decoration: InputDecoration(labelText: tr('मकान नं., गली, मोहल्ला')), validator: required),
           const SizedBox(height: 12),

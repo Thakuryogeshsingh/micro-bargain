@@ -248,7 +248,14 @@ class _AddressPicker extends ConsumerWidget {
             onChanged: (v) => onSelect(v!),
             child: Column(children: [
               for (final a in list)
-                RadioListTile(value: a.id, title: Text(a.label), subtitle: Text('${a.line}, ${a.city} ${a.pincode}')),
+                RadioListTile(
+                  value: a.id,
+                  title: Text(a.label),
+                  subtitle: Text([
+                    if (a.contactName.isNotEmpty) '👤 ${a.contactName} (${a.contactPhone})',
+                    '${a.line}, ${a.city} ${a.pincode}',
+                  ].join('\n')),
+                ),
             ]),
           ),
           TextButton.icon(
@@ -257,7 +264,7 @@ class _AddressPicker extends ConsumerWidget {
               ref.invalidate(addressesProvider);
             },
             icon: const Icon(Icons.add_location_alt),
-            label: Text(tr('नया पता जोड़ें')),
+            label: Text(tr('नया पता जोड़ें (किसी और के लिए भी)')),
           ),
         ]);
       },

@@ -50,7 +50,7 @@ def create_complaint(customer, reason, photo, description="", reservation=None, 
         source.shop.merchant.user, notifications.Kind.QUALITY_COMPLAINT, "⚠️ क्वालिटी की शिकायत",
         f"{complaint.reference}: {complaint.get_reason_display()}. {settings.QUALITY_SHOP_REPLY_HOURS} घंटे में जवाब दें, "
         "वरना ग्राहक को पूरा पैसा अपने आप वापस हो जाएगा।",
-        data={"complaint_id": str(complaint.id)},
+        data={"quality_id": str(complaint.id)},
     )
     return complaint
 
@@ -74,7 +74,7 @@ def _refund(complaint, amount, actor, note_field, note):
     notifications.notify(
         complaint.customer, notifications.Kind.REFUND, f"₹{amount} रिफंड वॉलेट में आ गया ✅",
         f"{complaint.shop.name} की शिकायत ({complaint.reference}) का पैसा आपके वॉलेट में है।",
-        data={"complaint_id": str(complaint.id)},
+        data={"quality_id": str(complaint.id)},
     )
     update_quality_score(complaint.shop_id)
     return complaint
@@ -96,7 +96,7 @@ def shop_respond(complaint, merchant_user, accept, amount=None, note=""):
     notifications.notify(
         complaint.customer, notifications.Kind.QUALITY_COMPLAINT, "शिकायत की जांच हो रही है",
         f"{complaint.shop.name}: {note[:120]}. हमारी टीम 48 घंटे में फैसला करेगी।",
-        data={"complaint_id": str(complaint.id)},
+        data={"quality_id": str(complaint.id)},
     )
     return complaint
 
@@ -116,7 +116,7 @@ def admin_decide(complaint, admin_user, refund, amount=None, note=""):
     record(admin_user, "complaint.rejected", complaint, note)
     notifications.notify(
         complaint.customer, notifications.Kind.QUALITY_COMPLAINT, "शिकायत बंद",
-        f"{complaint.reference}: {note or 'जांच में शिकायत सही नहीं पाई गई।'}", data={"complaint_id": str(complaint.id)},
+        f"{complaint.reference}: {note or 'जांच में शिकायत सही नहीं पाई गई।'}", data={"quality_id": str(complaint.id)},
     )
     update_quality_score(complaint.shop_id)
     return complaint

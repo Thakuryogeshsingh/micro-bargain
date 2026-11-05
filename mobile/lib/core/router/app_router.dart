@@ -15,6 +15,9 @@ import '../../features/customer/offers/offers.dart';
 import '../../features/customer/plus/plus_screens.dart';
 import '../../features/customer/profile/profile_screens.dart';
 import '../../features/customer/map/shops_map_screen.dart';
+import '../../features/customer/quality/quality_screens.dart';
+import '../../features/merchant/onboarding/onboarding_screen.dart';
+import '../../features/merchant/quality/complaints_screen.dart';
 import '../../features/customer/shops/shop_screens.dart';
 import '../../features/customer/wallet/wallet_screen.dart';
 import '../../features/merchant/alerts/order_alerts.dart';
@@ -134,6 +137,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/referral', builder: (_, _) => const ReferralScreen()),
       GoRoute(path: '/plus', builder: (_, _) => const PlusScreen()),
       GoRoute(path: '/wallet', builder: (_, _) => const WalletScreen()),
+      GoRoute(path: '/refunds', builder: (_, _) => const RefundsScreen()),
+      GoRoute(path: '/refund-policy', builder: (_, _) => const RefundPolicyScreen()),
       GoRoute(path: '/map', builder: (_, _) => const ShopsMapScreen()),
       GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
       GoRoute(path: '/addresses/new', builder: (_, _) => const AddressFormScreen()),
@@ -147,6 +152,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/merchant/deal-form', builder: (_, _) => const DealFormScreen()),
       GoRoute(path: '/merchant/bookings', builder: (_, _) => const MerchantBookingsScreen()),
       GoRoute(path: '/merchant/incoming', builder: (_, _) => const IncomingOrdersScreen()),
+      GoRoute(path: '/merchant/onboarding', builder: (_, _) => const ShopSetupScreen()),
+      GoRoute(path: '/merchant/complaints', builder: (_, _) => const MerchantComplaintsScreen()),
       GoRoute(path: '/merchant/inventory', builder: (_, _) => const InventoryScreen()),
       GoRoute(path: '/merchant/plans', builder: (_, _) => const PlansScreen()),
       GoRoute(path: '/merchant/promotions', builder: (_, _) => const PromotionsScreen()),

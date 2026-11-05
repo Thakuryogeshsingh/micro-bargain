@@ -13,6 +13,7 @@ import '../../customer/profile/profile_screens.dart';
 import '../../settings/language_screen.dart';
 import '../../settings/theme_screen.dart';
 import '../merchant_providers.dart';
+import '../onboarding/onboarding_screen.dart';
 import '../../../core/i18n/i18n.dart';
 
 class MoreScreen extends ConsumerWidget {
@@ -40,6 +41,13 @@ class MoreScreen extends ConsumerWidget {
         item(Icons.warehouse_outlined, tr('स्टॉक (इन्वेंटरी)'), '/merchant/inventory'),
         item(Icons.bar_chart, tr('बिक्री और कमीशन'), '/merchant/earnings'),
         item(Icons.star_outline, tr('ग्राहकों के रिव्यू'), '/merchant/reviews'),
+        item(Icons.verified_outlined, tr('क्वालिटी शिकायतें'), '/merchant/complaints'),
+        item(Icons.checklist_rounded, tr('दुकान सेटअप और दस्तावेज़'), '/merchant/onboarding'),
+        ListTile(
+          leading: const Icon(Icons.account_balance_outlined),
+          title: Text(tr('पेमेंट (UPI / बैंक)')),
+          onTap: () => showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const PayoutSheet()),
+        ),
         item(Icons.campaign_outlined, tr('प्रमोशन (डील ऊपर दिखाएं)'), '/merchant/promotions'),
         item(Icons.workspace_premium_outlined, tr('प्लान'), '/merchant/plans', subtitle: tr('ज़्यादा डील, बिक्री रिपोर्ट, फीचर्ड लिस्टिंग')),
         const LanguageTile(),

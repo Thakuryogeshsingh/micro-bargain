@@ -134,6 +134,7 @@ class ShopCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   RatingBadge(shop.rating, count: shop.ratingCount),
                 ]),
+                if (shop.qualityAssured) ...[const SizedBox(height: 4), QualityBadge(shop: shop)],
                 const SizedBox(height: 4),
                 Text(
                   [shop.categoryName, if (shop.distanceM != null) distance(shop.distanceM), shop.address].join(' · '),
@@ -157,6 +158,29 @@ class ShopCard extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+/// Shown on shops with a high quality score.
+class QualityBadge extends StatelessWidget {
+  const QualityBadge({super.key, required this.shop, this.large = false});
+
+  final ShopSummary shop;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!shop.qualityAssured) return const SizedBox.shrink();
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: large ? 10 : 8, vertical: large ? 5 : 3),
+      decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(20)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.verified_rounded, size: large ? 18 : 14, color: const Color(0xFF15803D)),
+        const SizedBox(width: 4),
+        Text(large ? tr('क्वालिटी पक्की · {0}%', [shop.qualityScore]) : tr('क्वालिटी पक्की'),
+            style: TextStyle(color: const Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: large ? 13 : 11)),
+      ]),
     );
   }
 }

@@ -14,6 +14,7 @@ import '../../../core/utils/format.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
+import '../../../shared/widgets/location_picker.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../notifications/notifications_screen.dart';
 import '../cart/cart.dart';
@@ -189,7 +190,7 @@ class _Header extends ConsumerWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Pressable(
-                onTap: () => ref.invalidate(locationProvider),
+                onTap: () => chooseBrowsePlace(context, ref),
                 child: Container(
                   width: 44,
                   height: 44,
@@ -204,9 +205,11 @@ class _Header extends ConsumerWidget {
                       maxLines: 1, overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
                   Text(
-                    location.value?.isFallback == true
-                        ? tr('📍 भरतपुर (लोकेशन बंद है)')
-                        : tr('📍 आपके आस-पास {0}', [distance(filters.radius)]),
+                    location.value?.label != null
+                        ? '📍 ${location.value!.label} ▾'
+                        : location.value?.isFallback == true
+                            ? tr('📍 भरतपुर (लोकेशन बंद है)')
+                            : tr('📍 आपके आस-पास {0}', [distance(filters.radius)]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
@@ -673,5 +676,38 @@ class _Leaderboard extends ConsumerWidget {
         ),
       ),
     ]);
+  }
+}
+
+/// Browse near where I am, or anywhere else (another city, e.g. to order for family there).
+Future<void> chooseBrowsePlace(BuildContext context, WidgetRef ref) async {
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    builder: (sheet) => SafeArea(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(
+          leading: const Icon(Icons.my_location_rounded),
+          title: Text(tr('मेरी अभी की लोकेशन')),
+          onTap: () => Navigator.pop(sheet, 'gps'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.map_rounded),
+          title: Text(tr('मैप पर जगह / दूसरा शहर चुनें')),
+          subtitle: Text(tr('किसी और के लिए वहाँ की दुकान से ऑर्डर करें')),
+          onTap: () => Navigator.pop(sheet, 'map'),
+        ),
+      ]),
+    ),
+  );
+  if (choice == 'gps') {
+    ref.read(chosenPlaceProvider.notifier).choose(null);
+    ref.invalidate(locationProvider);
+  } else if (choice == 'map' && context.mounted) {
+    final here = ref.read(locationProvider).value;
+    final place = await pickLocationOnMap(context, latitude: here?.latitude, longitude: here?.longitude, title: tr('कहाँ की दुकानें देखें?'));
+    if (place == null) return;
+    ref.read(chosenPlaceProvider.notifier).choose(
+          LatLng(place.latitude, place.longitude, label: place.city.isEmpty ? tr('चुनी हुई जगह') : place.city),
+        );
   }
 }

@@ -89,6 +89,7 @@ class ShopScreen extends ConsumerWidget {
                   Text('${shop.categoryName} · ${shop.address}', style: TextStyle(color: AppTheme.muted)),
                   const SizedBox(height: 12),
                   Wrap(spacing: 8, runSpacing: 8, children: [
+                    if (shop.qualityAssured) QualityBadge(shop: shop, large: true),
                     _InfoPill(icon: Icons.bolt_rounded, text: tr('{0} मिनट', [shop.prepMinutes]), color: const Color(0xFFF59E0B)),
                     if (shop.distanceM != null)
                       _InfoPill(icon: Icons.near_me_rounded, text: distance(shop.distanceM), color: AppTheme.primary),

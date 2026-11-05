@@ -42,7 +42,10 @@ String? routeFor(AppNotification n, {required bool merchant}) {
   if (d['order_id'] != null) return merchant ? '/merchant/bookings' : '/order/${d['order_id']}';
   if (d['reservation_id'] != null) return merchant ? '/merchant/bookings' : '/reservation/${d['reservation_id']}';
   if (d['deal_id'] != null) return '/deal/${d['deal_id']}';
+  if (d['quality_id'] != null) return merchant ? '/merchant/complaints' : '/refunds';
   if (d['complaint_id'] != null) return '/support/${d['complaint_id']}';
+  if (d['shop_id'] != null || n.kind == 'merchant_approved') return merchant ? '/merchant/onboarding' : null;
+  if (n.kind == 'cashback') return '/wallet';
   if (d['review_id'] != null) return '/merchant/reviews';
   return null;
 }
