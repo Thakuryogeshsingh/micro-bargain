@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_controller.dart';
+import '../../shared/widgets/brand.dart';
 
 /// Three welcome slides shown once, after picking the language.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -18,10 +19,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  List<(String, String, String, Color)> get _slides => [
-        ('🥬🍎🥛', tr('पास की दुकानों की ताज़ा डील'), tr('फल, सब्ज़ी, दूध और किराने पर रोज़ नई छूट — आपके आस-पास।'), const Color(0xFFE3F5DF)),
-        ('⏱️🛍️', tr('रिज़र्व करें, दुकान से उठाएं'), tr('एक टैप में सामान अपने लिए रखवाएं और अपने समय पर ले जाएं।'), const Color(0xFFFFF1D6)),
-        ('🎁💰', tr('हर खरीद पर बचत'), tr('ऑफ़र, कूपन और दोस्तों को बुलाने पर इनाम।'), const Color(0xFFFFE4E1)),
+  // Photos: Wikimedia Commons (see the photo credits page).
+  List<(String, String, String)> get _slides => [
+        ('assets/images/welcome_1.jpg', tr('पास की दुकानों की ताज़ा डील'), tr('फल, सब्ज़ी, दूध और किराने पर रोज़ नई छूट — आपके आस-पास।')),
+        ('assets/images/welcome_2.jpg', tr('रिज़र्व करें, दुकान से उठाएं'), tr('एक टैप में सामान अपने लिए रखवाएं और अपने समय पर ले जाएं।')),
+        ('assets/images/welcome_3.jpg', tr('हर खरीद पर बचत'), tr('ऑफ़र, कूपन और दोस्तों को बुलाने पर इनाम।')),
       ];
 
   Future<void> _finish() async {
@@ -42,9 +44,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(onPressed: _finish, child: Text(tr('छोड़ें'))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 8, 0),
+            child: Row(children: [
+              const BrandLockup(size: 34),
+              const Spacer(),
+              TextButton(onPressed: _finish, child: Text(tr('छोड़ें'))),
+            ]),
           ),
           Expanded(
             child: PageView.builder(
@@ -52,7 +58,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               itemCount: slides.length,
               onPageChanged: (i) => setState(() => _page = i),
               itemBuilder: (context, i) {
-                final (art, title, body, color) = slides[i];
+                final (photo, title, body) = slides[i];
                 return AnimatedBuilder(
                   animation: _controller,
                   builder: (context, child) {
@@ -63,24 +69,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     );
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Container(
-                        width: 260,
-                        height: 260,
-                        decoration: BoxDecoration(
-                          color: AppTheme.dark ? Color.lerp(color, Colors.black, 0.75) : color,
-                          shape: BoxShape.circle,
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Image.asset(photo, fit: BoxFit.cover, width: double.infinity),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(art, style: const TextStyle(fontSize: 72)),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 28),
                       Text(title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppTheme.ink, height: 1.2)),
-                      const SizedBox(height: 12),
-                      Text(body, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: AppTheme.muted, height: 1.4)),
+                          style: TextStyle(fontSize: 32, height: 1.08, fontWeight: FontWeight.w900, letterSpacing: -1.1, color: AppTheme.ink)),
+                      const SizedBox(height: 10),
+                      Text(body, style: TextStyle(fontSize: 16, color: AppTheme.muted, height: 1.45)),
+                      const SizedBox(height: 8),
                     ]),
                   ),
                 );

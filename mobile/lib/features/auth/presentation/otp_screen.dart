@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,7 +43,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   void _deliverTestOtp(String? otp) {
     if (otp == null) return;
-    LocalNotifications.show('Micro Bargain OTP', tr('{0} आपका लॉगिन OTP है', [otp]));
+    if (!kIsWeb) LocalNotifications.show('Micro Bargain OTP', tr('{0} आपका लॉगिन OTP है', [otp]));
     // Fill it in shortly after, so the person sees the notification arrive first.
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (!mounted) return;
@@ -103,75 +104,67 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(tr('OTP डालें'))),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
+      appBar: AppBar(),
+      body: ListView(padding: const EdgeInsets.fromLTRB(24, 4, 24, 24), children: [
         FadeSlideIn(
-          child: Row(children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(gradient: AppTheme.heroGradient, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.sms_rounded, color: Colors.white),
-            ),
-            const SizedBox(width: 14),
-            Expanded(child: Text(tr('+91 {0} पर भेजा गया 6 अंकों का कोड डालें', [widget.phone]))),
-          ]),
+          child: Text(tr('OTP डालें'),
+              style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: -1.2, color: AppTheme.ink)),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
         FadeSlideIn(
           index: 1,
-          child: TextField(
-            controller: _code,
-            autofocus: widget.testOtp == null,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 30, letterSpacing: 14, fontWeight: FontWeight.w700),
-            decoration: const InputDecoration(counterText: '', hintText: '••••••'),
-            onChanged: (value) {
-              if (value.length == 6) _verify();
-            },
-          ),
+          child: Text(tr('+91 {0} पर भेजा गया 6 अंकों का कोड डालें', [widget.phone]),
+              style: TextStyle(fontSize: 15, height: 1.4, color: AppTheme.muted)),
         ),
+        const SizedBox(height: 28),
+        FadeSlideIn(index: 2, child: _CodeBoxes(controller: _code, autofocus: widget.testOtp == null, onComplete: _verify)),
         AnimatedSize(
           duration: const Duration(milliseconds: 300),
           child: _autoFilled
               ? Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: 12),
                   child: Row(children: [
-                    Icon(Icons.notifications_active_rounded, size: 18, color: AppTheme.primary),
+                    Icon(Icons.bolt_rounded, size: 18, color: AppTheme.primary),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(tr('टेस्ट मोड: OTP नोटिफ़िकेशन से अपने आप भर गया'),
-                          style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700, fontSize: 13)),
                     ),
                   ]),
                 )
               : const SizedBox.shrink(),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 28),
         FadeSlideIn(
-          index: 2,
+          index: 3,
           child: TextField(
             controller: _name,
             textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(labelText: tr('आपका नाम (नए यूज़र के लिए)'), prefixIcon: const Icon(Icons.person_rounded)),
+            decoration: InputDecoration(
+              hintText: tr('आपका नाम (नए यूज़र के लिए)'),
+              prefixIcon: const Icon(Icons.person_outline_rounded),
+              filled: true,
+              fillColor: AppTheme.chip,
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         FadeSlideIn(
-          index: 3,
+          index: 4,
           child: TextField(
             controller: _referral,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
-              labelText: tr('दोस्त का रेफ़रल कोड (अगर है)'),
+              hintText: tr('दोस्त का रेफ़रल कोड (अगर है)'),
               prefixIcon: const Icon(Icons.card_giftcard_rounded),
+              filled: true,
+              fillColor: AppTheme.chip,
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         FilledButton(
           onPressed: _busy ? null : _verify,
           child: _busy
@@ -183,6 +176,89 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           onPressed: _resendIn > 0 ? null : _resend,
           child: Text(_resendIn > 0 ? tr('{0} सेकंड में दोबारा भेजें', [_resendIn]) : tr('OTP दोबारा भेजें')),
         ),
+      ]),
+    );
+  }
+}
+
+/// Six digit boxes over one invisible text field (so paste and keyboard autofill still work).
+class _CodeBoxes extends StatefulWidget {
+  const _CodeBoxes({required this.controller, required this.autofocus, required this.onComplete});
+
+  final TextEditingController controller;
+  final bool autofocus;
+  final VoidCallback onComplete;
+
+  @override
+  State<_CodeBoxes> createState() => _CodeBoxesState();
+}
+
+class _CodeBoxesState extends State<_CodeBoxes> {
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_changed);
+    _focus.addListener(_changed);
+  }
+
+  void _changed() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_changed);
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final code = widget.controller.text;
+    return GestureDetector(
+      onTap: () => _focus.requestFocus(),
+      child: Stack(children: [
+        Opacity(
+          opacity: 0,
+          child: TextField(
+            controller: widget.controller,
+            focusNode: _focus,
+            autofocus: widget.autofocus,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(counterText: ''),
+            onChanged: (value) {
+              if (value.length == 6) widget.onComplete();
+            },
+          ),
+        ),
+        Row(children: [
+          for (var i = 0; i < 6; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                height: 60,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppTheme.chip,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    width: 2,
+                    color: _focus.hasFocus && i == code.length.clamp(0, 5)
+                        ? AppTheme.ink
+                        : i < code.length
+                            ? (AppTheme.minimal ? AppTheme.accent : AppTheme.primary)
+                            : Colors.transparent,
+                  ),
+                ),
+                child: Text(i < code.length ? code[i] : '',
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppTheme.ink)),
+              ),
+            ),
+          ],
+        ]),
       ]),
     );
   }
