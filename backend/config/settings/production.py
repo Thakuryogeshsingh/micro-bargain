@@ -13,6 +13,19 @@ SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# Platform health checks call plain http:// on the internal port.
+SECURE_REDIRECT_EXEMPT = [r"^health/$"]
+
+# Static files (admin CSS) are served by Django itself through WhiteNoise, so hosts without a separate
+# web server (Render) work too. Behind Caddy the /static/ route is served by Caddy first.
+MIDDLEWARE.insert(MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
+
+# Hosts without a web server for uploads (Render free) let Django serve /media/ (photos, documents).
+SERVE_MEDIA = env.bool("SERVE_MEDIA", default=False)
 
 SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:

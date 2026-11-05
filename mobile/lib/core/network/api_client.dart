@@ -50,8 +50,9 @@ class ApiClient {
   ApiClient(this.tokens, {this.onSessionExpired})
       : dio = Dio(BaseOptions(
           baseUrl: AppConfig.apiBaseUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 20),
+          // Generous: a free-plan server can take about a minute to wake up on the first request.
+          connectTimeout: const Duration(seconds: 70),
+          receiveTimeout: const Duration(seconds: 70),
         )) {
     dio.interceptors.add(QueuedInterceptorsWrapper(
       onRequest: (options, handler) async {

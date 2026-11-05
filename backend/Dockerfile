@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-ARG REQUIREMENTS=development
+ARG REQUIREMENTS=production
 COPY requirements/ requirements/
 RUN pip install --no-cache-dir -r requirements/${REQUIREMENTS}.txt
 

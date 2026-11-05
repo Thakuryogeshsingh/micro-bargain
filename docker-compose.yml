@@ -21,7 +21,10 @@ services:
       - "6379:6379"
 
   web:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: development
     command: python manage.py runserver 0.0.0.0:8000
     env_file: ./backend/.env
     environment:

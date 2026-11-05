@@ -153,7 +153,9 @@ Before release, remove `android:usesCleartextTraffic="true"` from `AndroidManife
 
 ## Deploy (one VPS, e.g. 2 vCPU / 4 GB Ubuntu)
 
-**Free option:** Oracle Cloud Always Free. Step-by-step guide in Hindi: [deploy/ORACLE_FREE_SETUP.md](deploy/ORACLE_FREE_SETUP.md).
+**Free demo, no card:** Render (`render.yaml` Blueprint). Guide in Hindi: [deploy/RENDER_FREE_SETUP.md](deploy/RENDER_FREE_SETUP.md).
+
+**Free server (needs a Visa/Mastercard for verification):** Oracle Cloud Always Free. Step-by-step guide in Hindi: [deploy/ORACLE_FREE_SETUP.md](deploy/ORACLE_FREE_SETUP.md).
 After creating the server, one command from this PC deploys everything:
 `bash deploy/deploy_from_pc.sh <server-ip> <ssh-key-file>` (uses `<ip>.sslip.io` with HTTPS if you have no domain).
 Until MSG91 / Razorpay / Firebase are approved it runs as a test server (`ALLOW_TEST_BACKENDS=True`).

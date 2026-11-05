@@ -1,0 +1,69 @@
+# Render Blueprint: free demo server (web + PostGIS database + Redis).
+# Render dashboard -> New -> Blueprint -> pick this repository. See deploy/RENDER_FREE_SETUP.md.
+#
+# Free-plan limits: the web service sleeps after 15 minutes without traffic (first request then takes
+# about a minute), the free database expires after about 30 days, and uploaded photos are lost on
+# every redeploy/restart. Fine for demos, not for the real pilot.
+services:
+  - type: web
+    name: micro-bargain-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: sh render_start.sh
+    healthCheckPath: /health/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
+      - key: POSTGRES_HOST
+        fromDatabase: { name: micro-bargain-db, property: host }
+      - key: POSTGRES_PORT
+        fromDatabase: { name: micro-bargain-db, property: port }
+      - key: POSTGRES_DB
+        fromDatabase: { name: micro-bargain-db, property: database }
+      - key: POSTGRES_USER
+        fromDatabase: { name: micro-bargain-db, property: user }
+      - key: POSTGRES_PASSWORD
+        fromDatabase: { name: micro-bargain-db, property: password }
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: micro-bargain-redis, property: connectionString }
+      # Test server until MSG91 / Razorpay / Firebase are approved: OTPs appear in the Logs tab.
+      - key: ALLOW_TEST_BACKENDS
+        value: "True"
+      - key: SMS_BACKEND
+        value: console
+      - key: PUSH_BACKEND
+        value: console
+      - key: PAYMENT_BACKEND
+        value: fake
+      - key: SERVE_MEDIA
+        value: "True"
+      # Admin login for /admin/. Render asks for the phone when the Blueprint is created;
+      # the password is generated (see Environment tab).
+      - key: DJANGO_SUPERUSER_PHONE
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        generateValue: true
+
+  - type: keyvalue
+    name: micro-bargain-redis
+    plan: free
+    region: singapore
+    ipAllowList: []  # reachable only from our own services
+
+databases:
+  - name: micro-bargain-db
+    plan: free
+    region: singapore
+    databaseName: micro_bargain
+    user: micro_bargain
