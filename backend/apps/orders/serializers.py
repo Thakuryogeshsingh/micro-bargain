@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from .models import Order, OrderItem
+from .models import Coupon, Order, OrderItem
 
 
 class OrderLineInputSerializer(serializers.Serializer):
@@ -17,6 +17,19 @@ class OrderCreateSerializer(serializers.Serializer):
     address = serializers.IntegerField(required=False, help_text="Address id; required for delivery")
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=20)
     note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+class OfferSerializer(serializers.ModelSerializer):
+    shop_name = serializers.CharField(source="shop.name", default=None, read_only=True)
+    is_personal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Coupon
+        fields = ["code", "description", "discount_type", "value", "max_discount", "min_order_amount", "valid_until",
+                  "shop", "shop_name", "first_order_only", "is_personal"]
+
+    def get_is_personal(self, obj) -> bool:
+        return obj.customer_id is not None
 
 
 class CouponCheckSerializer(serializers.Serializer):

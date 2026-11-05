@@ -11,6 +11,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.audit.services import record
@@ -54,6 +55,10 @@ def coupon_discount(coupon, customer, shop, subtotal):
         raise BusinessRuleError("This coupon has expired.", "coupon_invalid")
     if coupon.shop_id and coupon.shop_id != shop.id:
         raise BusinessRuleError("This coupon is not valid at this shop.", "coupon_invalid")
+    if coupon.customer_id and coupon.customer_id != customer.id:
+        raise BusinessRuleError("Coupon not found.", "coupon_invalid")
+    if coupon.first_order_only and _has_ordered(customer):
+        raise BusinessRuleError("This coupon is only for your first order.", "coupon_first_order")
     if subtotal < coupon.min_order_amount:
         raise BusinessRuleError(f"Add items worth ₹{coupon.min_order_amount} to use this coupon.", "coupon_min_order")
     used = coupon.orders.exclude(status=Status.CANCELLED)
@@ -68,6 +73,35 @@ def coupon_discount(coupon, customer, shop, subtotal):
     else:
         discount = coupon.value
     return _money(min(discount, subtotal))
+
+
+def _has_ordered(customer):
+    from apps.customers.services import has_purchased
+
+    return has_purchased(customer) or customer.orders.exclude(status=Status.CANCELLED).exists()
+
+
+def available_offers(customer, shop_id=None):
+    """Coupons this customer can use now: platform-wide, the shop's own, and personal (e.g. referral rewards)."""
+    now = timezone.now()
+    coupons = (
+        Coupon.objects.filter(is_active=True, valid_from__lte=now, valid_until__gt=now)
+        .filter(Q(customer=None) | Q(customer=customer))
+        .filter(Q(shop=None) | (Q(shop_id=shop_id) if shop_id else Q(shop__status="approved")))
+        .select_related("shop")
+        .annotate(
+            used_total=Count("orders", filter=~Q(orders__status=Status.CANCELLED), distinct=True),
+            used_by_me=Count("orders", filter=Q(orders__customer=customer) & ~Q(orders__status=Status.CANCELLED), distinct=True),
+        )
+        .order_by("-customer", "valid_until")
+    )
+    first_order = not _has_ordered(customer)
+    return [
+        c for c in coupons
+        if (c.usage_limit is None or c.used_total < c.usage_limit)
+        and c.used_by_me < c.per_customer_limit
+        and (first_order or not c.first_order_only)
+    ]
 
 
 # ---------- customer ----------
@@ -265,6 +299,9 @@ def complete(order, pickup_code):
     order.payment_status = Order.PaymentStatus.PAID  # cash is collected at handover
     order.save(update_fields=["status", "completed_at", "payment_status", "updated_at"])
     commissions.record_for_order(order)
+    from apps.customers.services import reward_referral
+
+    reward_referral(order.customer)
     _tell_customer(order, "ऑर्डर पूरा 🎉", f"आपने इस ऑर्डर पर ₹{order.savings + order.coupon_discount} बचाए!")
     return order
 

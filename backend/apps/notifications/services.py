@@ -95,7 +95,8 @@ def reservation_event(reservation, kind):
         push = True
         if kind == Kind.NEW_RESERVATION:
             title = f"नई बुकिंग {reservation.reservation_number}"
-            body = f"ग्राहक ने {item} बुक किया (₹{reservation.total_amount})। जल्दी कन्फर्म करें।"
+            when = f" पिकअप: {timezone.localtime(reservation.pickup_at):%I:%M %p}।" if reservation.pickup_at else ""
+            body = f"ग्राहक ने {item} बुक किया (₹{reservation.total_amount})।{when} जल्दी कन्फर्म करें।"
         else:
             title = f"बुकिंग रद्द {reservation.reservation_number}"
             body = f"ग्राहक ने {item} की बुकिंग रद्द कर दी। स्टॉक वापस डील में जुड़ गया।"

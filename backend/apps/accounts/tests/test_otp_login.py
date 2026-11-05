@@ -138,3 +138,22 @@ class TestTokensAndProfile:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refreshed.data['access']}")
         assert api_client.post("/api/v1/auth/logout/", {"refresh": new_refresh}).status_code == 204
         assert api_client.post("/api/v1/auth/refresh/", {"refresh": new_refresh}).status_code == 401
+
+
+@pytest.mark.django_db
+class TestTestOTP:
+    def test_returned_with_console_sms(self, api_client, settings):
+        settings.SMS_BACKEND = "console"
+        data = api_client.post(SEND, {"phone": "9876500111"}).data
+        assert len(data["test_otp"]) == 6
+        assert api_client.post(VERIFY, {"phone": "9876500111", "code": data["test_otp"]}).status_code == 201
+
+    def test_never_with_real_sms(self, api_client, settings):
+        settings.SMS_BACKEND = "msg91"
+        with mock.patch("apps.accounts.services.send_sms"):
+            assert "test_otp" not in api_client.post(SEND, {"phone": "9876500112"}).data
+
+    def test_never_for_admin(self, api_client, make_user, settings):
+        settings.SMS_BACKEND = "console"
+        make_user(role="admin", phone="9876500113", is_staff=True)
+        assert "test_otp" not in api_client.post(SEND, {"phone": "9876500113"}).data

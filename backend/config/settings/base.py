@@ -256,6 +256,14 @@ ALLOW_CASH_PAYMENT = True  # cash at shop for pickup, cash on delivery for deliv
 DELIVERY_FEE = env.int("DELIVERY_FEE", default=20)  # rupees
 FREE_DELIVERY_ABOVE = env.int("FREE_DELIVERY_ABOVE", default=300)
 
+# Referral: when a referred customer completes their first purchase, both get a one-time coupon.
+REFERRAL_REWARD_RUPEES = 50
+REFERRAL_REWARD_MIN_ORDER = 150
+REFERRAL_REWARD_VALID_DAYS = 30
+# A reservation may pick a later pickup time; stock stays held until this long after it.
+PICKUP_GRACE_MINUTES = 30
+MAX_PICKUP_AHEAD_HOURS = 24
+
 # Revenue
 DEFAULT_COMMISSION_PERCENT = 3  # used when no CommissionRule matches (doc: 2-5%)
 AD_PRICE_PER_DAY = {"featured_deal": 49, "home_banner": 99}  # rupees

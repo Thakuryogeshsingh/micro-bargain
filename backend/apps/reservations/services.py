@@ -12,6 +12,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.commissions import services as commissions
+from apps.customers.services import reward_referral
 from apps.deals import services as deal_services
 from apps.inventory import services as inventory
 from apps.notifications import services as notifications
@@ -35,7 +36,20 @@ def _lock(reservation):
     return DealReservation.objects.select_for_update().get(pk=reservation.pk)
 
 
-def create_reservation(customer, deal_id, quantity):
+def _pickup_window(deal, pickup_at):
+    """Hold stock until the chosen pickup time plus a grace period (or the default hold when no time is chosen)."""
+    now = timezone.now()
+    if pickup_at is None:
+        return None, now + timedelta(minutes=settings.RESERVATION_HOLD_MINUTES)
+    if pickup_at < now - timedelta(minutes=1):
+        raise BusinessRuleError("Pickup time is in the past.", "invalid_pickup_time")
+    if pickup_at > min(deal.expires_at, now + timedelta(hours=settings.MAX_PICKUP_AHEAD_HOURS)):
+        raise BusinessRuleError("Choose a pickup time before the deal ends.", "invalid_pickup_time")
+    return pickup_at, max(now + timedelta(minutes=settings.RESERVATION_HOLD_MINUTES),
+                          pickup_at + timedelta(minutes=settings.PICKUP_GRACE_MINUTES))
+
+
+def create_reservation(customer, deal_id, quantity, pickup_at=None):
     open_count = customer.reservations.filter(status__in=DealReservation.OPEN_STATUSES).count()
     if open_count >= settings.MAX_ACTIVE_RESERVATIONS_PER_CUSTOMER:
         raise BusinessRuleError(
@@ -46,6 +60,7 @@ def create_reservation(customer, deal_id, quantity):
             if customer.reservations.filter(deal_id=deal_id, status__in=DealReservation.OPEN_STATUSES).exists():
                 raise BusinessRuleError("You already have an open reservation for this deal.", "already_reserved")
             deal = deal_services.reserve_quantity(deal_id, quantity)  # locks the deal row
+            pickup_at, hold_until = _pickup_window(deal, pickup_at)
             reservation = DealReservation.objects.create(
                 reservation_number=_new_reservation_number(),
                 customer=customer,
@@ -57,7 +72,8 @@ def create_reservation(customer, deal_id, quantity):
                 normal_unit_price=deal.normal_price,
                 total_amount=deal.offer_price * quantity,
                 pickup_code=f"{secrets.randbelow(10000):04d}",
-                expires_at=timezone.now() + timedelta(minutes=settings.RESERVATION_HOLD_MINUTES),
+                pickup_at=pickup_at,
+                expires_at=hold_until,
             )
             notifications.reservation_event(reservation, Kind.NEW_RESERVATION)
             return reservation
@@ -119,6 +135,7 @@ def complete(reservation, pickup_code):
     deal = deal_services.complete_quantity(reservation.deal_id, reservation.quantity)
     inventory.record_sale(deal.product_id, reservation.quantity, reservation.reservation_number)
     commissions.record_for_reservation(reservation)
+    reward_referral(reservation.customer)
     reservation.status = Status.COMPLETED
     reservation.completed_at = timezone.now()
     reservation.save(update_fields=["status", "completed_at", "updated_at"])

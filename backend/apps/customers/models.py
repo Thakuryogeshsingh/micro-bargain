@@ -19,6 +19,11 @@ class CustomerProfile(TimeStampedModel):
     notify_favorite_shops = models.BooleanField(default=True)
     notify_order_updates = models.BooleanField(default=True)
     preferred_categories = models.ManyToManyField("categories.Category", blank=True, related_name="+")
+    referral_code = models.CharField(max_length=10, unique=True, null=True, blank=True)
+    referred_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="referrals"
+    )
+    referral_rewarded_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Customer {self.user.phone}"

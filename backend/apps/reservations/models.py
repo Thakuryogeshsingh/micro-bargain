@@ -32,6 +32,7 @@ class DealReservation(TimeStampedModel):
     pickup_code = models.CharField(max_length=4)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     expires_at = models.DateTimeField()
+    pickup_at = models.DateTimeField(null=True, blank=True, help_text="When the customer plans to come")
     confirmed_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     closed_reason = models.CharField(max_length=255, blank=True)

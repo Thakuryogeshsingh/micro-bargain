@@ -20,6 +20,7 @@ class SendOTPSerializer(serializers.Serializer):
 class VerifyOTPSerializer(serializers.Serializer):
     phone = PhoneField()
     code = serializers.RegexField(rf"^\d{{{settings.OTP_LENGTH}}}$", error_messages={"invalid": "Enter the 6-digit OTP."})
+    referral_code = serializers.CharField(required=False, allow_blank=True, max_length=10)
 
 
 class UserSerializer(serializers.ModelSerializer):

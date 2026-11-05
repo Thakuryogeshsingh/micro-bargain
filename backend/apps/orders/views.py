@@ -12,7 +12,7 @@ from common.permissions import IsCustomer, IsMerchant
 
 from . import services
 from .models import Coupon, Order
-from .serializers import CouponCheckSerializer, MerchantOrderSerializer, OrderCreateSerializer, OrderSerializer
+from .serializers import CouponCheckSerializer, OfferSerializer, MerchantOrderSerializer, OrderCreateSerializer, OrderSerializer
 
 
 def visible_orders(user):
@@ -49,6 +49,18 @@ class OrderCreateView(APIView):
             data.get("coupon_code", ""), data.get("note", ""),
         )
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+class OffersView(APIView):
+    """GET /orders/offers/?shop=<id>: coupons this customer can use now (all shops, or one shop)."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(responses=OfferSerializer(many=True))
+    def get(self, request):
+        shop = request.query_params.get("shop")
+        offers = services.available_offers(request.user, int(shop) if shop and shop.isdigit() else None)
+        return Response(OfferSerializer(offers, many=True).data)
 
 
 class CouponCheckView(APIView):

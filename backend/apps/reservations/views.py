@@ -42,7 +42,8 @@ class ReservationCreateView(APIView):
         serializer = ReservationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         reservation = services.create_reservation(
-            request.user, serializer.validated_data["deal"], serializer.validated_data["quantity"]
+            request.user, serializer.validated_data["deal"], serializer.validated_data["quantity"],
+            serializer.validated_data.get("pickup_at"),
         )
         return Response(ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED)
 

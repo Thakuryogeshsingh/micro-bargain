@@ -19,6 +19,7 @@ from apps.categories.models import Category
 from apps.deals import services as deal_services
 from apps.deals.models import Deal
 from apps.merchants.models import MerchantProfile
+from apps.orders.models import Coupon
 from apps.products.models import Product
 from apps.shops.models import Shop
 from apps.shops.services import make_point
@@ -66,7 +67,25 @@ class Command(BaseCommand):
                         defaults={"category": shop.category, "unit": unit, "standard_price": Decimal(price)},
                     )
                     created_deals += self._ensure_live_deal(shop, product, price, discount, quantity)
+        self._offers()
         self.stdout.write(self.style.SUCCESS(f"Demo data ready: {len(SHOPS)} shops, {created_deals} new live deal(s)."))
+
+    def _offers(self):
+        """Sample coupons; extended so they never run out on the demo server."""
+        now = timezone.now()
+        gupta = Shop.objects.filter(name="Gupta Fruit Bhandar (Demo)").first()
+        offers = [
+            ("PEHLA50", "पहले ऑर्डर पर ₹50 छूट (₹150 से ऊपर)", "flat", 50, None, 150, None, True),
+            ("BHARAT10", "हर ऑर्डर पर 10% छूट, ₹40 तक", "percent", 10, 40, 100, None, False),
+            ("FRESH20", "Gupta Fruit Bhandar पर 20% छूट, ₹60 तक", "percent", 20, 60, 120, gupta, False),
+        ]
+        for code, text, kind, value, cap, minimum, shop, first in offers:
+            Coupon.objects.update_or_create(code=code, defaults={
+                "description": text, "discount_type": kind, "value": Decimal(value),
+                "max_discount": Decimal(cap) if cap else None, "min_order_amount": Decimal(minimum), "shop": shop,
+                "first_order_only": first, "per_customer_limit": 1 if first else 3,
+                "valid_from": now - timedelta(days=1), "valid_until": now + timedelta(days=30), "is_active": True,
+            })
 
     def _shop(self, phone, owner, name, slug, lat, lng, address, delivers, premium):
         user, _ = User.objects.get_or_create(

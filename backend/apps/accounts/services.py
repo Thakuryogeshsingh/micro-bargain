@@ -5,7 +5,7 @@ import secrets
 from datetime import timedelta
 
 from django.conf import settings
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from rest_framework.exceptions import Throttled
 from rest_framework_simplejwt.exceptions import TokenError
@@ -44,7 +44,18 @@ def send_otp(phone):
         )
     minutes = settings.OTP_EXPIRY_SECONDS // 60
     send_sms(phone, f"{code} is your Micro Bargain login OTP. Valid for {minutes} minutes.", otp=code)
+    otp.code = code  # not stored; only for test_otp_for() below
     return otp
+
+
+def test_otp_for(phone, otp):
+    """On a test server without real SMS (SMS_BACKEND=console) the app receives the OTP itself and shows it as a
+    notification. Never for staff/admin numbers: anyone could then log in as admin. Never with a real SMS provider."""
+    if settings.SMS_BACKEND != "console":
+        return None
+    if User.objects.filter(phone=phone).filter(models.Q(is_staff=True) | models.Q(role=User.Role.ADMIN)).exists():
+        return None
+    return otp.code
 
 
 def verify_otp(phone, code):

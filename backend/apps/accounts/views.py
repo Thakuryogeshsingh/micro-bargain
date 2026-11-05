@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from common.exceptions import BusinessRuleError
+
 from . import services
 from .serializers import (
     LogoutSerializer,
@@ -23,13 +25,22 @@ class SendOTPView(APIView):
 
     @extend_schema(
         request=SendOTPSerializer,
-        responses=inline_serializer("SendOTPResponse", {"message": serializers.CharField(), "expires_in": serializers.IntegerField()}),
+        responses=inline_serializer("SendOTPResponse", {
+            "message": serializers.CharField(),
+            "expires_in": serializers.IntegerField(),
+            "test_otp": serializers.CharField(required=False, help_text="Only on test servers without real SMS"),
+        }),
     )
     def post(self, request):
         serializer = SendOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        services.send_otp(serializer.validated_data["phone"])
-        return Response({"message": "OTP sent.", "expires_in": settings.OTP_EXPIRY_SECONDS})
+        phone = serializer.validated_data["phone"]
+        otp = services.send_otp(phone)
+        body = {"message": "OTP sent.", "expires_in": settings.OTP_EXPIRY_SECONDS}
+        test_otp = services.test_otp_for(phone, otp)
+        if test_otp:
+            body["test_otp"] = test_otp
+        return Response(body)
 
 
 class VerifyOTPView(APIView):
@@ -49,9 +60,20 @@ class VerifyOTPView(APIView):
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user, created = services.verify_otp(**serializer.validated_data)
+        data = serializer.validated_data
+        user, created = services.verify_otp(data["phone"], data["code"])
+        referral_applied = False
+        if created and data.get("referral_code"):
+            from apps.customers.services import apply_referral
+
+            try:
+                apply_referral(user, data["referral_code"])
+                referral_applied = True
+            except BusinessRuleError:
+                pass  # a wrong code must not block signing up
         return Response(
-            {**services.issue_tokens(user), "is_new_user": created, "user": UserSerializer(user).data},
+            {**services.issue_tokens(user), "is_new_user": created, "referral_applied": referral_applied,
+             "user": UserSerializer(user).data},
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 

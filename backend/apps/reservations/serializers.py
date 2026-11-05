@@ -8,6 +8,7 @@ from .models import DealReservation
 class ReservationCreateSerializer(serializers.Serializer):
     deal = serializers.IntegerField()
     quantity = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    pickup_at = serializers.DateTimeField(required=False, help_text="When the customer will come; empty = within 45 minutes")
 
 
 class ReasonSerializer(serializers.Serializer):
@@ -32,7 +33,7 @@ class ReservationSerializer(serializers.ModelSerializer):
             "id", "reservation_number", "status", "deal", "product_name",
             "shop", "shop_name", "shop_address", "shop_latitude", "shop_longitude",
             "quantity", "unit", "unit_price", "total_amount", "savings", "pickup_code",
-            "expires_at", "confirmed_at", "completed_at", "closed_reason", "created_at",
+            "pickup_at", "expires_at", "confirmed_at", "completed_at", "closed_reason", "created_at",
         ]
 
 

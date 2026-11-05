@@ -23,6 +23,11 @@ class Coupon(TimeStampedModel):
     min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     valid_from = models.DateTimeField()
     valid_until = models.DateTimeField()
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="personal_coupons",
+        help_text="Set for a personal coupon (e.g. referral reward); empty = anyone can use it",
+    )
+    first_order_only = models.BooleanField(default=False)
     usage_limit = models.PositiveIntegerField(null=True, blank=True, help_text="Total uses; empty = unlimited")
     per_customer_limit = models.PositiveSmallIntegerField(default=1)
     is_active = models.BooleanField(default=True)
