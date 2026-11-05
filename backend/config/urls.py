@@ -52,6 +52,7 @@ api_v1_patterns = [
     path("commissions/", include("apps.commissions.urls")),
     path("analytics/", include("apps.analytics.urls")),
     path("support/", include("apps.support.urls")),
+    path("app/", include("apps.releases.urls")),
 ]
 
 urlpatterns = [
