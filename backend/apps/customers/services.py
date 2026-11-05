@@ -108,3 +108,80 @@ def reward_referral(customer):
             data={"coupon": code},
         )
     return coupons
+
+
+
+# ---------- Bargain Plus ----------
+
+def active_plus(user):
+    from .models import PlusMembership
+
+    now = timezone.now()
+    return PlusMembership.objects.filter(user=user, status=PlusMembership.Status.ACTIVE, starts_at__lte=now, ends_at__gt=now).first()
+
+
+def buy_plus(user):
+    from .models import PlusMembership
+
+    PlusMembership.objects.filter(user=user, status=PlusMembership.Status.PENDING_PAYMENT).update(status=PlusMembership.Status.CANCELLED)
+    return PlusMembership.objects.create(user=user, amount=settings.PLUS_PRICE_RUPEES)
+
+
+@transaction.atomic
+def activate_plus(membership):
+    """Payment received: starts now, or after the current membership ends (renewal)."""
+    from apps.notifications import services as notifications
+
+    from .models import PlusMembership
+
+    membership = PlusMembership.objects.select_for_update().get(pk=membership.pk)
+    if membership.status == PlusMembership.Status.ACTIVE:
+        return membership
+    current = active_plus(membership.user)
+    membership.starts_at = current.ends_at if current else timezone.now()
+    membership.ends_at = membership.starts_at + timedelta(days=settings.PLUS_DAYS)
+    membership.status = PlusMembership.Status.ACTIVE
+    membership.save(update_fields=["status", "starts_at", "ends_at", "updated_at"])
+    notifications.notify(
+        membership.user, notifications.Kind.PLUS_ACTIVE, "💎 Bargain Plus चालू!",
+        f"हर ऑर्डर पर फ्री डिलीवरी और {settings.PLUS_EXTRA_PERCENT}% और छूट — {timezone.localtime(membership.ends_at):%d %b} तक।",
+    )
+    return membership
+
+
+def plus_discount(user, subtotal):
+    """Extra discount for Plus members, capped."""
+    from decimal import ROUND_HALF_UP, Decimal
+
+    if not active_plus(user):
+        return Decimal("0")
+    value = subtotal * Decimal(settings.PLUS_EXTRA_PERCENT) / 100
+    return min(value, Decimal(settings.PLUS_EXTRA_CAP_RUPEES)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+# ---------- impact ----------
+
+def impact(user):
+    """Money saved and food rescued by this customer (completed purchases only)."""
+    from decimal import Decimal
+
+    from django.db.models import DecimalField, F, Sum
+    from django.db.models.functions import Coalesce
+
+    from apps.orders.models import Order, OrderItem
+    from apps.reservations.models import DealReservation
+
+    money = DecimalField(max_digits=14, decimal_places=2)
+    reservations = DealReservation.objects.filter(customer=user, status=DealReservation.Status.COMPLETED)
+    orders = Order.objects.filter(customer=user, status=Order.Status.COMPLETED)
+    saved = reservations.aggregate(s=Coalesce(Sum((F("normal_unit_price") - F("unit_price")) * F("quantity"), output_field=money), Decimal(0), output_field=money))["s"]
+    saved += orders.aggregate(s=Coalesce(Sum(F("savings") + F("coupon_discount") + F("plus_discount"), output_field=money), Decimal(0), output_field=money))["s"]
+    weight_units = ["kg", "litre"]
+    kg = reservations.filter(unit__in=weight_units).aggregate(s=Coalesce(Sum("quantity"), Decimal(0), output_field=money))["s"]
+    kg += OrderItem.objects.filter(order__in=orders, unit__in=weight_units).aggregate(s=Coalesce(Sum("quantity"), Decimal(0), output_field=money))["s"]
+    grams = reservations.filter(unit="g").aggregate(s=Coalesce(Sum("quantity"), Decimal(0), output_field=money))["s"]
+    return {
+        "money_saved": saved,
+        "food_rescued_kg": kg + grams / 1000,
+        "purchases": reservations.count() + orders.count(),
+    }

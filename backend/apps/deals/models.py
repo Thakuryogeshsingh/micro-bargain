@@ -45,7 +45,9 @@ class Deal(TimeStampedModel):
     fulfilment = models.CharField(max_length=10, choices=Fulfilment.choices, default=Fulfilment.PICKUP)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
     published_at = models.DateTimeField(null=True, blank=True)
-    view_count = models.PositiveIntegerField(default=0, editable=False)  # customer detail views, for reports
+    view_count = models.PositiveIntegerField(default=0, editable=False)
+    # Set while a happy-hour discount is applied: the offer price to restore afterwards.
+    happy_hour_original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # customer detail views, for reports
 
     class Meta:
         ordering = ["-created_at"]

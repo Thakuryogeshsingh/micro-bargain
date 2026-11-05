@@ -12,6 +12,7 @@ class Payment(TimeStampedModel):
         ORDER = "order", "Order"
         SUBSCRIPTION = "subscription", "Merchant plan"
         ADVERTISEMENT = "advertisement", "Promotion"
+        MEMBERSHIP = "membership", "Bargain Plus"
 
     class Status(models.TextChoices):
         CREATED = "created", "Created"
@@ -26,6 +27,9 @@ class Payment(TimeStampedModel):
     )
     advertisement = models.ForeignKey(
         "advertisements.Advertisement", null=True, blank=True, on_delete=models.PROTECT, related_name="payments"
+    )
+    membership = models.ForeignKey(
+        "customers.PlusMembership", null=True, blank=True, on_delete=models.PROTECT, related_name="payments"
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, default="INR")

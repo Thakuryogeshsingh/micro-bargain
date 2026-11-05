@@ -30,6 +30,10 @@ class Shop(TimeStampedModel):
     opening_time = models.TimeField(null=True, blank=True)
     closing_time = models.TimeField(null=True, blank=True)
     prep_minutes = models.PositiveSmallIntegerField(default=15, help_text="Usual time to get an order ready")
+    # Happy hour: before closing, every live deal gets an extra discount automatically.
+    happy_hour_enabled = models.BooleanField(default=False)
+    happy_hour_percent = models.PositiveSmallIntegerField(default=15)
+    happy_hour_minutes = models.PositiveSmallIntegerField(default=60, help_text="Starts this long before closing time")
     offers_pickup = models.BooleanField(default=True)
     offers_delivery = models.BooleanField(default=False)
     is_temporarily_closed = models.BooleanField(default=False)

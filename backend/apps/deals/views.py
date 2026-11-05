@@ -109,6 +109,20 @@ class NearbyDealsView(generics.ListAPIView):
         return services.nearby_deals(**query.validated_data)
 
 
+class BoughtTogetherView(generics.ListAPIView):
+    """GET /deals/{id}/together/: other live deals at the same shop that customers buy with this one."""
+
+    serializer_class = DealSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Deal.objects.none()
+        deal = get_object_or_404(Deal, pk=self.kwargs["pk"])
+        return services.bought_together(deal)
+
+
 class ShopDealsView(generics.ListAPIView):
     serializer_class = DealSerializer
     permission_classes = [AllowAny]

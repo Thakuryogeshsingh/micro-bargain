@@ -49,3 +49,25 @@ class Address(TimeStampedModel):
 
     def __str__(self):
         return f"{self.label}: {self.address_line}, {self.city}"
+
+
+class PlusMembership(TimeStampedModel):
+    """Bargain Plus: a paid customer membership (free delivery + extra discount on orders)."""
+
+    class Status(models.TextChoices):
+        PENDING_PAYMENT = "pending_payment", "Waiting for payment"
+        ACTIVE = "active", "Active"
+        EXPIRED = "expired", "Expired"
+        CANCELLED = "cancelled", "Cancelled"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="plus_memberships")
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING_PAYMENT, db_index=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Plus {self.user.phone} ({self.status})"

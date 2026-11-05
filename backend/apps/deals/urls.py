@@ -11,6 +11,7 @@ urlpatterns = [
     path("shop/<int:shop_id>/", views.ShopDealsView.as_view(), name="shop-deals"),
     path("update/<int:pk>/", views.DealUpdateView.as_view(), name="update"),
     path("<int:pk>/", views.DealDetailView.as_view(), name="detail"),
+    path("<int:pk>/together/", views.BoughtTogetherView.as_view(), name="together"),
     path("<int:pk>/publish/", views.DealActionView.as_view(action="publish"), name="publish"),
     path("<int:pk>/pause/", views.DealActionView.as_view(action="pause"), name="pause"),
     path("<int:pk>/sold-out/", views.DealActionView.as_view(action="sold-out"), name="sold-out"),

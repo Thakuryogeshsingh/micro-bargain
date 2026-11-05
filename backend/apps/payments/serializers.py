@@ -33,6 +33,8 @@ class PaymentSerializer(serializers.ModelSerializer):
     def get_reference(self, obj) -> str:
         if obj.order_id:
             return obj.order.order_number
+        if obj.membership_id:
+            return f"PLUS-{obj.membership_id}"
         return f"SUB-{obj.subscription_id}" if obj.subscription_id else f"AD-{obj.advertisement_id}"
 
 

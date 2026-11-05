@@ -94,6 +94,7 @@ class Order(TimeStampedModel):
     savings = models.DecimalField(max_digits=12, decimal_places=2, default=0)  # vs normal price
     coupon = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.PROTECT, related_name="orders")
     coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    plus_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Bargain Plus members
     delivery_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     refunded_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)

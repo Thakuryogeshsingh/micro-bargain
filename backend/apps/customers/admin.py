@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Address, CustomerProfile
+from .models import PlusMembership, Address, CustomerProfile
 
 
 class AddressInline(admin.TabularInline):
@@ -20,4 +20,12 @@ class CustomerProfileAdmin(admin.ModelAdmin):
 class AddressAdmin(admin.ModelAdmin):
     list_display = ["user", "label", "city", "pincode", "is_default"]
     search_fields = ["user__phone", "address_line", "pincode"]
+    raw_id_fields = ["user"]
+
+
+@admin.register(PlusMembership)
+class PlusMembershipAdmin(admin.ModelAdmin):
+    list_display = ["user", "status", "amount", "starts_at", "ends_at"]
+    list_filter = ["status"]
+    search_fields = ["user__phone"]
     raw_id_fields = ["user"]

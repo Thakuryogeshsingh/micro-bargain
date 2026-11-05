@@ -73,6 +73,7 @@ class DealSerializer(serializers.ModelSerializer):
     seconds_left = serializers.SerializerMethodField()
     distance_m = serializers.SerializerMethodField()
     is_featured = serializers.SerializerMethodField()
+    is_happy_hour = serializers.SerializerMethodField()
 
     class Meta:
         model = Deal
@@ -80,7 +81,7 @@ class DealSerializer(serializers.ModelSerializer):
             "id", "shop", "product_id", "product_name", "category", "category_name", "description", "image",
             "unit", "normal_price", "offer_price", "discount_percent", "quantity_available",
             "starts_at", "expires_at", "seconds_left", "fulfilment", "status", "published_at", "distance_m",
-            "is_featured",
+            "is_featured", "is_happy_hour",
         ]
 
     def get_image(self, obj) -> str | None:
@@ -92,6 +93,9 @@ class DealSerializer(serializers.ModelSerializer):
 
     def get_seconds_left(self, obj) -> int:
         return max(0, int((obj.expires_at - timezone.now()).total_seconds()))
+
+    def get_is_happy_hour(self, obj) -> bool:
+        return obj.happy_hour_original_price is not None
 
     def get_is_featured(self, obj) -> bool:
         return bool(getattr(obj, "is_featured", False))

@@ -17,7 +17,8 @@ class ShopWriteSerializer(serializers.ModelSerializer):
         fields = [
             "name", "description", "category", "phone", "cover_image",
             "address_line", "landmark", "city", "state", "pincode", "latitude", "longitude",
-            "opening_time", "closing_time", "prep_minutes", "offers_pickup", "offers_delivery", "is_temporarily_closed",
+            "opening_time", "closing_time", "prep_minutes", "happy_hour_enabled", "happy_hour_percent", "happy_hour_minutes",
+            "offers_pickup", "offers_delivery", "is_temporarily_closed",
         ]
 
     def validate(self, attrs):
@@ -41,7 +42,8 @@ class ShopSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "description", "category", "category_name", "phone", "cover_image",
             "address_line", "landmark", "city", "state", "pincode", "latitude", "longitude",
-            "opening_time", "closing_time", "prep_minutes", "offers_pickup", "offers_delivery", "is_temporarily_closed",
+            "opening_time", "closing_time", "prep_minutes", "happy_hour_enabled", "happy_hour_percent", "happy_hour_minutes",
+            "offers_pickup", "offers_delivery", "is_temporarily_closed",
             "status", "rejection_reason", "rating_avg", "rating_count", "created_at",
         ]
         read_only_fields = fields
@@ -64,7 +66,7 @@ class PublicShopSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "description", "category", "category_name", "phone", "cover_image",
             "address_line", "landmark", "city", "pincode", "latitude", "longitude",
-            "opening_time", "closing_time", "prep_minutes", "offers_pickup", "offers_delivery",
+            "opening_time", "closing_time", "prep_minutes", "happy_hour_enabled", "happy_hour_percent", "offers_pickup", "offers_delivery",
             "rating_avg", "rating_count", "distance_m", "is_favorite", "live_deals_count", "max_discount",
         ]
 

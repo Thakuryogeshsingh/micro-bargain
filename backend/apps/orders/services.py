@@ -159,10 +159,14 @@ def create_order(customer, items, fulfilment, payment_method, address=None, coup
                 raise BusinessRuleError("Coupon not found.", "coupon_invalid")
             discount = coupon_discount(coupon, customer, shop, subtotal)
 
+        from apps.customers.services import active_plus, plus_discount
+
+        plus_off = min(plus_discount(customer, subtotal), subtotal - discount)
         delivery_fee = Decimal("0")
-        if fulfilment == Order.Fulfilment.DELIVERY and subtotal < settings.FREE_DELIVERY_ABOVE:
+        is_plus = active_plus(customer) is not None
+        if fulfilment == Order.Fulfilment.DELIVERY and subtotal < settings.FREE_DELIVERY_ABOVE and not is_plus:
             delivery_fee = Decimal(settings.DELIVERY_FEE)
-        total = subtotal - discount + delivery_fee
+        total = subtotal - discount - plus_off + delivery_fee
 
         online = payment_method == Order.PaymentMethod.ONLINE and total > 0
         order = Order.objects.create(
@@ -173,7 +177,7 @@ def create_order(customer, items, fulfilment, payment_method, address=None, coup
             delivery_address=_address_text(address) if fulfilment == Order.Fulfilment.DELIVERY else "",
             delivery_latitude=address.latitude if fulfilment == Order.Fulfilment.DELIVERY else None,
             delivery_longitude=address.longitude if fulfilment == Order.Fulfilment.DELIVERY else None,
-            subtotal=subtotal, savings=savings, coupon=coupon, coupon_discount=discount,
+            subtotal=subtotal, savings=savings, coupon=coupon, coupon_discount=discount, plus_discount=plus_off,
             delivery_fee=delivery_fee, total_amount=total, pickup_code=f"{secrets.randbelow(10000):04d}", note=note,
             expires_at=now + timedelta(minutes=settings.ORDER_PAYMENT_MINUTES if online else settings.ORDER_ACCEPT_MINUTES),
         )

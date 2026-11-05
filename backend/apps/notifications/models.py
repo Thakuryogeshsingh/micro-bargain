@@ -52,6 +52,8 @@ class Notification(TimeStampedModel):
         AD_ACTIVE = "ad_active", "Promotion live"
         SUPPORT_REPLY = "support_reply", "Support reply"
         REFERRAL_REWARD = "referral_reward", "Referral reward"
+        HAPPY_HOUR = "happy_hour", "Happy hour started"
+        PLUS_ACTIVE = "plus_active", "Bargain Plus active"
 
     DEAL_KINDS = (Kind.NEARBY_DEAL, Kind.FAVORITE_SHOP_DEAL)
 

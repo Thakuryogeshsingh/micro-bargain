@@ -303,3 +303,78 @@ def nearby_deals(latitude, longitude, radius, category=None, min_price=None, max
     if fulfilment:
         qs = qs.filter(fulfilment__in=(fulfilment, Deal.Fulfilment.BOTH))
     return qs.order_by(*SORTS[sort])
+
+
+# ---------- happy hour ----------
+
+def _in_happy_hour(shop, now_local):
+    if not (shop.happy_hour_enabled and shop.closing_time):
+        return False
+    closing = now_local.replace(hour=shop.closing_time.hour, minute=shop.closing_time.minute, second=0, microsecond=0)
+    return closing - timedelta(minutes=shop.happy_hour_minutes) <= now_local < closing
+
+
+def run_happy_hours():
+    """Every few minutes: apply the extra discount to live deals of shops in their happy hour, and restore
+    prices when it ends. Returns (applied, restored)."""
+    from decimal import ROUND_DOWN, Decimal
+
+    from apps.notifications import services as notifications
+
+    now_local = timezone.localtime()
+    applied = restored = 0
+    shops = Shop.objects.filter(status=Shop.Status.APPROVED, closing_time__isnull=False)
+    for shop in shops.filter(Q(happy_hour_enabled=True) | Q(deals__happy_hour_original_price__isnull=False)).distinct():
+        active = _in_happy_hour(shop, now_local)
+        with transaction.atomic():
+            if active:
+                deals = Deal.objects.select_for_update().filter(
+                    shop=shop, status=Status.ACTIVE, happy_hour_original_price__isnull=True, expires_at__gt=timezone.now()
+                )
+                changed = 0
+                for deal in deals:
+                    factor = Decimal(100 - shop.happy_hour_percent) / 100
+                    new_price = (deal.offer_price * factor).quantize(Decimal("1"), rounding=ROUND_DOWN)
+                    if new_price < 1 or new_price >= deal.offer_price:
+                        continue
+                    deal.happy_hour_original_price = deal.offer_price
+                    deal.offer_price = new_price
+                    deal.save(update_fields=["offer_price", "happy_hour_original_price", "updated_at"])
+                    changed += 1
+                applied += changed
+                if changed:
+                    for fav in shop.favorited_by.select_related("user"):
+                        notifications.notify(
+                            fav.user, notifications.Kind.HAPPY_HOUR, f"🌙 {shop.name} पर हैप्पी आवर!",
+                            f"अगले {shop.happy_hour_minutes} मिनट सभी डील पर {shop.happy_hour_percent}% और छूट।",
+                            data={"shop_id": str(shop.id)},
+                        )
+            else:
+                for deal in Deal.objects.select_for_update().filter(shop=shop, happy_hour_original_price__isnull=False):
+                    deal.offer_price = deal.happy_hour_original_price
+                    deal.happy_hour_original_price = None
+                    deal.save(update_fields=["offer_price", "happy_hour_original_price", "updated_at"])
+                    restored += 1
+    return applied, restored
+
+
+# ---------- frequently bought together ----------
+
+def bought_together(deal, limit=6):
+    """Other live deals at the same shop, ranked by how often their products were bought by the same customers."""
+    from django.db.models import Count
+
+    from apps.orders.models import OrderItem
+    from apps.reservations.models import DealReservation
+
+    buyers = set(
+        DealReservation.objects.filter(deal__product=deal.product, status="completed").values_list("customer_id", flat=True)
+    ) | set(OrderItem.objects.filter(deal__product=deal.product, order__status="completed").values_list("order__customer_id", flat=True))
+    candidates = live_deals().filter(shop=deal.shop).exclude(pk=deal.pk)
+    if buyers:
+        candidates = candidates.annotate(
+            together=Count("product__deals__reservations", filter=Q(product__deals__reservations__customer_id__in=buyers), distinct=True)
+        ).order_by("-together", "-discount_percent")
+    else:
+        candidates = candidates.order_by("-discount_percent")
+    return list(candidates[:limit])

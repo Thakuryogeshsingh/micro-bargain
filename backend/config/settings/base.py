@@ -234,6 +234,7 @@ CELERY_BEAT_SCHEDULE = {
     "expire-orders": {"task": "apps.orders.tasks.expire_orders", "schedule": 60.0},
     "expire-subscriptions-and-ads": {"task": "apps.subscriptions.tasks.expire_paid_services", "schedule": 300.0},
     "refresh-demo-deals": {"task": "apps.shops.tasks.refresh_demo_deals", "schedule": 3600.0},
+    "happy-hours": {"task": "apps.deals.tasks.run_happy_hours", "schedule": 300.0},
 }
 
 # Demo/test servers only: fill the database with sample Bharatpur shops and keep their deals live.
@@ -264,6 +265,12 @@ REFERRAL_REWARD_VALID_DAYS = 30
 # A reservation may pick a later pickup time; stock stays held until this long after it.
 PICKUP_GRACE_MINUTES = 30
 MAX_PICKUP_AHEAD_HOURS = 24
+
+# Bargain Plus (customer membership): free delivery and an extra discount on every order.
+PLUS_PRICE_RUPEES = 49
+PLUS_DAYS = 30
+PLUS_EXTRA_PERCENT = 5
+PLUS_EXTRA_CAP_RUPEES = 50
 
 # Revenue
 DEFAULT_COMMISSION_PERCENT = 3  # used when no CommissionRule matches (doc: 2-5%)

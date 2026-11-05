@@ -41,6 +41,13 @@ def _payable(user, purpose, object_id):
         if obj is None or obj.status != Order.Status.PENDING_PAYMENT:
             raise BusinessRuleError("This order is not waiting for payment.", "not_payable")
         return {"order": obj}, obj.total_amount, obj.order_number
+    if purpose == Purpose.MEMBERSHIP:
+        from apps.customers.models import PlusMembership
+
+        obj = PlusMembership.objects.filter(user=user, pk=object_id).first()
+        if obj is None or obj.status != PlusMembership.Status.PENDING_PAYMENT:
+            raise BusinessRuleError("This membership is not waiting for payment.", "not_payable")
+        return {"membership": obj}, obj.amount, f"PLUS-{obj.id}"
     if purpose == Purpose.SUBSCRIPTION:
         obj = MerchantSubscription.objects.filter(merchant__user=user, pk=object_id).first()
         if obj is None or obj.status != MerchantSubscription.Status.PENDING_PAYMENT:
@@ -96,6 +103,10 @@ def _fulfil(payment):
         if already_paid or not orders.mark_paid(payment.order):
             reason = "Duplicate payment" if already_paid else "Order was cancelled before the payment arrived"
             _create_refund(payment, payment.amount, reason)
+    elif payment.purpose == Purpose.MEMBERSHIP:
+        from apps.customers.services import activate_plus
+
+        activate_plus(payment.membership)
     elif payment.purpose == Purpose.SUBSCRIPTION:
         from apps.subscriptions.services import activate
 

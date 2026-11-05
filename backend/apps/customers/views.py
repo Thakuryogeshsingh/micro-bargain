@@ -51,6 +51,39 @@ class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
         services.save_address(serializer, self.request.user)
 
 
+class ImpactView(APIView):
+    """GET /customers/impact/: money saved and food rescued (for the profile badge)."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        return Response(services.impact(request.user))
+
+
+class PlusView(APIView):
+    """GET: Bargain Plus status and price. POST: start a purchase (then pay with purpose "membership")."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        current = services.active_plus(request.user)
+        return Response({
+            "active": current is not None,
+            "ends_at": current.ends_at if current else None,
+            "price": settings.PLUS_PRICE_RUPEES,
+            "days": settings.PLUS_DAYS,
+            "extra_percent": settings.PLUS_EXTRA_PERCENT,
+            "extra_cap": settings.PLUS_EXTRA_CAP_RUPEES,
+        })
+
+    @extend_schema(request=None, responses={201: OpenApiTypes.OBJECT})
+    def post(self, request):
+        membership = services.buy_plus(request.user)
+        return Response({"id": membership.id, "amount": membership.amount}, status=201)
+
+
 class ReferralView(APIView):
     """GET: my code, share message and how many friends joined. POST {code}: apply a friend's code."""
 
