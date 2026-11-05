@@ -1,13 +1,14 @@
-"""Demo data for showing the app: Bharatpur shops with products and live deals.
+"""Demo data for showing the app: Bharatpur shops in every category, live deals, customers, purchases and reviews.
 
     python manage.py seed_demo
 
-Safe to run again and again: shops and products are created once, and any product without a live deal gets
-a fresh one, so the demo never runs empty (deals expire within hours by design). Demo merchants use phone
-numbers 90000001xx and are marked "(Demo)" so they are easy to find and delete in the admin.
+Safe to run again and again (the demo server runs it hourly): shops, products and customers are created once,
+any product without a live deal gets a fresh one, and a few new purchases with reviews are added whenever recent
+activity runs low, so ratings, the mohalla ranking and savings always look alive. Demo merchants use phone
+numbers 90000001xx and demo customers 90000002xx, so they are easy to find and delete in the admin.
 """
 import random
-from datetime import timedelta
+from datetime import time, timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
@@ -21,46 +22,39 @@ from apps.deals.models import Deal
 from apps.merchants.models import MerchantProfile
 from apps.orders.models import Coupon
 from apps.products.models import Product
+from apps.reservations import services as reservations
+from apps.reservations.models import DealReservation
+from apps.reviews import services as reviews
 from apps.shops.models import Shop
 from apps.shops.services import make_point
 from apps.subscriptions.models import MerchantSubscription, Plan
+from common.exceptions import BusinessRuleError
 
-# (phone, owner, shop, category slug, lat, lng, address, delivers, [(product, unit, normal price, discount %, quantity)])
-SHOPS = [
-    ("9000000101", "Ramesh Gupta", "Gupta Fruit Bhandar", "fruits", 27.2165, 77.4902, "Mathura Gate Road", True, [
-        ("सेब (शिमला)", "kg", 160, 30, 15), ("केला", "dozen", 60, 25, 20), ("अनार", "kg", 180, 35, 8), ("पपीता", "kg", 50, 40, 12),
-    ]),
-    ("9000000102", "Suresh Sharma", "Sharma Sabzi Wala", "vegetables", 27.2131, 77.4871, "Kumher Gate Sabzi Mandi", False, [
-        ("टमाटर (देसी)", "kg", 40, 35, 30), ("आलू", "kg", 30, 20, 50), ("प्याज़", "kg", 45, 25, 40), ("पालक", "piece", 20, 50, 25),
-        ("भिंडी", "kg", 60, 40, 10),
-    ]),
-    ("9000000103", "Mahesh Yadav", "Bharatpur Dairy", "dairy", 27.2098, 77.4935, "Chowburja Road", True, [
-        ("दूध (फुल क्रीम)", "litre", 66, 15, 40), ("पनीर", "kg", 380, 25, 6), ("दही", "kg", 80, 30, 15),
-    ]),
-    ("9000000104", "Vinod Agarwal", "Agarwal Kirana Store", "grocery", 27.2185, 77.4840, "Laxman Mandir Road", True, [
-        ("आटा (5 किलो)", "packet", 240, 15, 20), ("बासमती चावल", "kg", 120, 20, 25), ("अरहर दाल", "kg", 160, 18, 20),
-        ("सरसों तेल (1 लीटर)", "litre", 180, 12, 15),
-    ]),
-    ("9000000105", "Pooja Jain", "Fresh Bake House", "bakery", 27.2070, 77.4965, "Krishna Nagar", False, [
-        ("ब्रेड", "packet", 45, 40, 20), ("केक (500 ग्राम)", "piece", 350, 45, 5), ("बिस्कुट / कुकीज़", "packet", 120, 35, 15),
-    ]),
-    ("9000000106", "Rakesh Meena", "Meena Fruits & Juice", "fruits", 27.2045, 77.4990, "Ranjeet Nagar", True, [
-        ("मौसमी", "kg", 70, 30, 25), ("अंगूर", "kg", 120, 40, 10), ("तरबूज़", "piece", 80, 35, 8),
-    ]),
-]
+from ...demo_data import COUPONS, CUSTOMERS, REVIEWS, SHOPS
 
-DEAL_HOURS = (6, 8, 12, 18, 24)
+DEAL_HOURS = (2, 4, 6, 8, 12, 18, 24)
+DESCRIPTIONS = (
+    "आज की ताज़ा खेप — जल्दी लें!", "स्टॉक सीमित है, पहले आओ पहले पाओ।", "शाम तक बिक जाना चाहिए, इसलिए भारी छूट।",
+    "क्वालिटी पक्की, दाम आधे।", "",
+)
+RECENT_PURCHASES_TARGET = 45  # completed pickups by demo customers in the last 3 days
+
+
+def _time(text):
+    hours, minutes = text.split(":")
+    return time(int(hours), int(minutes))
 
 
 class Command(BaseCommand):
-    help = "Create demo shops, products and live deals around Bharatpur (idempotent)."
+    help = "Create demo shops, products, live deals, customers and reviews around Bharatpur (idempotent)."
 
     def handle(self, *args, **options):
         created_deals = 0
         premium = Plan.objects.filter(code="premium").first()
-        for phone, owner, shop_name, slug, lat, lng, address, delivers, products in SHOPS:
+        for row in SHOPS:
+            products = row[-1]
             with transaction.atomic():
-                shop = self._shop(phone, owner, f"{shop_name} (Demo)", slug, lat, lng, address, delivers, premium)
+                shop = self._shop(*row[:-1], premium=premium)
                 for name, unit, price, discount, quantity in products:
                     product, _ = Product.objects.get_or_create(
                         shop=shop, name=name,
@@ -68,26 +62,12 @@ class Command(BaseCommand):
                     )
                     created_deals += self._ensure_live_deal(shop, product, price, discount, quantity)
         self._offers()
-        self.stdout.write(self.style.SUCCESS(f"Demo data ready: {len(SHOPS)} shops, {created_deals} new live deal(s)."))
+        purchases = self._activity()
+        self.stdout.write(self.style.SUCCESS(
+            f"Demo data ready: {len(SHOPS)} shops, {created_deals} new live deal(s), {purchases} new purchase(s)."
+        ))
 
-    def _offers(self):
-        """Sample coupons; extended so they never run out on the demo server."""
-        now = timezone.now()
-        gupta = Shop.objects.filter(name="Gupta Fruit Bhandar (Demo)").first()
-        offers = [
-            ("PEHLA50", "पहले ऑर्डर पर ₹50 छूट (₹150 से ऊपर)", "flat", 50, None, 150, None, True),
-            ("BHARAT10", "हर ऑर्डर पर 10% छूट, ₹40 तक", "percent", 10, 40, 100, None, False),
-            ("FRESH20", "Gupta Fruit Bhandar पर 20% छूट, ₹60 तक", "percent", 20, 60, 120, gupta, False),
-        ]
-        for code, text, kind, value, cap, minimum, shop, first in offers:
-            Coupon.objects.update_or_create(code=code, defaults={
-                "description": text, "discount_type": kind, "value": Decimal(value),
-                "max_discount": Decimal(cap) if cap else None, "min_order_amount": Decimal(minimum), "shop": shop,
-                "first_order_only": first, "per_customer_limit": 1 if first else 3,
-                "valid_from": now - timedelta(days=1), "valid_until": now + timedelta(days=30), "is_active": True,
-            })
-
-    def _shop(self, phone, owner, name, slug, lat, lng, address, delivers, premium):
+    def _shop(self, phone, owner, name, slug, lat, lng, address, delivers, opens, closes, happy, description, *, premium):
         user, _ = User.objects.get_or_create(
             phone=phone, defaults={"name": owner, "role": User.Role.MERCHANT, "is_phone_verified": True}
         )
@@ -95,12 +75,26 @@ class Command(BaseCommand):
         merchant, _ = MerchantProfile.objects.get_or_create(
             user=user, defaults={"owner_name": owner, "business_category": category, "status": MerchantProfile.Status.APPROVED},
         )
-        shop = merchant.shops.first() or Shop.objects.create(
-            merchant=merchant, name=name, category=category, phone=phone, address_line=address, city="Bharatpur",
-            state="Rajasthan", pincode="321001", location=make_point(lat, lng), offers_delivery=delivers,
-            status=Shop.Status.APPROVED, reviewed_at=timezone.now(),
-        )
-        # Premium plan so the demo merchants are not held back by the free plan's 3-live-deal limit.
+        if merchant.onboarding_submitted_at is None:
+            merchant.upi_id = f"{phone}@upi"
+            merchant.onboarding_submitted_at = timezone.now()
+            merchant.save(update_fields=["upi_id", "onboarding_submitted_at", "updated_at"])
+        details = {
+            "name": name, "description": description, "category": category, "phone": phone, "address_line": address,
+            "city": "Bharatpur", "state": "Rajasthan", "pincode": "321001", "offers_delivery": delivers,
+            "opening_time": _time(opens), "closing_time": _time(closes), "prep_minutes": random.choice((10, 15, 15, 20, 25)),
+            "happy_hour_enabled": happy > 0, "happy_hour_percent": happy or 15,
+        }
+        shop = merchant.shops.first()
+        if shop is None:
+            shop = Shop.objects.create(
+                merchant=merchant, location=make_point(lat, lng), status=Shop.Status.APPROVED, reviewed_at=timezone.now(), **details
+            )
+        else:  # older demo shops: refresh their details (and drop the old "(Demo)" suffix)
+            details.pop("prep_minutes")
+            Shop.objects.filter(pk=shop.pk).update(**details)
+            shop.refresh_from_db()
+        # Premium plan so the demo merchants are not held back by the free plan's live-deal limit.
         now = timezone.now()
         if premium and not merchant.subscriptions.filter(status=MerchantSubscription.Status.ACTIVE, ends_at__gt=now).exists():
             MerchantSubscription.objects.create(
@@ -110,16 +104,70 @@ class Command(BaseCommand):
         return shop
 
     def _ensure_live_deal(self, shop, product, price, discount, quantity):
-        soon = timezone.now() + timedelta(hours=1)
+        soon = timezone.now() + timedelta(minutes=30)
         if Deal.objects.filter(product=product, status=Deal.Status.ACTIVE, expires_at__gt=soon).exists():
             return 0
         normal = Decimal(price)
+        # A little variety so the same product doesn't always show the same discount.
+        discount = max(5, min(60, discount + random.choice((-5, 0, 0, 5))))
         offer = (normal * (100 - discount) / 100).quantize(Decimal("1"))
-        deal_services.create_deal(
-            shop.merchant.user, shop=shop, product=product, normal_price=normal, offer_price=offer,
-            quantity_total=Decimal(quantity), duration_minutes=random.choice(DEAL_HOURS) * 60,
-            description="आज की ताज़ा खेप — जल्दी लें!",
-            fulfilment=Deal.Fulfilment.BOTH if shop.offers_delivery else Deal.Fulfilment.PICKUP,
-            publish=True,
-        )
+        try:
+            deal_services.create_deal(
+                shop.merchant.user, shop=shop, product=product, normal_price=normal, offer_price=offer,
+                quantity_total=Decimal(quantity), duration_minutes=random.choice(DEAL_HOURS) * 60,
+                description=random.choice(DESCRIPTIONS),
+                fulfilment=Deal.Fulfilment.BOTH if shop.offers_delivery else Deal.Fulfilment.PICKUP,
+                publish=True,
+            )
+        except BusinessRuleError as error:
+            self.stderr.write(f"{shop.name} / {product.name}: {error}")
+            return 0
         return 1
+
+    def _offers(self):
+        """Sample coupons; extended so they never run out on the demo server."""
+        now = timezone.now()
+        for code, text, kind, value, cap, minimum, shop_name, first in COUPONS:
+            Coupon.objects.update_or_create(code=code, defaults={
+                "description": text, "discount_type": kind, "value": Decimal(value),
+                "max_discount": Decimal(cap) if cap else None, "min_order_amount": Decimal(minimum),
+                "shop": Shop.objects.filter(name=shop_name).first() if shop_name else None,
+                "first_order_only": first, "per_customer_limit": 1 if first else 3,
+                "valid_from": now - timedelta(days=1), "valid_until": now + timedelta(days=30), "is_active": True,
+            })
+
+    def _activity(self):
+        """Completed pickups (with reviews) by demo customers, spread over the last 3 days."""
+        customers = [
+            User.objects.get_or_create(phone=phone, defaults={"name": name, "role": User.Role.CUSTOMER, "is_phone_verified": True})[0]
+            for phone, name in CUSTOMERS
+        ]
+        now = timezone.now()
+        recent = DealReservation.objects.filter(
+            customer__phone__startswith="90000002", status="completed", completed_at__gte=now - timedelta(days=3)
+        ).count()
+        wanted = max(0, RECENT_PURCHASES_TARGET - recent)
+        deals = list(deal_services.live_deals().filter(shop__merchant__user__phone__startswith="90000001").select_related("shop"))
+        random.shuffle(deals)
+        made = 0
+        for deal in deals:
+            if made >= wanted:
+                break
+            customer = random.choice(customers)
+            quantity = Decimal("1") if deal.unit not in ("kg", "litre") else random.choice((Decimal("1"), Decimal("2")))
+            try:
+                with transaction.atomic():
+                    reservation = reservations.create_reservation(customer, deal.id, quantity)
+                    reservations.confirm(reservation)
+                    reservation = reservations.complete(reservation, reservation.pickup_code)
+                    when = now - timedelta(minutes=random.randint(30, 3 * 24 * 60))
+                    DealReservation.objects.filter(pk=reservation.pk).update(
+                        created_at=when - timedelta(minutes=20), confirmed_at=when - timedelta(minutes=15), completed_at=when
+                    )
+                    if random.random() < 0.7:
+                        rating, comment = random.choice(REVIEWS)
+                        reviews.create_review(customer, rating, comment, reservation=reservation)
+                made += 1
+            except BusinessRuleError:
+                continue  # sold out, or this customer already has it open: try the next deal
+        return made
