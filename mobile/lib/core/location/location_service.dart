@@ -33,14 +33,15 @@ Future<LatLng> currentLocation() async {
   }
 }
 
-/// A place picked on the map; null means "where I am".
-class ChosenPlaceController extends Notifier<LatLng?> {
-  @override
-  LatLng? build() => null;
+/// A place picked on the map (e.g. another city); null means "where I am".
+/// Kept outside Riverpod on purpose: watching a provider from inside locationProvider crashed the
+/// release (AOT) build on arm64 phones. Change it only through [chooseBrowseLocation].
+LatLng? _chosenPlace;
 
-  void choose(LatLng? place) => state = place;
+/// Browse near [place] (or near the phone again when null) and reload everything that depends on location.
+void chooseBrowseLocation(WidgetRef ref, LatLng? place) {
+  _chosenPlace = place;
+  ref.invalidate(locationProvider);
 }
 
-final chosenPlaceProvider = NotifierProvider<ChosenPlaceController, LatLng?>(ChosenPlaceController.new);
-
-final locationProvider = FutureProvider<LatLng>((ref) async => ref.watch(chosenPlaceProvider) ?? await currentLocation());
+final locationProvider = FutureProvider<LatLng>((ref) => _chosenPlace ?? currentLocation());

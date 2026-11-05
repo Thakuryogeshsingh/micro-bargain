@@ -700,14 +700,14 @@ Future<void> chooseBrowsePlace(BuildContext context, WidgetRef ref) async {
     ),
   );
   if (choice == 'gps') {
-    ref.read(chosenPlaceProvider.notifier).choose(null);
-    ref.invalidate(locationProvider);
+    chooseBrowseLocation(ref, null);
   } else if (choice == 'map' && context.mounted) {
     final here = ref.read(locationProvider).value;
     final place = await pickLocationOnMap(context, latitude: here?.latitude, longitude: here?.longitude, title: tr('कहाँ की दुकानें देखें?'));
     if (place == null) return;
-    ref.read(chosenPlaceProvider.notifier).choose(
-          LatLng(place.latitude, place.longitude, label: place.city.isEmpty ? tr('चुनी हुई जगह') : place.city),
-        );
+    chooseBrowseLocation(
+      ref,
+      LatLng(place.latitude, place.longitude, label: place.city.isEmpty ? tr('चुनी हुई जगह') : place.city),
+    );
   }
 }
