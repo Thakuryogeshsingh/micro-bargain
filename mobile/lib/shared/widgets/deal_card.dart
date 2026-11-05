@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/format.dart';
+import '../../features/customer/cart/cart_bar.dart';
 import '../models/models.dart';
 import 'common.dart';
 import 'motion.dart';
@@ -333,15 +334,7 @@ class DealGridCard extends StatelessWidget {
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.ink)),
                     ]),
                   ),
-                  Pressable(
-                    onTap: onAdd,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(color: AppTheme.primaryDark, shape: BoxShape.circle),
-                      child: const Icon(Icons.add_rounded, color: Colors.white),
-                    ),
-                  ),
+                  AddStepper(deal: deal, onAdd: onAdd),
                 ]),
               ]),
             ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/i18n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/format.dart';
+import '../../../shared/models/models.dart';
 import 'cart.dart';
 
 /// "3 items · ₹240 — View cart" strip shown at the bottom of customer screens whenever the cart has something.
@@ -89,4 +91,71 @@ class CartIconButton extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// "+" button on a deal card; once the deal is in the cart it becomes "− 2 +" to change the quantity there.
+class AddStepper extends ConsumerWidget {
+  const AddStepper({super.key, required this.deal, required this.onAdd});
+
+  final Deal deal;
+
+  /// Adds one step (also handles "another shop's items are in the cart").
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final line = ref.watch(cartProvider).where((l) => l.deal.id == deal.id).firstOrNull;
+    final step = (deal.unit == 'kg' || deal.unit == 'litre') ? 0.5 : 1.0;
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+      child: line == null
+          ? Material(
+              key: const ValueKey('add'),
+              color: AppTheme.primaryDark,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onAdd,
+                child: const SizedBox(width: 36, height: 36, child: Icon(Icons.add_rounded, color: Colors.white)),
+              ),
+            )
+          : Material(
+              key: const ValueKey('stepper'),
+              color: AppTheme.primaryDark,
+              borderRadius: BorderRadius.circular(18),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                _StepButton(
+                  icon: Icons.remove_rounded,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    final cart = ref.read(cartProvider.notifier);
+                    line.quantity - step <= 0 ? cart.remove(deal.id) : cart.add(deal, line.quantity - step);
+                  },
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 22),
+                  child: Text(qty(line.quantity),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                ),
+                _StepButton(icon: Icons.add_rounded, onTap: onAdd),
+              ]),
+            ),
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(width: 32, height: 36, child: Icon(icon, color: Colors.white, size: 20)),
+      );
 }
