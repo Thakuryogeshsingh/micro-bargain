@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -54,7 +55,11 @@ class MicroBargainApp extends ConsumerWidget {
             textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 0.9, maxScaleFactor: 1.15),
           ),
           // Rebuild everything when the phone switches between light and dark ("system" mode).
-          child: KeyedSubtree(key: ValueKey(brightness), child: child!),
+          // Status bar icons: dark on the light (white-header) screens, light in dark mode.
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: brightness == Brightness.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+            child: KeyedSubtree(key: ValueKey(brightness), child: child!),
+          ),
         );
       },
     );

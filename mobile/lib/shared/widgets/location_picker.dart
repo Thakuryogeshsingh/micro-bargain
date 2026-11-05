@@ -152,7 +152,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 44),
-              child: Icon(Icons.location_on_rounded, size: 48, color: AppTheme.accent, shadows: const [Shadow(blurRadius: 8, color: Colors.black38)]),
+              child: Icon(Icons.location_on_rounded, size: 48, color: AppTheme.accentInk, shadows: const [Shadow(blurRadius: 8, color: Colors.black38)]),
             ),
           ),
         ),
@@ -214,7 +214,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
-                    Icon(Icons.place_rounded, color: AppTheme.accent),
+                    Icon(Icons.place_rounded, color: AppTheme.accentInk),
                     const SizedBox(width: 8),
                     Expanded(
                       child: _looking

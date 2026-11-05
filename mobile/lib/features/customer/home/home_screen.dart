@@ -256,7 +256,7 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
             suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
               IconButton(
                 tooltip: tr('बोलकर खोजें'),
-                icon: Icon(Icons.mic_rounded, color: AppTheme.accent),
+                icon: Icon(Icons.mic_rounded, color: AppTheme.accentInk),
                 onPressed: () async {
                   final text = await listenOnce(context, hint: tr('जैसे: "टमाटर" या "दूध"'));
                   if (text == null || !mounted) return;
@@ -286,7 +286,7 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(16)),
-          child: const Icon(Icons.tune_rounded, color: Colors.white),
+          child: Icon(Icons.tune_rounded, color: AppTheme.onAccent),
         ),
       ),
     ]);
@@ -479,7 +479,7 @@ class _FilterRow extends ConsumerWidget {
                   key: ValueKey(count),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(12)),
-                  child: Text('$count', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                  child: Text('$count', style: TextStyle(color: AppTheme.onAccent, fontWeight: FontWeight.w800)),
                 ),
         ),
       ),
@@ -490,7 +490,7 @@ class _FilterRow extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ActionChip(
-              avatar: Icon(Icons.map_rounded, size: 18, color: AppTheme.accent),
+              avatar: Icon(Icons.map_rounded, size: 18, color: AppTheme.accentInk),
               label: Text(tr('नक्शा')),
               onPressed: () => context.push('/map'),
             ),

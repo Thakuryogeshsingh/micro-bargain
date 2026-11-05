@@ -98,7 +98,7 @@ class _Pin extends StatelessWidget {
             boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black26)],
           ),
           child: live && shop.maxDiscount != null
-              ? Text('${shop.maxDiscount!.round()}% OFF', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12))
+              ? Text('${shop.maxDiscount!.round()}% OFF', style: TextStyle(color: AppTheme.onAccent, fontWeight: FontWeight.w800, fontSize: 12))
               : const Icon(Icons.storefront_rounded, color: Colors.white, size: 16),
         ),
       ),

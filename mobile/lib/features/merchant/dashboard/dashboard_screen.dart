@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -44,6 +45,7 @@ class DashboardScreen extends ConsumerWidget {
             expandedHeight: 168,
             backgroundColor: AppTheme.minimal ? AppTheme.background : AppTheme.primaryDark,
             foregroundColor: AppTheme.minimal ? AppTheme.ink : Colors.white,
+            systemOverlayStyle: AppTheme.minimal ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
             title: Text(tr('डैशबोर्ड'), style: TextStyle(color: AppTheme.minimal ? AppTheme.ink : Colors.white)),
             actions: [
               IconTheme(data: IconThemeData(color: AppTheme.minimal ? AppTheme.ink : Colors.white), child: const NotificationBell()),

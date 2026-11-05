@@ -42,7 +42,7 @@ class ContactActions extends StatelessWidget {
       _Action(
         icon: Icons.directions_rounded,
         label: tr('रास्ता'),
-        color: AppTheme.accent,
+        color: AppTheme.accentInk,
         onTap: () => launchUrl(
           Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude'),
           mode: LaunchMode.externalApplication,

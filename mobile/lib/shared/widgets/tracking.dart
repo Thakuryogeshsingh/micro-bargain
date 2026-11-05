@@ -100,7 +100,7 @@ class _TrackingTimelineState extends State<TrackingTimeline> with SingleTickerPr
                               )),
                           if (steps[i].at != null)
                             Text(timeOnly(steps[i].at!), style: TextStyle(fontSize: 12, color: AppTheme.muted)),
-                          if (i == current) Text(tr('अभी यहाँ'), style: TextStyle(fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w700)),
+                          if (i == current) Text(tr('अभी यहाँ'), style: TextStyle(fontSize: 12, color: AppTheme.accentInk, fontWeight: FontWeight.w700)),
                         ]),
                       ),
                     ),

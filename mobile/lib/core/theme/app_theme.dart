@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// One colour theme the user can pick.
 class AppPalette {
@@ -49,6 +50,11 @@ class AppTheme {
   // Near-black buttons would vanish on the dark background, so dark mode uses the brand green there.
   static Color get primaryDark => dark && palette.key == 'fresh' ? palette.primary : palette.primaryDark;
   static Color get accent => palette.accent;
+  /// Accent for icons and text drawn on light backgrounds (the neon accent is unreadable on white).
+  static Color get accentInk => minimal ? const Color(0xFF00A344) : palette.accent;
+
+  /// Text/icons drawn on an accent-filled background.
+  static Color get onAccent => minimal ? Colors.black : Colors.white;
   static const Color deal = Color(0xFFF97316); // discount badges and offer prices stay warm orange
   static const Color featured = Color(0xFFF59E0B);
 
@@ -118,6 +124,7 @@ class AppTheme {
         backgroundColor: background,
         surfaceTintColor: Colors.transparent,
         foregroundColor: ink,
+        systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
         titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ink),
       ),
       cardTheme: CardThemeData(
