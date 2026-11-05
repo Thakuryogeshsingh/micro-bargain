@@ -37,3 +37,6 @@ Thumbs.db
 *.keystore
 mobile/android/key.properties
 
+
+# Server-side compose variables (DOMAIN, POSTGIS_IMAGE), written by deploy/setup_server.sh
+/.env

@@ -1,11 +1,13 @@
 # Production stack for one VPS: Caddy (automatic HTTPS) -> Gunicorn/Django, Celery worker + beat,
 # PostGIS and Redis on the private network only.
 #
-#   cp backend/.env.example backend/.env    # fill in real secrets (see README "Deploy")
-#   DOMAIN=api.example.com docker compose -f docker-compose.prod.yml up -d --build
+#   Easiest: deploy/setup_server.sh writes backend/.env and ./.env (DOMAIN, POSTGIS_IMAGE) and starts it.
+#   By hand: cp backend/.env.example backend/.env (real secrets), then
+#            DOMAIN=api.example.com docker compose -f docker-compose.prod.yml up -d --build
 services:
   db:
-    image: postgis/postgis:16-3.4
+    # Set POSTGIS_IMAGE=imresamu/postgis:16-3.4 on ARM servers (the official image is x86 only).
+    image: ${POSTGIS_IMAGE:-postgis/postgis:16-3.4}
     restart: unless-stopped
     env_file: ./backend/.env  # POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD create the database
     volumes:
