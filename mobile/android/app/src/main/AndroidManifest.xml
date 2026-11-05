@@ -41,6 +41,12 @@
                 <data android:scheme="microbargain" android:host="open"/>
             </intent-filter>
         </activity>
+        <!-- Crash report screen, in its own process so it still opens when the app itself has crashed. -->
+        <activity
+            android:name=".CrashActivity"
+            android:process=":crash"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
