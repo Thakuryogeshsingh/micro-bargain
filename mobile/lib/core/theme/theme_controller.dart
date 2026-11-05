@@ -5,7 +5,7 @@ import '../storage/prefs.dart';
 import 'app_theme.dart';
 
 class ThemeSettings {
-  const ThemeSettings({this.paletteKey = 'forest', this.mode = ThemeMode.system});
+  const ThemeSettings({this.paletteKey = 'fresh', this.mode = ThemeMode.system});
 
   final String paletteKey;
   final ThemeMode mode;
@@ -22,7 +22,7 @@ class ThemeController extends Notifier<ThemeSettings> {
     final palette = Prefs.get('theme_palette');
     final mode = Prefs.get('theme_mode');
     state = ThemeSettings(
-      paletteKey: palette ?? 'forest',
+      paletteKey: palette ?? 'fresh',
       mode: ThemeMode.values.firstWhere((m) => m.name == mode, orElse: () => ThemeMode.system),
     );
   }

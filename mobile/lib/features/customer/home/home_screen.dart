@@ -155,11 +155,13 @@ class _Header extends ConsumerWidget {
     final user = ref.watch(sessionProvider).user;
     final filters = ref.watch(dealFiltersProvider);
     final location = ref.watch(locationProvider);
+    final minimal = AppTheme.minimal;
+    final fg = minimal ? AppTheme.ink : Colors.white;
+    final bubble = minimal ? AppTheme.chip : Colors.white.withValues(alpha: 0.15);
     return Container(
-      decoration: BoxDecoration(
-        gradient: AppTheme.heroGradient,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
+      decoration: minimal
+          ? BoxDecoration(color: AppTheme.background)
+          : BoxDecoration(gradient: AppTheme.heroGradient, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32))),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -171,8 +173,8 @@ class _Header extends ConsumerWidget {
                 child: Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.location_on_rounded, color: Colors.white),
+                  decoration: BoxDecoration(color: bubble, borderRadius: BorderRadius.circular(14)),
+                  child: Icon(Icons.location_on_rounded, color: minimal ? AppTheme.primary : Colors.white),
                 ),
               ),
               const SizedBox(width: 12),
@@ -180,7 +182,7 @@ class _Header extends ConsumerWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(tr('नमस्ते, {0}', [user?.name.split(' ').first ?? '']),
                       maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
+                      style: TextStyle(color: fg.withValues(alpha: minimal ? 0.55 : 0.85), fontSize: 13)),
                   Text(
                     location.value?.label != null
                         ? '${location.value!.label} ▾'
@@ -189,20 +191,25 @@ class _Header extends ConsumerWidget {
                             : plain(tr('📍 आपके आस-पास {0}', [distance(filters.radius)])),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+                    style: TextStyle(color: fg, fontSize: 16, fontWeight: FontWeight.w900),
                   ),
                 ]),
               ),
               Container(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
-                child: const IconTheme(data: IconThemeData(color: Colors.white), child: NotificationBell()),
+                decoration: BoxDecoration(color: bubble, borderRadius: BorderRadius.circular(14)),
+                child: IconTheme(data: IconThemeData(color: fg), child: const NotificationBell()),
               ),
               const SizedBox(width: 8),
               Container(
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
-                child: const CartIconButton(color: Colors.white),
+                decoration: BoxDecoration(color: bubble, borderRadius: BorderRadius.circular(14)),
+                child: CartIconButton(color: fg),
               ),
             ]),
+            if (minimal) ...[
+              const SizedBox(height: 18),
+              Text(tr('सबसे सस्ता,\nसबसे पास।'),
+                  style: TextStyle(fontSize: 32, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -1.2, color: AppTheme.ink)),
+            ],
             const SizedBox(height: 18),
             _SearchBar(initial: filters.query),
           ]),
@@ -237,6 +244,8 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
           onSubmitted: _search,
           decoration: InputDecoration(
             hintText: tr('सब्ज़ी, फल, दूध, दुकान खोजें…'),
+            filled: true,
+            fillColor: AppTheme.minimal ? AppTheme.chip : null,
             prefixIcon: Icon(Icons.search_rounded, color: AppTheme.muted),
             isDense: true,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
@@ -331,7 +340,7 @@ class _OfferBannersState extends ConsumerState<_OfferBanners> {
                 margin: const EdgeInsets.symmetric(horizontal: 6),
                 padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: _gradients[i % _gradients.length]),
+                  gradient: AppTheme.minimal ? AppTheme.heroGradient : LinearGradient(colors: _gradients[i % _gradients.length]),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: AppTheme.softShadow(0.12),
                 ),
@@ -348,13 +357,16 @@ class _OfferBannersState extends ConsumerState<_OfferBanners> {
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                        decoration: BoxDecoration(color: AppTheme.minimal ? AppTheme.accent : Colors.white, borderRadius: BorderRadius.circular(20)),
                         child: Text(o['code'],
-                            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2, color: _gradients[i % _gradients.length][0])),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2,
+                                color: AppTheme.minimal ? Colors.black : _gradients[i % _gradients.length][0])),
                       ),
                     ]),
                   ),
-                  Icon(Icons.local_offer_rounded, size: 52, color: Colors.white.withValues(alpha: 0.85)),
+                  Icon(Icons.local_offer_rounded, size: 52, color: AppTheme.minimal ? AppTheme.accent : Colors.white.withValues(alpha: 0.85)),
                 ]),
               ),
             );

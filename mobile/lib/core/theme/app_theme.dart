@@ -22,7 +22,9 @@ class AppPalette {
 
 // i18n:off (palette names are translated where shown)
 const palettes = [
-  // Default: deep green on cream, like the reference design.
+  // Default: Fresh Minimal - white, near-black type, one neon-green accent.
+  AppPalette(key: 'fresh', label: 'फ़्रेश (सफ़ेद)', primary: Color(0xFF0A8F3C), primaryDark: Color(0xFF0A0A0A), accent: Color(0xFF00E676), background: Color(0xFFFFFFFF)),
+  // Deep green on cream, like the first reference design.
   AppPalette(key: 'forest', label: 'जंगल हरा', primary: Color(0xFF1F6B4F), primaryDark: Color(0xFF0F3D2E), accent: Color(0xFFF5A524), background: Color(0xFFF7F4EC)),
   AppPalette(key: 'ocean', label: 'समुद्री नीला', primary: Color(0xFF2563EB), primaryDark: Color(0xFF1E3A8A), accent: Color(0xFFF97316), background: Color(0xFFF2F5FB)),
   AppPalette(key: 'sunset', label: 'सूर्यास्त', primary: Color(0xFFE4572E), primaryDark: Color(0xFF8C2A12), accent: Color(0xFF14B8A6), background: Color(0xFFFDF4EE)),
@@ -40,23 +42,25 @@ class AppTheme {
   static AppPalette palette = palettes.first;
   static bool dark = false;
 
+  /// The Fresh Minimal look (light mode): white surfaces, hairline borders instead of shadows.
+  static bool get minimal => palette.key == 'fresh' && !dark;
+
   static Color get primary => palette.primary;
-  static Color get primaryDark => palette.primaryDark;
+  // Near-black buttons would vanish on the dark background, so dark mode uses the brand green there.
+  static Color get primaryDark => dark && palette.key == 'fresh' ? palette.primary : palette.primaryDark;
   static Color get accent => palette.accent;
   static const Color deal = Color(0xFFF97316); // discount badges and offer prices stay warm orange
   static const Color featured = Color(0xFFF59E0B);
 
   static Color get background => dark ? const Color(0xFF0F1412) : palette.background;
   static Color get card => dark ? const Color(0xFF1A201E) : Colors.white;
-  static Color get chip => dark ? const Color(0xFF252C29) : const Color(0xFFF1F1EC);
-  static Color get ink => dark ? const Color(0xFFF1F3F2) : const Color(0xFF17201C);
-  static Color get muted => dark ? const Color(0xFFA7B0AC) : const Color(0xFF6B7470);
+  static Color get chip => dark ? const Color(0xFF252C29) : minimal ? const Color(0xFFF3F4F6) : const Color(0xFFF1F1EC);
+  static Color get ink => dark ? const Color(0xFFF1F3F2) : minimal ? const Color(0xFF0A0A0A) : const Color(0xFF17201C);
+  static Color get muted => dark ? const Color(0xFFA7B0AC) : minimal ? const Color(0xFF6B6B6B) : const Color(0xFF6B7470);
 
-  static LinearGradient get heroGradient => LinearGradient(
-        colors: [palette.primaryDark, palette.primary],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+  static LinearGradient get heroGradient => minimal
+      ? const LinearGradient(colors: [Color(0xFF0A0A0A), Color(0xFF262626)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+      : LinearGradient(colors: [palette.primaryDark, palette.primary], begin: Alignment.topLeft, end: Alignment.bottomRight);
 
   static const LinearGradient dealGradient = LinearGradient(
     colors: [Color(0xFFFF8A00), Color(0xFFFF3D54)],
@@ -66,7 +70,10 @@ class AppTheme {
 
   static List<BoxShadow> softShadow([double opacity = 0.08]) => dark
       ? const []
-      : [BoxShadow(color: Colors.black.withValues(alpha: opacity), blurRadius: 20, offset: const Offset(0, 8))];
+      : minimal
+          // A 1 px hairline instead of a soft shadow keeps white cards visible on the white background.
+          ? const [BoxShadow(color: Color(0x17000000), spreadRadius: 1)]
+          : [BoxShadow(color: Colors.black.withValues(alpha: opacity), blurRadius: 20, offset: const Offset(0, 8))];
 
   static final BorderRadius radius = BorderRadius.circular(20);
 
@@ -74,7 +81,8 @@ class AppTheme {
     final isDark = brightness == Brightness.dark;
     final background = isDark ? const Color(0xFF0F1412) : p.background;
     final surface = isDark ? const Color(0xFF1A201E) : Colors.white;
-    final ink = isDark ? const Color(0xFFF1F3F2) : const Color(0xFF17201C);
+    final fresh = p.key == 'fresh' && !isDark;
+    final ink = isDark ? const Color(0xFFF1F3F2) : fresh ? const Color(0xFF0A0A0A) : const Color(0xFF17201C);
     final line = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.07);
     final scheme = ColorScheme.fromSeed(
       seedColor: p.primary,
@@ -90,6 +98,15 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
       splashFactory: InkSparkle.splashFactory,
+      // Fresh Minimal: heavier, tighter headings.
+      textTheme: fresh
+          ? const TextTheme(
+              headlineMedium: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.8),
+              headlineSmall: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.6),
+              titleLarge: TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+              titleMedium: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.2),
+            )
+          : null,
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),

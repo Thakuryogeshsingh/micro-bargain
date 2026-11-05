@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/i18n.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
@@ -80,15 +81,20 @@ class CollectionTiles extends StatelessWidget {
               child: Container(
                 width: 120,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: AppTheme.minimal
+                    ? BoxDecoration(color: AppTheme.chip, borderRadius: BorderRadius.circular(20))
+                    : BoxDecoration(
+                        gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Icon(icon, size: 30, color: Colors.white),
+                  AppTheme.minimal
+                      ? CircleAvatar(radius: 18, backgroundColor: AppTheme.accent, child: Icon(icon, size: 20, color: Colors.black))
+                      : Icon(icon, size: 30, color: Colors.white),
                   Text(title,
                       maxLines: 2,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, height: 1.15)),
+                      style: TextStyle(
+                          color: AppTheme.minimal ? AppTheme.ink : Colors.white, fontWeight: FontWeight.w900, fontSize: 14, height: 1.15)),
                 ]),
               ),
             ),

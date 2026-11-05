@@ -61,8 +61,9 @@ class CartBar extends ConsumerWidget {
                           ),
                         ]),
                       ),
-                      Text(tr('कार्ट देखें'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                      const Icon(Icons.chevron_right_rounded, color: Colors.white),
+                      Text(tr('कार्ट देखें'),
+                          style: TextStyle(color: AppTheme.minimal ? AppTheme.accent : Colors.white, fontWeight: FontWeight.w900)),
+                      Icon(Icons.chevron_right_rounded, color: AppTheme.minimal ? AppTheme.accent : Colors.white),
                     ]),
                   ),
                 ),
@@ -106,27 +107,30 @@ class AddStepper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final line = ref.watch(cartProvider).where((l) => l.deal.id == deal.id).firstOrNull;
     final step = (deal.unit == 'kg' || deal.unit == 'litre') ? 0.5 : 1.0;
+    final fill = AppTheme.minimal ? AppTheme.accent : AppTheme.primaryDark;
+    final on = AppTheme.minimal ? Colors.black : Colors.white;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
       child: line == null
           ? Material(
               key: const ValueKey('add'),
-              color: AppTheme.primaryDark,
+              color: fill,
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: onAdd,
-                child: const SizedBox(width: 36, height: 36, child: Icon(Icons.add_rounded, color: Colors.white)),
+                child: SizedBox(width: 36, height: 36, child: Icon(Icons.add_rounded, color: on)),
               ),
             )
           : Material(
               key: const ValueKey('stepper'),
-              color: AppTheme.primaryDark,
+              color: fill,
               borderRadius: BorderRadius.circular(18),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 _StepButton(
                   icon: Icons.remove_rounded,
+                  color: on,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     final cart = ref.read(cartProvider.notifier);
@@ -137,9 +141,9 @@ class AddStepper extends ConsumerWidget {
                   constraints: const BoxConstraints(minWidth: 22),
                   child: Text(qty(line.quantity),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                      style: TextStyle(color: on, fontWeight: FontWeight.w900, fontSize: 15)),
                 ),
-                _StepButton(icon: Icons.add_rounded, onTap: onAdd),
+                _StepButton(icon: Icons.add_rounded, color: on, onTap: onAdd),
               ]),
             ),
     );
@@ -147,15 +151,16 @@ class AddStepper extends ConsumerWidget {
 }
 
 class _StepButton extends StatelessWidget {
-  const _StepButton({required this.icon, required this.onTap});
+  const _StepButton({required this.icon, required this.color, required this.onTap});
 
   final IconData icon;
+  final Color color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: SizedBox(width: 32, height: 36, child: Icon(icon, color: Colors.white, size: 20)),
+        child: SizedBox(width: 32, height: 36, child: Icon(icon, color: color, size: 20)),
       );
 }
