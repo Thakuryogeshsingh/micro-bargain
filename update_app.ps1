@@ -42,4 +42,4 @@ Write-Host "Ab sabke phone par update bhejne ke liye:" -ForegroundColor Yellow
 Write-Host "  1. $apk ko Google Drive par upload karein -> Share -> 'Anyone with the link'"
 Write-Host "  2. https://micro-bargain-api.onrender.com/admin/releases/apprelease/add/ kholein"
 Write-Host "     Version code: $build     Version name: $name     APK URL: (Drive ka link)"
-Write-Host "  3. Save karein - sabke app mein 'नया अपडेट उपलब्ध है' aa jayega"
+Write-Host "  3. Save karein - sabke app mein update ka popup aa jayega"
