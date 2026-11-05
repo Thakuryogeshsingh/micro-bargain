@@ -104,7 +104,9 @@ class NearbyShopsView(generics.ListAPIView):
 class ShopDetailView(generics.RetrieveAPIView):
     serializer_class = PublicShopSerializer
     permission_classes = [AllowAny]
-    queryset = Shop.objects.filter(status=Shop.Status.APPROVED).select_related("category")
+    def get_queryset(self):
+        # Built per request: the deal stats depend on the current time.
+        return services.with_deal_stats(Shop.objects.filter(status=Shop.Status.APPROVED).select_related("category"))
 
     def get_serializer_context(self):
         return {**super().get_serializer_context(), "favorite_ids": _favorite_ids(self.request)}

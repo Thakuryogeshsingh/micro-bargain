@@ -50,8 +50,8 @@ class _ShopForm extends ConsumerStatefulWidget {
 class _ShopFormState extends ConsumerState<_ShopForm> {
   final _form = GlobalKey<FormState>();
   late final Map<String, TextEditingController> _text = {
-    for (final key in ['name', 'phone', 'address_line', 'landmark', 'city', 'pincode', 'description'])
-      key: TextEditingController(text: widget.shop?[key]?.toString() ?? (key == 'city' ? 'Bharatpur' : '')),
+    for (final key in ['name', 'phone', 'address_line', 'landmark', 'city', 'pincode', 'description', 'prep_minutes'])
+      key: TextEditingController(text: widget.shop?[key]?.toString() ?? {'city': 'Bharatpur', 'prep_minutes': '15'}[key] ?? ''),
   };
   late int? _category = widget.shop?['category'];
   late bool _delivery = widget.shop?['offers_delivery'] ?? false;
@@ -172,6 +172,13 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
           ),
         ]),
         TextFormField(controller: _text['description'], maxLines: 2, decoration: InputDecoration(labelText: tr('दुकान के बारे में'))),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _text['prep_minutes'],
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(labelText: tr('ऑर्डर कितने मिनट में तैयार होता है?'), suffixText: tr('मिनट')),
+        ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _locate,

@@ -36,6 +36,10 @@ class ShopSummary {
     this.categoryName = '',
     this.offersDelivery = false,
     this.coverImage,
+    this.liveDealsCount = 0,
+    this.maxDiscount,
+    this.prepMinutes = 15,
+    this.categoryId,
   });
 
   factory ShopSummary.fromJson(Map<String, dynamic> j) => ShopSummary(
@@ -52,6 +56,10 @@ class ShopSummary {
         categoryName: j['category_name'] ?? '',
         offersDelivery: j['offers_delivery'] ?? false,
         coverImage: j['cover_image'],
+        liveDealsCount: j['live_deals_count'] ?? 0,
+        maxDiscount: j['max_discount'] == null ? null : _d(j['max_discount']),
+        prepMinutes: j['prep_minutes'] ?? 15,
+        categoryId: j['category'] is int ? j['category'] : null,
       );
 
   final int id;
@@ -67,6 +75,10 @@ class ShopSummary {
   final String categoryName;
   final bool offersDelivery;
   final String? coverImage;
+  final int liveDealsCount;
+  final double? maxDiscount;
+  final int prepMinutes;
+  final int? categoryId;
 }
 
 class Deal {

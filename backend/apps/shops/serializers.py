@@ -17,7 +17,7 @@ class ShopWriteSerializer(serializers.ModelSerializer):
         fields = [
             "name", "description", "category", "phone", "cover_image",
             "address_line", "landmark", "city", "state", "pincode", "latitude", "longitude",
-            "opening_time", "closing_time", "offers_pickup", "offers_delivery", "is_temporarily_closed",
+            "opening_time", "closing_time", "prep_minutes", "offers_pickup", "offers_delivery", "is_temporarily_closed",
         ]
 
     def validate(self, attrs):
@@ -41,7 +41,7 @@ class ShopSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "description", "category", "category_name", "phone", "cover_image",
             "address_line", "landmark", "city", "state", "pincode", "latitude", "longitude",
-            "opening_time", "closing_time", "offers_pickup", "offers_delivery", "is_temporarily_closed",
+            "opening_time", "closing_time", "prep_minutes", "offers_pickup", "offers_delivery", "is_temporarily_closed",
             "status", "rejection_reason", "rating_avg", "rating_count", "created_at",
         ]
         read_only_fields = fields
@@ -55,14 +55,17 @@ class PublicShopSerializer(serializers.ModelSerializer):
     longitude = serializers.FloatField(read_only=True)
     distance_m = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
+    # Present when the query added deal stats (nearby list, shop page).
+    live_deals_count = serializers.IntegerField(read_only=True, default=0)
+    max_discount = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True, default=None)
 
     class Meta:
         model = Shop
         fields = [
             "id", "name", "description", "category", "category_name", "phone", "cover_image",
             "address_line", "landmark", "city", "pincode", "latitude", "longitude",
-            "opening_time", "closing_time", "offers_pickup", "offers_delivery",
-            "rating_avg", "rating_count", "distance_m", "is_favorite",
+            "opening_time", "closing_time", "prep_minutes", "offers_pickup", "offers_delivery",
+            "rating_avg", "rating_count", "distance_m", "is_favorite", "live_deals_count", "max_discount",
         ]
 
     def get_distance_m(self, obj) -> int | None:

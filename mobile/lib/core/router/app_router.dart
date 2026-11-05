@@ -9,6 +9,7 @@ import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/customer/bookings/booking_detail_screens.dart';
 import '../../features/customer/cart/cart_screen.dart';
 import '../../features/customer/customer_shell.dart';
+import '../../features/customer/deals/collection_screen.dart';
 import '../../features/customer/deals/deal_detail_screen.dart';
 import '../../features/customer/offers/offers.dart';
 import '../../features/customer/profile/profile_screens.dart';
@@ -112,6 +113,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/reservation/:id', builder: (_, state) => ReservationDetailScreen(id: _id(state))),
       GoRoute(path: '/order/:id', builder: (_, state) => OrderDetailScreen(id: _id(state))),
       GoRoute(path: '/favorites', builder: (_, _) => const FavoritesScreen()),
+      GoRoute(
+        path: '/collection',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return CollectionScreen(title: extra['title'] as String, query: extra['query'] as String);
+        },
+      ),
       GoRoute(path: '/referral', builder: (_, _) => const ReferralScreen()),
       GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
       GoRoute(path: '/addresses/new', builder: (_, _) => const AddressFormScreen()),

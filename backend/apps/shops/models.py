@@ -29,6 +29,7 @@ class Shop(TimeStampedModel):
 
     opening_time = models.TimeField(null=True, blank=True)
     closing_time = models.TimeField(null=True, blank=True)
+    prep_minutes = models.PositiveSmallIntegerField(default=15, help_text="Usual time to get an order ready")
     offers_pickup = models.BooleanField(default=True)
     offers_delivery = models.BooleanField(default=False)
     is_temporarily_closed = models.BooleanField(default=False)

@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
+from django.db.models import Count, F, Max, Q
 from django.utils import timezone
 
 from apps.audit.services import record
@@ -54,6 +55,16 @@ def review_shop(shop, reviewer, approve, reason=""):
     return shop
 
 
+def with_deal_stats(qs):
+    """Adds live_deals_count and max_discount (over deals a customer can buy right now)."""
+    now = timezone.now()
+    live = (
+        Q(deals__status="active", deals__starts_at__lte=now, deals__expires_at__gt=now)
+        & Q(deals__quantity_total__gt=F("deals__quantity_reserved") + F("deals__quantity_sold"))
+    )
+    return qs.annotate(live_deals_count=Count("deals", filter=live, distinct=True), max_discount=Max("deals__discount_percent", filter=live))
+
+
 def nearby_shops(latitude, longitude, radius_m, category=None):
     """Live shops within radius_m metres, nearest first. Filtering and sorting run in PostGIS."""
     point = make_point(latitude, longitude)
@@ -65,8 +76,9 @@ def nearby_shops(latitude, longitude, radius_m, category=None):
         )
         .select_related("category")
         .annotate(distance=Distance("location", point))
-        .order_by("distance")
     )
+    # Shops with something to buy right now come first, nearest first within each group.
+    qs = with_deal_stats(qs).order_by(F("live_deals_count").desc(nulls_last=True), "distance")
     if category:
         qs = qs.filter(category_id=category)
     return qs

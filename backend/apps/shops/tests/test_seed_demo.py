@@ -30,3 +30,14 @@ class TestSeedDemo:
         settings.SEED_DEMO = False
         refresh_demo_deals()
         assert not Shop.objects.exists()
+
+
+@pytest.mark.django_db
+def test_nearby_shops_show_deal_stats_and_shops_with_deals_first(api_client, merchant_shop):
+    call_command("seed_demo")
+    merchant_shop(lat=27.2063, lng=77.4972, name="Empty Shop")  # nearest, but no deals
+    data = api_client.get("/api/v1/shops/nearby/", {"latitude": 27.2063, "longitude": 77.4972, "radius": 5000}).data["results"]
+    assert data[0]["live_deals_count"] > 0 and data[0]["max_discount"] is not None
+    assert data[-1]["name"] == "Empty Shop" and data[-1]["live_deals_count"] == 0
+    detail = api_client.get(f"/api/v1/shops/{data[0]['id']}/").data
+    assert detail["live_deals_count"] == data[0]["live_deals_count"] and detail["prep_minutes"] == 15

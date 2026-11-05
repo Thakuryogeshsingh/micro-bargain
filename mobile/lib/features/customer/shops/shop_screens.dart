@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +8,12 @@ import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/contact_actions.dart';
 import '../../../shared/widgets/deal_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/shop_card.dart';
+import '../../../shared/widgets/motion.dart';
+import '../../../shared/widgets/visuals.dart';
 import '../customer_providers.dart';
+import '../home/home_screen.dart';
 import '../../../core/i18n/i18n.dart';
 
 class ShopScreen extends ConsumerWidget {
@@ -20,63 +26,155 @@ class ShopScreen extends ConsumerWidget {
     return AsyncView(
       value: ref.watch(shopProvider(id)),
       onRetry: () => ref.invalidate(shopProvider(id)),
-      data: (shop) => Scaffold(
-        appBar: AppBar(title: Text(shop.name), actions: [
-          IconButton(
-            tooltip: tr('पसंदीदा'),
-            icon: Icon(shop.isFavorite ? Icons.favorite : Icons.favorite_border, color: Colors.red),
-            onPressed: () async {
-              final api = ref.read(apiProvider);
-              final ok = await runAction(context, () async {
-                shop.isFavorite ? await api.delete('/shops/$id/favorite/') : await api.post('/shops/$id/favorite/');
-              }, success: shop.isFavorite ? tr('पसंदीदा से हटाया') : tr('पसंदीदा में जोड़ा — नई डील पर सूचना मिलेगी'));
-              if (ok) {
-                ref.invalidate(shopProvider(id));
-                ref.invalidate(favoritesProvider);
-              }
-            },
-          ),
-        ]),
-        body: ListView(children: [
-          ListTile(
-            title: Text(shop.categoryName),
-            subtitle: Text(shop.address),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: ContactActions(phone: shop.phone, latitude: shop.latitude, longitude: shop.longitude),
-          ),
-          if (shop.ratingCount > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: [Stars(shop.rating), Text(tr('  {0} ({1} रिव्यू)', [shop.rating.toStringAsFixed(1), shop.ratingCount]))]),
-            ),
-          SectionTitle(tr('अभी की डील')),
-          AsyncView(
-            value: ref.watch(shopDealsProvider(id)),
-            data: (deals) => deals.isEmpty
-                ? Padding(padding: const EdgeInsets.all(16), child: Text(tr('अभी कोई लाइव डील नहीं।')))
-                : Column(children: [for (final d in deals) DealCard(deal: d, onTap: () => context.push('/deal/${d.id}'))]),
-          ),
-          SectionTitle(tr('रिव्यू')),
-          AsyncView(
-            value: ref.watch(shopReviewsProvider(id)),
-            data: (reviews) => reviews.isEmpty
-                ? Padding(padding: const EdgeInsets.all(16), child: Text(tr('अभी कोई रिव्यू नहीं।')))
-                : Column(children: [
-                    for (final r in reviews)
-                      ListTile(
-                        leading: Stars(r.rating, size: 14),
-                        title: Text(r.comment.isEmpty ? '—' : r.comment),
-                        subtitle: Text('${r.customerName} · ${dateTime(r.createdAt)}${r.reply.isEmpty ? '' : tr('\nदुकान: {0}', [r.reply])}'),
+      data: (shop) {
+        Future<void> toggleFavorite() async {
+          final api = ref.read(apiProvider);
+          final ok = await runAction(context, () async {
+            shop.isFavorite ? await api.delete('/shops/$id/favorite/') : await api.post('/shops/$id/favorite/');
+          }, success: shop.isFavorite ? tr('पसंदीदा से हटाया') : tr('पसंदीदा में जोड़ा — नई डील पर सूचना मिलेगी'));
+          if (ok) {
+            ref.invalidate(shopProvider(id));
+            ref.invalidate(favoritesProvider);
+          }
+        }
+
+        final (_, pastel) = productLook(shop.name, shop.categoryName);
+        return Scaffold(
+          body: CustomScrollView(slivers: [
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: 220,
+              backgroundColor: AppTheme.primaryDark,
+              foregroundColor: Colors.white,
+              title: Text(shop.name, style: const TextStyle(color: Colors.white)),
+              actions: [
+                IconButton(
+                  tooltip: tr('पसंदीदा'),
+                  icon: Icon(shop.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: shop.isFavorite ? const Color(0xFFFF4D6D) : Colors.white),
+                  onPressed: toggleFavorite,
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(fit: StackFit.expand, children: [
+                  Hero(
+                    tag: 'shop-cover-${shop.id}',
+                    child: shop.coverImage != null
+                        ? CachedNetworkImage(imageUrl: shop.coverImage!, fit: BoxFit.cover)
+                        : Container(color: pastel, alignment: Alignment.center, child: const Text('🏪', style: TextStyle(fontSize: 80))),
+                  ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.black45, Colors.transparent, Colors.black54],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                       ),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Expanded(
+                      child: Text(shop.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppTheme.ink)),
+                    ),
+                    RatingBadge(shop.rating, count: shop.ratingCount),
                   ]),
-          ),
-          const SizedBox(height: 24),
-        ]),
-      ),
+                  const SizedBox(height: 4),
+                  Text('${shop.categoryName} · ${shop.address}', style: TextStyle(color: AppTheme.muted)),
+                  const SizedBox(height: 12),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    _InfoPill(icon: Icons.bolt_rounded, text: tr('{0} मिनट', [shop.prepMinutes]), color: const Color(0xFFF59E0B)),
+                    if (shop.distanceM != null)
+                      _InfoPill(icon: Icons.near_me_rounded, text: distance(shop.distanceM), color: AppTheme.primary),
+                    if (shop.liveDealsCount > 0)
+                      _InfoPill(
+                        icon: Icons.local_fire_department_rounded,
+                        text: tr('{0} डील लाइव', [shop.liveDealsCount]),
+                        color: AppTheme.deal,
+                      ),
+                    if (shop.offersDelivery)
+                      _InfoPill(icon: Icons.delivery_dining_rounded, text: tr('होम डिलीवरी'), color: const Color(0xFF2563EB)),
+                  ]),
+                  const SizedBox(height: 14),
+                  ContactActions(phone: shop.phone, latitude: shop.latitude, longitude: shop.longitude),
+                ]),
+              ),
+            ),
+            SliverToBoxAdapter(child: SectionTitle(tr('अभी की डील'))),
+            ref.watch(shopDealsProvider(id)).when(
+                  loading: () => const SliverToBoxAdapter(child: DealListSkeleton(count: 2)),
+                  error: (e, _) => SliverToBoxAdapter(child: ErrorView(message: e.toString())),
+                  data: (deals) => deals.isEmpty
+                      ? SliverToBoxAdapter(
+                          child: Padding(padding: const EdgeInsets.all(16), child: Text(tr('अभी कोई लाइव डील नहीं।'))),
+                        )
+                      : SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid.builder(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 14,
+                              crossAxisSpacing: 14,
+                              childAspectRatio: 0.66,
+                            ),
+                            itemCount: deals.length,
+                            itemBuilder: (_, i) => DealGridCard(
+                              deal: deals[i],
+                              index: i,
+                              onAdd: () => quickAdd(context, ref, deals[i]),
+                              onTap: () => context.push('/deal/${deals[i].id}'),
+                            ),
+                          ),
+                        ),
+                ),
+            SliverToBoxAdapter(child: SectionTitle(tr('रिव्यू'))),
+            SliverToBoxAdapter(
+              child: AsyncView(
+                value: ref.watch(shopReviewsProvider(id)),
+                data: (reviews) => reviews.isEmpty
+                    ? Padding(padding: const EdgeInsets.all(16), child: Text(tr('अभी कोई रिव्यू नहीं।')))
+                    : Column(children: [
+                        for (final r in reviews)
+                          ListTile(
+                            leading: Stars(r.rating, size: 14),
+                            title: Text(r.comment.isEmpty ? '—' : r.comment),
+                            subtitle: Text(
+                                '${r.customerName} · ${dateTime(r.createdAt)}${r.reply.isEmpty ? '' : tr('\nदुकान: {0}', [r.reply])}'),
+                          ),
+                      ]),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          ]),
+        );
+      },
     );
   }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({required this.icon, required this.text, required this.color});
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 13)),
+        ]),
+      );
 }
 
 class FavoritesScreen extends ConsumerWidget {

@@ -100,3 +100,32 @@ final addressesProvider = FutureProvider.autoDispose<List<Address>>((ref) async 
 final customerProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   return Map<String, dynamic>.from(await ref.watch(apiProvider).get('/customers/profile/'));
 });
+
+/// Shops near the customer (Zomato-style list): shops with live deals first.
+final nearbyShopsProvider = FutureProvider.autoDispose<List<ShopSummary>>((ref) async {
+  final here = await ref.watch(locationProvider.future);
+  final filters = ref.watch(dealFiltersProvider);
+  final results = await ref.watch(apiProvider).list('/shops/nearby/', query: {
+    'latitude': here.latitude.toStringAsFixed(6),
+    'longitude': here.longitude.toStringAsFixed(6),
+    'radius': filters.radius,
+    'category': filters.category,
+    'page_size': 50,
+  });
+  return [for (final s in results) ShopSummary.fromJson(s)];
+});
+
+/// Deals for a collection screen. Key: "sort=discount&max_price=50" (query string).
+final collectionDealsProvider = FutureProvider.autoDispose.family<List<Deal>, String>((ref, key) async {
+  final here = await ref.watch(locationProvider.future);
+  final filters = ref.watch(dealFiltersProvider);
+  final results = await ref.watch(apiProvider).list('/deals/nearby/', query: {
+    'latitude': here.latitude.toStringAsFixed(6),
+    'longitude': here.longitude.toStringAsFixed(6),
+    'radius': filters.radius,
+    'category': filters.category,
+    'page_size': 60,
+    ...Uri.splitQueryString(key),
+  });
+  return [for (final d in results) Deal.fromJson(d)];
+});

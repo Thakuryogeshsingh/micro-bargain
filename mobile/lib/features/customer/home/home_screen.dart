@@ -18,7 +18,9 @@ import '../../../shared/widgets/motion.dart';
 import '../../notifications/notifications_screen.dart';
 import '../cart/cart.dart';
 import '../customer_providers.dart';
+import '../deals/collection_screen.dart';
 import '../offers/offers.dart';
+import '../../../shared/widgets/shop_card.dart';
 
 // i18n:off (translated where used)
 const _sorts = {
@@ -73,14 +75,16 @@ class HomeScreen extends ConsumerWidget {
     final cartTotal = cart.fold<double>(0, (s, l) => s + l.total);
     final favoriteShops = {for (final s in ref.watch(favoritesProvider).value ?? <ShopSummary>[]) s.id};
 
-    Future<void> toggleFavorite(Deal deal) async {
+    Future<void> toggleFavorite(int shopId, bool isFav) async {
       final api = ref.read(apiProvider);
-      final isFav = favoriteShops.contains(deal.shop.id);
       HapticFeedback.lightImpact();
       final ok = await runAction(context, () async {
-        isFav ? await api.delete('/shops/${deal.shop.id}/favorite/') : await api.post('/shops/${deal.shop.id}/favorite/');
+        isFav ? await api.delete('/shops/$shopId/favorite/') : await api.post('/shops/$shopId/favorite/');
       }, success: isFav ? tr('पसंदीदा से हटाया') : tr('पसंदीदा में जोड़ा — नई डील पर सूचना मिलेगी'));
-      if (ok) ref.invalidate(favoritesProvider);
+      if (ok) {
+        ref.invalidate(favoritesProvider);
+        ref.invalidate(nearbyShopsProvider);
+      }
     }
 
     return Scaffold(
@@ -100,7 +104,8 @@ class HomeScreen extends ConsumerWidget {
           ref.invalidate(locationProvider);
           ref.invalidate(bannersProvider);
           ref.invalidate(offersProvider(null));
-          await ref.read(nearbyDealsProvider.future);
+          ref.invalidate(collectionDealsProvider('sort=discount'));
+          await ref.read(nearbyShopsProvider.future);
         },
         child: CustomScrollView(slivers: [
           const SliverToBoxAdapter(child: _Header()),
@@ -108,41 +113,31 @@ class HomeScreen extends ConsumerWidget {
           const SliverToBoxAdapter(child: _Banners()),
           SliverToBoxAdapter(child: _SectionTitle(tr('कैटेगरी'))),
           const SliverToBoxAdapter(child: _CategoryPills()),
+          SliverToBoxAdapter(child: _SectionTitle('✨ ${tr('आपके लिए खास')}')),
+          const SliverToBoxAdapter(child: CollectionTiles()),
+          const SliverToBoxAdapter(child: _TopDeals()),
           const SliverToBoxAdapter(child: _FilterRow()),
-          ref.watch(nearbyDealsProvider).when(
+          ref.watch(nearbyShopsProvider).when(
                 loading: () => const SliverToBoxAdapter(child: DealListSkeleton(count: 3)),
-                error: (e, _) => SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: ErrorView(message: e.toString(), onRetry: () => ref.invalidate(nearbyDealsProvider)),
+                error: (e, _) => SliverToBoxAdapter(
+                  child: ErrorView(message: e.toString(), onRetry: () => ref.invalidate(nearbyShopsProvider)),
                 ),
-                data: (deals) => deals.isEmpty
-                    ? SliverFillRemaining(
-                        hasScrollBody: false,
+                data: (shops) => shops.isEmpty
+                    ? SliverToBoxAdapter(
                         child: FadeSlideIn(
                           child: EmptyView(
-                            icon: Icons.local_offer_outlined,
+                            icon: Icons.storefront_outlined,
                             message: tr('अभी इस दायरे में कोई डील नहीं।\nदायरा बढ़ाकर देखें या थोड़ी देर बाद आएं।'),
                           ),
                         ),
                       )
-                    : SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                        sliver: SliverGrid.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 14,
-                            crossAxisSpacing: 14,
-                            childAspectRatio: 0.66,
-                          ),
-                          itemCount: deals.length,
-                          itemBuilder: (_, i) => DealGridCard(
-                            deal: deals[i],
-                            index: i,
-                            favorite: favoriteShops.contains(deals[i].shop.id),
-                            onFavorite: () => toggleFavorite(deals[i]),
-                            onAdd: () => quickAdd(context, ref, deals[i]),
-                            onTap: () => context.push('/deal/${deals[i].id}'),
-                          ),
+                    : SliverList.builder(
+                        itemCount: shops.length,
+                        itemBuilder: (_, i) => ShopCard(
+                          shop: shops[i],
+                          index: i,
+                          onFavorite: () => toggleFavorite(shops[i].id, favoriteShops.contains(shops[i].id)),
+                          onTap: () => context.push('/shop/${shops[i].id}'),
                         ),
                       ),
               ),
@@ -457,10 +452,10 @@ class _FilterRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filters = ref.watch(dealFiltersProvider);
-    final count = ref.watch(nearbyDealsProvider).value?.length;
+    final count = ref.watch(nearbyShopsProvider).value?.length;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _SectionTitle(
-        tr('पास की डील'),
+        '🏪 ${tr('पास की दुकानें')}',
         trailing: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
@@ -558,5 +553,44 @@ class _BannersState extends ConsumerState<_Banners> {
         ),
       ),
     );
+  }
+}
+
+
+/// Horizontal row of the biggest discounts nearby, Blinkit-style.
+class _TopDeals extends ConsumerWidget {
+  const _TopDeals();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final deals = ref.watch(collectionDealsProvider('sort=discount')).value ?? [];
+    if (deals.isEmpty) return const SizedBox.shrink();
+    return Column(children: [
+      _SectionTitle(
+        '⚡ ${tr('आज की टॉप डील्स')}',
+        trailing: TextButton(
+          onPressed: () => context.push('/collection', extra: {'title': tr('सबसे बड़ी छूट'), 'query': 'sort=discount'}),
+          child: Text(tr('सभी देखें')),
+        ),
+      ),
+      SizedBox(
+        height: 262,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: deals.length.clamp(0, 10),
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          itemBuilder: (_, i) => SizedBox(
+            width: 168,
+            child: DealGridCard(
+              deal: deals[i],
+              index: i,
+              onAdd: () => quickAdd(context, ref, deals[i]),
+              onTap: () => context.push('/deal/${deals[i].id}'),
+            ),
+          ),
+        ),
+      ),
+    ]);
   }
 }
