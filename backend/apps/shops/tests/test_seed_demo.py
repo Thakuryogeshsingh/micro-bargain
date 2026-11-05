@@ -6,17 +6,54 @@ from apps.deals.models import Deal
 from apps.reviews.models import Review
 from apps.shops.demo_data import SHOPS
 from apps.shops.models import Shop
+from apps.shops.tasks import refresh_demo_deals
+
+PRODUCTS = sum(len(row[-1]) for row in SHOPS)
+
+
+def demo_shops():
+    return Shop.objects.filter(merchant__user__phone__startswith="90000001")
 
 
 @pytest.mark.django_db
-def test_seed_demo_fills_every_category_and_is_repeatable():
-    call_command("seed_demo")
-    shops = Shop.objects.filter(merchant__user__phone__startswith="90000001")
-    assert shops.count() == len(SHOPS)
-    assert set(Category.objects.values_list("slug", flat=True)) <= set(shops.values_list("category__slug", flat=True))
-    assert Deal.objects.filter(status="active").count() >= 150
-    assert Review.objects.count() > 10
-    assert not shops.filter(name__contains="(Demo)").exists()
+class TestSeedDemo:
+    def test_creates_live_deals_near_bharatpur(self, api_client):
+        call_command("seed_demo")
+        assert demo_shops().filter(status="approved").count() == len(SHOPS)
+        response = api_client.get("/api/v1/deals/nearby/", {"latitude": 27.2063, "longitude": 77.4972, "radius": 5000})
+        assert response.data["count"] >= 100
+        assert all(d["discount_percent"] != "0.00" for d in response.data["results"])
 
-    call_command("seed_demo")  # hourly refresh: no duplicates
-    assert Shop.objects.filter(merchant__user__phone__startswith="90000001").count() == len(SHOPS)
+    def test_every_category_has_shops_and_shops_look_real(self):
+        call_command("seed_demo")
+        assert set(Category.objects.values_list("slug", flat=True)) <= set(demo_shops().values_list("category__slug", flat=True))
+        assert not demo_shops().filter(name__contains="(Demo)").exists()
+        assert Review.objects.count() > 10
+
+    def test_rerun_adds_no_shops_and_keeps_one_live_deal_per_product(self):
+        call_command("seed_demo")
+        call_command("seed_demo")
+        assert demo_shops().count() == len(SHOPS)
+        assert Deal.objects.filter(status=Deal.Status.ACTIVE).count() == PRODUCTS
+
+    def test_expired_deals_are_replaced(self):
+        call_command("seed_demo")
+        Deal.objects.update(status=Deal.Status.EXPIRED)
+        call_command("seed_demo")
+        assert Deal.objects.filter(status=Deal.Status.ACTIVE).count() == PRODUCTS
+
+    def test_task_only_runs_when_enabled(self, settings):
+        settings.SEED_DEMO = False
+        refresh_demo_deals()
+        assert not Shop.objects.exists()
+
+
+@pytest.mark.django_db
+def test_nearby_shops_show_deal_stats_and_shops_with_deals_first(api_client, merchant_shop):
+    call_command("seed_demo")
+    merchant_shop(lat=27.2063, lng=77.4972, name="Empty Shop")  # nearest, but no deals
+    data = api_client.get("/api/v1/shops/nearby/", {"latitude": 27.2063, "longitude": 77.4972, "radius": 5000, "page_size": 50}).data["results"]
+    assert data[0]["live_deals_count"] > 0 and data[0]["max_discount"] is not None
+    assert data[-1]["name"] == "Empty Shop" and data[-1]["live_deals_count"] == 0
+    detail = api_client.get(f"/api/v1/shops/{data[0]['id']}/").data
+    assert detail["live_deals_count"] == data[0]["live_deals_count"]
