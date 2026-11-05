@@ -11,6 +11,7 @@ import '../../../shared/widgets/deal_card.dart';
 import '../../../core/theme/app_theme.dart';
 import '../customer_providers.dart';
 import '../offers/offers.dart';
+import '../plus/plus_screens.dart';
 import 'cart.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -93,7 +94,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     if (!canPickup && _fulfilment == 'pickup') _fulfilment = 'delivery';
     final subtotal = lines.fold<double>(0, (s, l) => s + l.total);
     final savings = lines.fold<double>(0, (s, l) => s + l.savings);
-    final fee = _fulfilment == 'delivery' && subtotal < _freeDeliveryAbove ? _deliveryFee : 0.0;
+    final isPlus = ref.watch(plusProvider).value?['active'] == true;
+    final fee = _fulfilment == 'delivery' && subtotal < _freeDeliveryAbove && !isPlus ? _deliveryFee : 0.0;
     final total = subtotal - _discount + fee;
 
     return Scaffold(
@@ -121,6 +123,13 @@ class _CartScreenState extends ConsumerState<CartScreen> {
           child: Text(tr('हटाने के लिए बाएं स्वाइप करें'), style: TextStyle(color: AppTheme.muted, fontSize: 12)),
         ),
         const Divider(),
+        if (_fulfilment == 'delivery' && !isPlus) _FreeDeliveryBar(subtotal: subtotal, target: _freeDeliveryAbove),
+        if (isPlus)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+            child: Text(tr('💎 Plus: फ्री डिलीवरी और {0}% और छूट मिलेगी', [5]),
+                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF8A6D1E))),
+          ),
         SectionTitle(tr('कैसे लेंगे?')),
         RadioGroup<String>(
           groupValue: _fulfilment,
@@ -285,6 +294,41 @@ class _CartLineTile extends ConsumerWidget {
               onPressed: line.quantity + step <= deal.quantityAvailable ? () => cart.add(deal, line.quantity + step) : null,
             ),
           ]),
+        ),
+      ]),
+    );
+  }
+}
+
+
+/// Blinkit-style "add ₹X more for free delivery" progress bar.
+class _FreeDeliveryBar extends StatelessWidget {
+  const _FreeDeliveryBar({required this.subtotal, required this.target});
+
+  final double subtotal;
+  final double target;
+
+  @override
+  Widget build(BuildContext context) {
+    final done = subtotal >= target;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(done ? tr('🎉 डिलीवरी फ्री हो गई!') : tr('🚚 ₹{0} और जोड़ें, डिलीवरी फ्री', [(target - subtotal).ceil()]),
+            style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.ink)),
+        const SizedBox(height: 8),
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: (subtotal / target).clamp(0, 1)),
+          duration: const Duration(milliseconds: 500),
+          builder: (_, v, _) => LinearProgressIndicator(
+            value: v,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+            color: done ? const Color(0xFF16A34A) : AppTheme.accent,
+            backgroundColor: AppTheme.chip,
+          ),
         ),
       ]),
     );

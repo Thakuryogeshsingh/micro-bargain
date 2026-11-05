@@ -14,6 +14,7 @@ import '../../../shared/widgets/common.dart';
 import '../../settings/language_screen.dart';
 import '../../settings/theme_screen.dart';
 import '../customer_providers.dart';
+import '../plus/plus_screens.dart';
 import '../../../core/i18n/i18n.dart';
 
 Future<void> editName(BuildContext context, WidgetRef ref) async {
@@ -71,7 +72,9 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('प्रोफाइल'))),
-      body: ListView(children: [
+      body: ListView(padding: const EdgeInsets.only(bottom: 110), children: [
+        const ImpactCard(),
+        const PlusBanner(),
         ListTile(
           leading: const CircleAvatar(child: Icon(Icons.person)),
           title: Text(user?.displayName ?? ''),

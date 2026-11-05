@@ -55,6 +55,14 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
   };
   late int? _category = widget.shop?['category'];
   late bool _delivery = widget.shop?['offers_delivery'] ?? false;
+  late bool _happyHour = widget.shop?['happy_hour_enabled'] ?? false;
+  late int _happyPercent = widget.shop?['happy_hour_percent'] ?? 15;
+  late TimeOfDay? _closing = _parseTime(widget.shop?['closing_time']);
+
+  static TimeOfDay? _parseTime(Object? value) {
+    if (value is! String || value.length < 5) return null;
+    return TimeOfDay(hour: int.parse(value.substring(0, 2)), minute: int.parse(value.substring(3, 5)));
+  }
   late bool _closed = widget.shop?['is_temporarily_closed'] ?? false;
   LatLng? _location;
   bool _busy = false;
@@ -84,6 +92,10 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
       'state': 'Rajasthan',
       'offers_delivery': _delivery,
       'is_temporarily_closed': _closed,
+      'happy_hour_enabled': _happyHour,
+      'happy_hour_percent': _happyPercent,
+      if (_closing != null)
+        'closing_time': '${_closing!.hour.toString().padLeft(2, '0')}:${_closing!.minute.toString().padLeft(2, '0')}',
       if (_location != null) 'latitude': _location!.latitude.toStringAsFixed(6),
       if (_location != null) 'longitude': _location!.longitude.toStringAsFixed(6),
     };
@@ -188,6 +200,31 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
               : tr('लोकेशन मिल गई ({0}, {1})', [_location!.latitude.toStringAsFixed(4), _location!.longitude.toStringAsFixed(4)])),
         ),
         SwitchListTile(title: Text(tr('होम डिलीवरी करते हैं')), value: _delivery, onChanged: (v) => setState(() => _delivery = v)),
+        ListTile(
+          leading: const Icon(Icons.schedule_rounded),
+          title: Text(tr('दुकान बंद होने का समय')),
+          trailing: Text(_closing == null ? tr('समय चुनें') : _closing!.format(context),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          onTap: () async {
+            final picked = await showTimePicker(context: context, initialTime: _closing ?? const TimeOfDay(hour: 21, minute: 0));
+            if (picked != null) setState(() => _closing = picked);
+          },
+        ),
+        SwitchListTile(
+          title: Text(tr('🌙 हैप्पी आवर')),
+          subtitle: Text(tr('बंद होने से 1 घंटा पहले सभी डील पर अपने आप {0}% और छूट', [_happyPercent])),
+          value: _happyHour,
+          onChanged: (v) => setState(() => _happyHour = v),
+        ),
+        if (_happyHour)
+          Slider(
+            value: _happyPercent.toDouble(),
+            min: 5,
+            max: 50,
+            divisions: 9,
+            label: '$_happyPercent%',
+            onChanged: (v) => setState(() => _happyPercent = v.round()),
+          ),
         if (!_isNew)
           SwitchListTile(
             title: Text(tr('दुकान अभी बंद है')),

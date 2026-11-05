@@ -100,6 +100,7 @@ class Deal {
     required this.status,
     this.distanceM,
     this.isFeatured = false,
+    this.isHappyHour = false,
     this.quantityTotal,
     this.quantityReserved,
     this.quantitySold,
@@ -123,6 +124,7 @@ class Deal {
         status: j['status'],
         distanceM: j['distance_m'],
         isFeatured: j['is_featured'] ?? false,
+        isHappyHour: j['is_happy_hour'] ?? false,
         quantityTotal: j.containsKey('quantity_total') ? _d(j['quantity_total']) : null,
         quantityReserved: j.containsKey('quantity_reserved') ? _d(j['quantity_reserved']) : null,
         quantitySold: j.containsKey('quantity_sold') ? _d(j['quantity_sold']) : null,
@@ -145,6 +147,7 @@ class Deal {
   final String status;
   final int? distanceM;
   final bool isFeatured;
+  final bool isHappyHour;
   // Merchant view only.
   final double? quantityTotal;
   final double? quantityReserved;
@@ -178,6 +181,8 @@ class Reservation {
     this.pickupCode,
     this.pickupAt,
     this.closedReason = '',
+    this.confirmedAt,
+    this.completedAt,
     this.customerName = '',
     this.customerPhone = '',
   });
@@ -204,6 +209,8 @@ class Reservation {
         pickupCode: j['pickup_code'],
         pickupAt: _t(j['pickup_at']),
         closedReason: j['closed_reason'] ?? '',
+        confirmedAt: _t(j['confirmed_at']),
+        completedAt: _t(j['completed_at']),
         customerName: j['customer_name'] ?? '',
         customerPhone: j['customer_phone'] ?? '',
       );
@@ -229,6 +236,8 @@ class Reservation {
   final String? pickupCode; // customer only
   final DateTime? pickupAt; // chosen pickup time, if any
   final String closedReason;
+  final DateTime? confirmedAt;
+  final DateTime? completedAt;
   final String customerName; // merchant only
   final String customerPhone; // merchant only
 
@@ -236,9 +245,10 @@ class Reservation {
 }
 
 class OrderItem {
-  OrderItem({required this.productName, required this.quantity, required this.unit, required this.unitPrice, required this.lineTotal});
+  OrderItem({required this.dealId, required this.productName, required this.quantity, required this.unit, required this.unitPrice, required this.lineTotal});
 
   factory OrderItem.fromJson(Map<String, dynamic> j) => OrderItem(
+        dealId: j['deal'],
         productName: j['product_name'],
         quantity: _d(j['quantity']),
         unit: j['unit'],
@@ -246,6 +256,7 @@ class OrderItem {
         lineTotal: _d(j['line_total']),
       );
 
+  final int dealId;
   final String productName;
   final double quantity;
   final String unit;
@@ -278,6 +289,10 @@ class Order {
     this.pickupCode,
     this.expiresAt,
     this.cancelReason = '',
+    this.plusDiscount = 0,
+    this.confirmedAt,
+    this.readyAt,
+    this.completedAt,
     this.customerName = '',
     this.customerPhone = '',
   });
@@ -306,6 +321,10 @@ class Order {
         pickupCode: j['pickup_code'],
         expiresAt: _t(j['expires_at']),
         cancelReason: j['cancel_reason'] ?? '',
+        plusDiscount: _d(j['plus_discount']),
+        confirmedAt: _t(j['confirmed_at']),
+        readyAt: _t(j['ready_at']),
+        completedAt: _t(j['completed_at']),
         customerName: j['customer_name'] ?? '',
         customerPhone: j['customer_phone'] ?? '',
       );
@@ -333,6 +352,10 @@ class Order {
   final String? pickupCode;
   final DateTime? expiresAt;
   final String cancelReason;
+  final double plusDiscount;
+  final DateTime? confirmedAt;
+  final DateTime? readyAt;
+  final DateTime? completedAt;
   final String customerName;
   final String customerPhone;
 

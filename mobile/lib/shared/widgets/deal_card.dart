@@ -151,6 +151,12 @@ class DealCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (deal.isHappyHour)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(tr('🌙 हैप्पी आवर'),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF7C3AED))),
+                  ),
                 if (deal.isFeatured)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2),
@@ -271,6 +277,17 @@ class DealGridCard extends StatelessWidget {
                   ),
                 ),
                 Positioned(left: 12, top: 12, child: DiscountBadge(deal.discountPercent)),
+                if (deal.isHappyHour)
+                  Positioned(
+                    left: 12,
+                    top: 38,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(color: const Color(0xFF7C3AED), borderRadius: BorderRadius.circular(20)),
+                      child: Text(tr('🌙 हैप्पी आवर'),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
                 if (onFavorite != null)
                   Positioned(
                     right: 10,

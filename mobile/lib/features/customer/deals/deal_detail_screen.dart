@@ -15,6 +15,7 @@ import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../cart/cart.dart';
 import '../customer_providers.dart';
+import '../home/home_screen.dart';
 
 Future<void> openDirections(double lat, double lng) =>
     launchUrl(Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng'), mode: LaunchMode.externalApplication);
@@ -259,6 +260,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                   message: '${deal.productName} — Micro Bargain',
                 ),
               ),
+              _BoughtTogether(dealId: deal.id),
               if (deal.isLive) ...[
                 const SizedBox(height: 20),
                 FadeSlideIn(
@@ -371,4 +373,46 @@ class _StepButton extends StatelessWidget {
           ),
         ),
       );
+}
+
+
+final _togetherProvider = FutureProvider.autoDispose.family<List<Deal>, int>((ref, id) async {
+  final data = await ref.watch(apiProvider).get('/deals/$id/together/') as List;
+  return [for (final d in data) Deal.fromJson(d)];
+});
+
+/// "Customers also buy" row from the same shop.
+class _BoughtTogether extends ConsumerWidget {
+  const _BoughtTogether({required this.dealId});
+
+  final int dealId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final deals = ref.watch(_togetherProvider(dealId)).value ?? [];
+    if (deals.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const SizedBox(height: 18),
+      Text('🛒 ${tr('अक्सर साथ खरीदते हैं')}',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.ink)),
+      const SizedBox(height: 10),
+      SizedBox(
+        height: 250,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: deals.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          itemBuilder: (_, i) => SizedBox(
+            width: 160,
+            child: DealGridCard(
+              deal: deals[i],
+              index: i,
+              onAdd: () => quickAdd(context, ref, deals[i]),
+              onTap: () => context.push('/deal/${deals[i].id}'),
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
 }

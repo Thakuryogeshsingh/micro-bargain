@@ -12,6 +12,7 @@ import '../../features/customer/customer_shell.dart';
 import '../../features/customer/deals/collection_screen.dart';
 import '../../features/customer/deals/deal_detail_screen.dart';
 import '../../features/customer/offers/offers.dart';
+import '../../features/customer/plus/plus_screens.dart';
 import '../../features/customer/profile/profile_screens.dart';
 import '../../features/customer/shops/shop_screens.dart';
 import '../../features/merchant/alerts/order_alerts.dart';
@@ -121,6 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: '/referral', builder: (_, _) => const ReferralScreen()),
+      GoRoute(path: '/plus', builder: (_, _) => const PlusScreen()),
       GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
       GoRoute(path: '/addresses/new', builder: (_, _) => const AddressFormScreen()),
       GoRoute(path: '/become-merchant', builder: (_, _) => const MerchantRegisterScreen()),
