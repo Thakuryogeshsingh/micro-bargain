@@ -137,6 +137,9 @@ Future<bool> runAction(BuildContext context, Future<void> Function() action, {St
   }
 }
 
+/// Popup buttons keep their natural width (the theme makes page buttons full-width, which stacked them).
+final dialogButtonStyle = FilledButton.styleFrom(minimumSize: const Size(96, 46));
+
 Future<bool> confirm(BuildContext context, String title, {String? message, String? ok}) async {
   final result = await showDialog<bool>(
     context: context,
@@ -145,7 +148,7 @@ Future<bool> confirm(BuildContext context, String title, {String? message, Strin
       content: message == null ? null : Text(message),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('नहीं'))),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(ok ?? tr('हाँ'))),
+        FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(context, true), child: Text(ok ?? tr('हाँ'))),
       ],
     ),
   );
@@ -169,7 +172,7 @@ Future<String?> askText(BuildContext context, String title,
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: Text(tr('रद्द'))),
-        FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: Text(tr('ठीक है'))),
+        FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(context, controller.text.trim()), child: Text(tr('ठीक है'))),
       ],
     ),
   );

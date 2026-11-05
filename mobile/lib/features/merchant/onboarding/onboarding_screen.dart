@@ -252,7 +252,7 @@ class _StepCard extends ConsumerWidget {
         content: TextField(controller: name, autofocus: true, decoration: InputDecoration(labelText: tr('पूरा नाम'))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text(tr('रद्द'))),
-          FilledButton(onPressed: () => Navigator.pop(dialog, true), child: Text(tr('सेव करें'))),
+          FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(dialog, true), child: Text(tr('सेव करें'))),
         ],
       ),
     );

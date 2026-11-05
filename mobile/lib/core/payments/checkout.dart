@@ -5,6 +5,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../network/api_client.dart';
 import '../../core/i18n/i18n.dart';
+import '../../shared/widgets/common.dart';
 
 /// Pays for an order, plan or promotion: asks the server for a Razorpay order, opens Razorpay Checkout,
 /// then sends the result back for server-side signature verification. Returns true when paid.
@@ -21,7 +22,7 @@ Future<bool> payOnline(BuildContext context, ApiClient api, {required String pur
         content: Text(tr('सर्वर टेस्ट मोड में है। ₹{0} का नकली पेमेंट करें?', [(checkout['amount'] as int) / 100])),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('रद्द'))),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(tr('पेमेंट करें'))),
+          FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(context, true), child: Text(tr('पेमेंट करें'))),
         ],
       ),
     );

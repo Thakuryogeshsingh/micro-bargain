@@ -715,5 +715,8 @@
  "हो तो लगाएं (ज़रूरी नहीं)": "Add if you have it (optional)",
  "⏱️ जवाब के लिए {0} घंटे बाकी": "⏱️ {0} hours left to reply",
  "🎉 बधाई! आपकी दुकान लाइव है": "🎉 Congrats! Your shop is live",
- "📍 मैप पर लोकेशन चुनें": "📍 Pick location on map"
+ "📍 मैप पर लोकेशन चुनें": "📍 Pick location on map",
+ "{0} आइटम · {1}": "{0} items · {1}",
+ "{0} से · {1} की बचत": "From {0} · You save {1}",
+ "कार्ट देखें": "View cart"
 }

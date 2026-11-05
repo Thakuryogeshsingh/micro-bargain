@@ -161,7 +161,7 @@ class _Actions extends ConsumerWidget {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('रद्द'))),
-          FilledButton(onPressed: () => Navigator.pop(dialog, text.text.trim()), child: Text(tr('भेजें'))),
+          FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(dialog, text.text.trim()), child: Text(tr('भेजें'))),
         ],
       ),
     );
