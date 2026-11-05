@@ -109,7 +109,7 @@ class OffersStrip extends ConsumerWidget {
         child: Text('🎁 ${tr('ऑफ़र')}', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
       ),
       SizedBox(
-        height: 140,
+        height: 156,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -153,7 +153,7 @@ Future<String?> pickOffer(BuildContext context, int shopId) {
                       FadeSlideIn(
                         index: i,
                         child: SizedBox(
-                          height: 130,
+                          height: 146,
                           child: OfferCard(
                             offer: offers[i],
                             width: double.infinity,

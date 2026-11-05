@@ -40,6 +40,13 @@ class MicroBargainApp extends ConsumerWidget {
       theme: AppTheme.light,
       scaffoldMessengerKey: _messengerKey,
       routerConfig: ref.watch(routerProvider),
+      // Very large system font sizes clipped text in fixed-height cards; allow up to 115%.
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 0.9, maxScaleFactor: 1.15),
+        ),
+        child: child!,
+      ),
     );
   }
 }

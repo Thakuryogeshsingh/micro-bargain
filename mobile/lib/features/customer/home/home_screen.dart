@@ -130,7 +130,7 @@ class _Header extends ConsumerWidget {
     const white = Colors.white;
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 178,
+      expandedHeight: 196,
       backgroundColor: AppTheme.primaryDark,
       foregroundColor: white,
       title: Text(tr('पास की डील'), style: const TextStyle(color: white, fontWeight: FontWeight.w700)),
@@ -149,7 +149,7 @@ class _Header extends ConsumerWidget {
           child: SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 52, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 2, 16, 0),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(
                   '${tr('नमस्ते, {0}', [user?.name.split(' ').first ?? ''])} 👋',
@@ -231,7 +231,7 @@ class _CategoryStrip extends ConsumerWidget {
       for (final c in categories) (id: c.id as int?, emoji: _categoryEmoji[c.nameHi] ?? '🛍️', label: c.label),
     ];
     return SizedBox(
-      height: 104,
+      height: 116,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
@@ -245,7 +245,7 @@ class _CategoryStrip extends ConsumerWidget {
             child: Pressable(
               onTap: () => select(active && tile.id != null ? null : tile.id),
               child: SizedBox(
-                width: 74,
+                width: 78,
                 child: Column(children: [
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
@@ -264,10 +264,12 @@ class _CategoryStrip extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Text(
                     tile.label,
-                    maxLines: 1,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.5,
+                      height: 1.15,
                       fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                       color: active ? AppTheme.primaryDark : Colors.black87,
                     ),

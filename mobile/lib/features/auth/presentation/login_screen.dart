@@ -54,11 +54,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final roles = [
       (key: 'customer', icon: Icons.shopping_bag_rounded, label: tr('ग्राहक')),
       (key: 'merchant', icon: Icons.storefront_rounded, label: tr('दुकानदार')),
-      (key: 'admin', icon: Icons.admin_panel_settings_rounded, label: tr('एडमिन')),
     ];
     final hint = switch (role) {
       'merchant' => tr('अपनी दुकान की डील डालें और पास के ग्राहकों तक पहुंचें'),
-      'admin' => tr('दुकानें अप्रूव करें और बिज़नेस रिपोर्ट देखें'),
       _ => tr('पास की दुकानों की ताज़ा डील, सस्ते दाम पर'),
     };
 
@@ -186,7 +184,8 @@ class _RoleCard extends StatelessWidget {
           Icon(icon, size: 28, color: selected ? Colors.white : AppTheme.primaryDark),
           const SizedBox(height: 6),
           Text(label,
-              maxLines: 1,
+              maxLines: 2,
+              textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: selected ? Colors.white : AppTheme.ink)),
         ]),
