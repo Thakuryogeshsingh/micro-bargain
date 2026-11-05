@@ -6,10 +6,12 @@ import 'core/i18n/i18n.dart';
 import 'core/network/api_client.dart';
 import 'core/push/local_notifications.dart';
 import 'core/push/push_service.dart';
+import 'core/storage/prefs.dart';
 import 'core/theme/theme_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Prefs.init();
   await PushService.init();
   await LocalNotifications.init();
   final container = ProviderContainer(retry: _retry);

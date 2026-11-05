@@ -35,8 +35,16 @@ class TokenStorage {
 
   final FlutterSecureStorage _storage;
 
-  Future<String?> get access => _storage.read(key: 'access_token');
-  Future<String?> get refresh => _storage.read(key: 'refresh_token');
+  Future<String?> get access => _read('access_token');
+  Future<String?> get refresh => _read('refresh_token');
+
+  Future<String?> _read(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } catch (_) {
+      return null; // unreadable (e.g. restored from another phone's backup): sign in again
+    }
+  }
 
   Future<void> save(String access, String refresh) async {
     await _storage.write(key: 'access_token', value: access);

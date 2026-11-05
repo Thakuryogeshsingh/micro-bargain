@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../storage/prefs.dart';
 
 /// App languages. The UI is written in Hindi; every Hindi text is the key into assets/i18n/<code>.json.
 class AppLanguage {
@@ -50,12 +51,12 @@ class LanguageController extends Notifier<String?> {
 
   /// Called once at startup, before the first frame.
   Future<void> restore() async {
-    final saved = await const FlutterSecureStorage().read(key: _storageKey);
+    final saved = Prefs.get(_storageKey);
     if (saved != null) await _apply(saved);
   }
 
   Future<void> choose(String code) async {
-    await const FlutterSecureStorage().write(key: _storageKey, value: code);
+    await Prefs.set(_storageKey, code);
     await _apply(code);
   }
 
