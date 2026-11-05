@@ -21,7 +21,7 @@ class AsyncView<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return value.when(
       data: data,
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ListSkeleton(),
       error: (error, _) => ErrorView(message: error.toString(), onRetry: onRetry),
     );
   }
@@ -35,19 +35,19 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.cloud_off, size: 48),
-          const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
-          if (onRetry != null) ...[
-            const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: Text(tr('फिर से कोशिश करें'))),
-          ],
-        ]),
-      ),
+    return _StateView(
+      icon: Icons.wifi_off_rounded,
+      tint: const Color(0xFFE5484D),
+      title: tr('कुछ गड़बड़ हुई'),
+      message: message,
+      action: onRetry == null
+          ? null
+          : FilledButton.icon(
+              style: FilledButton.styleFrom(minimumSize: const Size(160, 48)),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: Text(tr('फिर से कोशिश करें')),
+            ),
     );
   }
 }
@@ -60,15 +60,98 @@ class EmptyView extends StatelessWidget {
   final Widget? action;
 
   @override
+  Widget build(BuildContext context) => _StateView(icon: icon, title: message, action: action);
+}
+
+/// Big icon in a soft circle, a bold line, an optional softer line and an optional button.
+class _StateView extends StatelessWidget {
+  const _StateView({required this.icon, required this.title, this.message, this.action, this.tint});
+
+  final IconData icon;
+  final String title;
+  final String? message;
+  final Widget? action;
+  final Color? tint;
+
+  @override
   Widget build(BuildContext context) {
+    final color = tint ?? (AppTheme.minimal ? AppTheme.ink : AppTheme.primary);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 56, color: Theme.of(context).colorScheme.outline),
-          const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
-          if (action != null) ...[const SizedBox(height: 16), action!],
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.7, end: 1),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutBack,
+            builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
+            child: Stack(clipBehavior: Clip.none, children: [
+              Container(
+                width: 112,
+                height: 112,
+                decoration: BoxDecoration(color: AppTheme.chip, shape: BoxShape.circle),
+                child: Icon(icon, size: 50, color: color),
+              ),
+              if (tint == null)
+                Positioned(
+                  right: 4,
+                  top: 6,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: AppTheme.minimal ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.9),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.background, width: 3),
+                    ),
+                  ),
+                ),
+            ]),
+          ),
+          const SizedBox(height: 20),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 17, height: 1.4, fontWeight: FontWeight.w800, color: AppTheme.ink)),
+          if (message != null) ...[
+            const SizedBox(height: 6),
+            Text(message!, textAlign: TextAlign.center, maxLines: 4, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14, height: 1.4, color: AppTheme.muted)),
+          ],
+          if (action != null) ...[const SizedBox(height: 20), action!],
+        ]),
+      ),
+    );
+  }
+}
+
+/// Shimmering placeholder rows while a list loads.
+class ListSkeleton extends StatelessWidget {
+  const ListSkeleton({super.key, this.rows = 6});
+
+  final int rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Shimmer(
+        child: Column(children: [
+          for (var i = 0; i < rows; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Row(children: [
+                const SkeletonBox(width: 56, height: 56, radius: 16),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    SkeletonBox(width: i.isEven ? 180 : 140, height: 14),
+                    const SizedBox(height: 8),
+                    const SkeletonBox(width: 100, height: 12),
+                  ]),
+                ),
+              ]),
+            ),
         ]),
       ),
     );

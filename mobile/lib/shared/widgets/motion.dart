@@ -159,7 +159,7 @@ class DealListSkeleton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             child: Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(18)),
+              decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(18), boxShadow: AppTheme.softShadow(0.04)),
               child: const Row(children: [
                 SkeletonBox(width: 104, height: 104, radius: 14),
                 SizedBox(width: 12),

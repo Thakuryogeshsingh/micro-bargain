@@ -214,24 +214,46 @@ class _DealBodyState extends ConsumerState<_DealBody> {
               FadeSlideIn(
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(
-                    child: Text(deal.productName, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                    child: Text(deal.productName,
+                        style: TextStyle(fontSize: 28, height: 1.1, fontWeight: FontWeight.w900, letterSpacing: -0.8, color: AppTheme.ink)),
                   ),
                   StatusChip(deal.status),
                 ]),
               ),
               const SizedBox(height: 8),
-              FadeSlideIn(index: 1, child: PriceLine(offer: deal.offerPrice, normal: deal.normalPrice, unit: deal.unit, large: true)),
-              const SizedBox(height: 10),
+              FadeSlideIn(
+                index: 1,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(rupees(deal.offerPrice),
+                      style: TextStyle(fontSize: 36, height: 1, fontWeight: FontWeight.w900, letterSpacing: -1.2, color: AppTheme.ink)),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6, bottom: 4),
+                    child: Text('/${unitLabel(deal.unit)}', style: TextStyle(fontSize: 15, color: AppTheme.muted, fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(rupees(deal.normalPrice),
+                        style: TextStyle(fontSize: 16, color: AppTheme.muted, decoration: TextDecoration.lineThrough)),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.minimal ? AppTheme.accent : Colors.green.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('${deal.discountPercent.round()}% OFF',
+                        style: TextStyle(
+                            color: AppTheme.minimal ? Colors.black : Colors.green.shade800, fontWeight: FontWeight.w900, fontSize: 14)),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 14),
               FadeSlideIn(
                 index: 2,
                 child: Wrap(spacing: 8, runSpacing: 6, children: [
                   CountdownChip(deal.expiresAt),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-                    child: Text(tr('{0}% की बचत', [deal.discountPercent.round()]),
-                        style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.w700, fontSize: 12)),
-                  ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(color: AppTheme.chip, borderRadius: BorderRadius.circular(20)),
@@ -290,7 +312,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                   index: 5,
                   child: Container(
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius),
+                    decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.05)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Text(tr('मात्रा'), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
@@ -324,7 +346,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                     index: 6,
                     child: Container(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius),
+                      decoration: BoxDecoration(color: AppTheme.card, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.05)),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
                           Icon(Icons.schedule_rounded, color: AppTheme.primary),
