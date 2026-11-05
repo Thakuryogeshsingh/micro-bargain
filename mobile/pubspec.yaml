@@ -1,7 +1,7 @@
 name: micro_bargain
 description: Local Grocery Micro-Bargain - customer & merchant app (role-based, shared codebase).
 publish_to: "none"
-version: 0.2.5+7
+version: 0.2.6+8
 
 environment:
   sdk: ^3.9.0
