@@ -7,10 +7,14 @@ any product without a live deal gets a fresh one, and a few new purchases with r
 activity runs low, so ratings, the mohalla ranking and savings always look alive. Demo merchants use phone
 numbers 90000001xx and demo customers 90000002xx, so they are easy to find and delete in the admin.
 """
+import json
 import random
 from datetime import time, timedelta
 from decimal import Decimal
+from pathlib import Path
 
+from django.core.files import File
+from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -21,7 +25,7 @@ from apps.deals import services as deal_services
 from apps.deals.models import Deal
 from apps.merchants.models import MerchantProfile
 from apps.orders.models import Coupon
-from apps.products.models import Product
+from apps.products.models import Product, ProductImage
 from apps.reservations import services as reservations
 from apps.reservations.models import DealReservation
 from apps.reviews import services as reviews
@@ -38,6 +42,8 @@ DESCRIPTIONS = (
     "क्वालिटी पक्की, दाम आधे।", "",
 )
 RECENT_PURCHASES_TARGET = 45  # completed pickups by demo customers in the last 3 days
+# Free-licence photos (Wikimedia Commons, see manifest.json "credits") for demo products, shops and categories.
+PHOTOS = Path(__file__).resolve().parents[2] / "demo_images"
 
 
 def _time(text):
@@ -62,6 +68,7 @@ class Command(BaseCommand):
                     )
                     created_deals += self._ensure_live_deal(shop, product, price, discount, quantity)
         self._offers()
+        self._photos()
         purchases = self._activity()
         self.stdout.write(self.style.SUCCESS(
             f"Demo data ready: {len(SHOPS)} shops, {created_deals} new live deal(s), {purchases} new purchase(s)."
@@ -171,3 +178,33 @@ class Command(BaseCommand):
             except BusinessRuleError:
                 continue  # sold out, or this customer already has it open: try the next deal
         return made
+
+    def _photos(self):
+        """Attach photos; also restores them after the free server's disk was wiped (the database keeps the paths)."""
+        manifest = PHOTOS / "manifest.json"
+        if not manifest.exists():
+            return
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+
+        def missing(field):
+            return not field or not default_storage.exists(field.name)
+
+        def put(field, relative, name):
+            with open(PHOTOS / relative, "rb") as source:
+                field.save(name, File(source), save=True)
+
+        for slug, relative in data.get("categories", {}).items():
+            category = Category.objects.filter(slug=slug).first()
+            if category and missing(category.icon):
+                put(category.icon, relative, f"{slug}.jpg")
+        for shop in Shop.objects.filter(merchant__user__phone__startswith="90000001").select_related("category"):
+            relative = data.get("categories", {}).get(shop.category.slug)
+            if relative and missing(shop.cover_image):
+                put(shop.cover_image, relative, f"shop-{shop.id}.jpg")
+        for product in Product.objects.filter(shop__merchant__user__phone__startswith="90000001").prefetch_related("images"):
+            relative = data.get("products", {}).get(product.name)
+            if not relative:
+                continue
+            image = next(iter(product.images.all()), None) or ProductImage(product=product)
+            if missing(image.image):
+                put(image.image, relative, f"product-{product.id}.jpg")

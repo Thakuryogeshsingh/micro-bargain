@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,17 +19,55 @@ Future<void> main() async {
     } catch (_) {
       // Without saved settings the app still works; it just asks for the language again.
     }
-    await PushService.init();
-    await LocalNotifications.init();
+    // Push and local notifications are phone-only; the browser preview skips them.
+    if (!kIsWeb) {
+      await PushService.init();
+      await LocalNotifications.init();
+    }
     final container = ProviderContainer(retry: _retry);
     // Saved language, theme and onboarding state before the first frame.
     await container.read(languageProvider.notifier).restore();
     await container.read(themeProvider.notifier).restore();
     await container.read(onboardedProvider.notifier).restore();
-    runApp(UncontrolledProviderScope(container: container, child: const MicroBargainApp()));
+    final app = UncontrolledProviderScope(container: container, child: const MicroBargainApp());
+    runApp(kIsWeb ? _PhoneFrame(child: app) : app);
   } catch (error, stack) {
     // Show why start-up failed (with a way to send it) instead of a blank screen.
     runApp(_StartupError('$error\n\n$stack'));
+  }
+}
+
+/// Browser preview: shows the app at phone size in the middle of a wide window.
+class _PhoneFrame extends StatelessWidget {
+  const _PhoneFrame({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQueryData.fromView(View.of(context));
+    if (media.size.width < 600) return child; // already phone-sized
+    final size = Size(400, (media.size.height - 32).clamp(560, 880).toDouble());
+    return ColoredBox(
+      color: const Color(0xFF1F2430),
+      child: Center(
+        child: Container(
+          width: size.width,
+          height: size.height,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(36),
+            border: Border.all(color: Colors.black, width: 8),
+            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 30)],
+          ),
+          // The app sizes itself from this MediaQuery, as it would on a phone.
+          child: MediaQuery(
+            data: media.copyWith(size: size, padding: const EdgeInsets.only(top: 24), viewPadding: const EdgeInsets.only(top: 24)),
+            child: child,
+          ),
+        ),
+      ),
+    );
   }
 }
 

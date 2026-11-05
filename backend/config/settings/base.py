@@ -201,6 +201,9 @@ SPECTACULAR_SETTINGS = {
 }
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+# The app's browser preview runs on the developer's machine. Logins use bearer tokens, not cookies,
+# so letting a local page call the API exposes nothing it couldn't already do with the token.
+CORS_ALLOWED_ORIGIN_REGEXES = [r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"]
 
 # OTP
 OTP_LENGTH = 6
