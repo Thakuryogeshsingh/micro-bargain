@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/contact_actions.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../customer_providers.dart';
-import '../deals/deal_detail_screen.dart';
 import '../../../core/i18n/i18n.dart';
 
 class ShopScreen extends ConsumerWidget {
@@ -42,11 +41,10 @@ class ShopScreen extends ConsumerWidget {
           ListTile(
             title: Text(shop.categoryName),
             subtitle: Text(shop.address),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (shop.phone.isNotEmpty)
-                IconButton(icon: const Icon(Icons.call), onPressed: () => launchUrl(Uri.parse('tel:${shop.phone}'))),
-              IconButton(icon: const Icon(Icons.directions), onPressed: () => openDirections(shop.latitude, shop.longitude)),
-            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: ContactActions(phone: shop.phone, latitude: shop.latitude, longitude: shop.longitude),
           ),
           if (shop.ratingCount > 0)
             Padding(

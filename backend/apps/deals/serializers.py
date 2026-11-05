@@ -57,7 +57,7 @@ class DealShopSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Shop
-        fields = ["id", "name", "address_line", "city", "latitude", "longitude", "rating_avg", "rating_count"]
+        fields = ["id", "name", "phone", "address_line", "city", "latitude", "longitude", "rating_avg", "rating_count"]
 
 
 class DealSerializer(serializers.ModelSerializer):

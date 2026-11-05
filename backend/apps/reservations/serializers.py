@@ -23,6 +23,7 @@ class ReservationSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="deal.product.name", read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
     shop_address = serializers.CharField(source="shop.address_line", read_only=True)
+    shop_phone = serializers.CharField(source="shop.phone", read_only=True)
     shop_latitude = serializers.FloatField(source="shop.latitude", read_only=True)
     shop_longitude = serializers.FloatField(source="shop.longitude", read_only=True)
     savings = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
@@ -31,7 +32,7 @@ class ReservationSerializer(serializers.ModelSerializer):
         model = DealReservation
         fields = [
             "id", "reservation_number", "status", "deal", "product_name",
-            "shop", "shop_name", "shop_address", "shop_latitude", "shop_longitude",
+            "shop", "shop_name", "shop_phone", "shop_address", "shop_latitude", "shop_longitude",
             "quantity", "unit", "unit_price", "total_amount", "savings", "pickup_code",
             "pickup_at", "expires_at", "confirmed_at", "completed_at", "closed_reason", "created_at",
         ]

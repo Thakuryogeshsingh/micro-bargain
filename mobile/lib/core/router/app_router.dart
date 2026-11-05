@@ -13,6 +13,7 @@ import '../../features/customer/deals/deal_detail_screen.dart';
 import '../../features/customer/offers/offers.dart';
 import '../../features/customer/profile/profile_screens.dart';
 import '../../features/customer/shops/shop_screens.dart';
+import '../../features/merchant/alerts/order_alerts.dart';
 import '../../features/merchant/bookings/merchant_bookings_screen.dart';
 import '../../features/merchant/deals/merchant_deal_screens.dart';
 import '../../features/merchant/merchant_shell.dart';
@@ -123,6 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/merchant/product-form', builder: (_, state) => ProductFormScreen(product: state.extra as Product?)),
       GoRoute(path: '/merchant/deal-form', builder: (_, _) => const DealFormScreen()),
       GoRoute(path: '/merchant/bookings', builder: (_, _) => const MerchantBookingsScreen()),
+      GoRoute(path: '/merchant/incoming', builder: (_, _) => const IncomingOrdersScreen()),
       GoRoute(path: '/merchant/inventory', builder: (_, _) => const InventoryScreen()),
       GoRoute(path: '/merchant/plans', builder: (_, _) => const PlansScreen()),
       GoRoute(path: '/merchant/promotions', builder: (_, _) => const PromotionsScreen()),

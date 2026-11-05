@@ -153,6 +153,7 @@ class Reservation {
     required this.shopId,
     required this.shopName,
     required this.shopAddress,
+    this.shopPhone = '',
     required this.shopLatitude,
     required this.shopLongitude,
     required this.quantity,
@@ -178,6 +179,7 @@ class Reservation {
         shopId: j['shop'],
         shopName: j['shop_name'],
         shopAddress: j['shop_address'] ?? '',
+        shopPhone: j['shop_phone'] ?? '',
         shopLatitude: _d(j['shop_latitude']),
         shopLongitude: _d(j['shop_longitude']),
         quantity: _d(j['quantity']),
@@ -202,6 +204,7 @@ class Reservation {
   final int shopId;
   final String shopName;
   final String shopAddress;
+  final String shopPhone;
   final double shopLatitude;
   final double shopLongitude;
   final double quantity;
@@ -249,6 +252,8 @@ class Order {
     required this.shopId,
     required this.shopName,
     required this.shopPhone,
+    this.shopLatitude = 0,
+    this.shopLongitude = 0,
     required this.items,
     required this.subtotal,
     required this.savings,
@@ -275,6 +280,8 @@ class Order {
         shopId: j['shop'],
         shopName: j['shop_name'],
         shopPhone: j['shop_phone'] ?? '',
+        shopLatitude: _d(j['shop_latitude']),
+        shopLongitude: _d(j['shop_longitude']),
         items: (j['items'] as List).map((i) => OrderItem.fromJson(i)).toList(),
         subtotal: _d(j['subtotal']),
         savings: _d(j['savings']),
@@ -300,6 +307,8 @@ class Order {
   final int shopId;
   final String shopName;
   final String shopPhone;
+  final double shopLatitude;
+  final double shopLongitude;
   final List<OrderItem> items;
   final double subtotal;
   final double savings;

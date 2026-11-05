@@ -10,6 +10,7 @@ import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../notifications/notifications_screen.dart';
+import '../../../shared/widgets/tab_shell.dart';
 import '../merchant_providers.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -59,15 +60,17 @@ class DashboardScreen extends ConsumerWidget {
               value: ref.watch(dashboardProvider),
               onRetry: () => ref.invalidate(dashboardProvider),
               data: (s) {
+                final goTab = TabSwitcher.maybeOf(context);
+                void open(String route) => context.push(route);
                 final tiles = [
-                  (tr('लाइव डील'), parseNum(s['active_deals']), Icons.local_offer_rounded, null, AppTheme.primary),
-                  (tr('कुल बिक्री'), parseNum(s['revenue']), Icons.currency_rupee_rounded, rupees, AppTheme.deal),
-                  (tr('पूरे हुए पिकअप'), parseNum(s['completed_orders']), Icons.check_circle_rounded, null, const Color(0xFF2563EB)),
-                  (tr('चल रहे ऑर्डर'), parseNum(s['open_orders']), Icons.delivery_dining_rounded, null, const Color(0xFF7C3AED)),
-                  (tr('बचा स्टॉक'), parseNum(s['remaining_stock']), Icons.inventory_2_rounded, qty, const Color(0xFF0891B2)),
-                  (tr('रेटिंग'), parseNum(s['rating_avg']), Icons.star_rounded, (double v) => '★ ${v.toStringAsFixed(1)}', AppTheme.featured),
-                  (tr('खत्म हुई डील'), parseNum(s['expired_deals']), Icons.timer_off_rounded, null, Colors.blueGrey),
-                  (tr('पूरी बिकी डील'), parseNum(s['sold_out_deals']), Icons.done_all_rounded, null, const Color(0xFFDB2777)),
+                  (tr('लाइव डील'), parseNum(s['active_deals']), Icons.local_offer_rounded, null, AppTheme.primary, () => goTab?.call(1)),
+                  (tr('कुल बिक्री'), parseNum(s['revenue']), Icons.currency_rupee_rounded, rupees, AppTheme.deal, () => open('/merchant/earnings')),
+                  (tr('पूरे हुए पिकअप'), parseNum(s['completed_orders']), Icons.check_circle_rounded, null, const Color(0xFF2563EB), () => goTab?.call(2)),
+                  (tr('चल रहे ऑर्डर'), parseNum(s['open_orders']), Icons.delivery_dining_rounded, null, const Color(0xFF7C3AED), () => goTab?.call(2)),
+                  (tr('बचा स्टॉक'), parseNum(s['remaining_stock']), Icons.inventory_2_rounded, qty, const Color(0xFF0891B2), () => open('/merchant/inventory')),
+                  (tr('रेटिंग'), parseNum(s['rating_avg']), Icons.star_rounded, (double v) => '★ ${v.toStringAsFixed(1)}', AppTheme.featured, () => open('/merchant/reviews')),
+                  (tr('खत्म हुई डील'), parseNum(s['expired_deals']), Icons.timer_off_rounded, null, Colors.blueGrey, () => goTab?.call(1)),
+                  (tr('पूरी बिकी डील'), parseNum(s['sold_out_deals']), Icons.done_all_rounded, null, const Color(0xFFDB2777), () => goTab?.call(1)),
                 ];
                 return Column(children: [
                   const SizedBox(height: 8),
@@ -76,7 +79,7 @@ class DashboardScreen extends ConsumerWidget {
                     FadeSlideIn(
                       index: 1,
                       child: _PulseCard(
-                        onTap: () => context.push('/merchant/bookings'),
+                        onTap: () => TabSwitcher.maybeOf(context)?.call(2),
                         text: tr('{0} रिज़र्वेशन और {1} ऑर्डर आपके जवाब का इंतज़ार कर रहे हैं',
                             [s['pending_reservations'], s['pending_orders']]),
                       ),
@@ -100,6 +103,7 @@ class DashboardScreen extends ConsumerWidget {
                               icon: tiles[i].$3,
                               format: tiles[i].$4,
                               color: tiles[i].$5,
+                              onTap: tiles[i].$6,
                             ),
                           ),
                       ],

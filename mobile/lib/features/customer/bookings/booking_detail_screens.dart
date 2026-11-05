@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/payments/checkout.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/contact_actions.dart';
 import '../customer_providers.dart';
-import '../deals/deal_detail_screen.dart';
 import '../reviews/review_sheet.dart';
 import '../../../core/i18n/i18n.dart';
 
@@ -90,12 +89,13 @@ class ReservationDetailScreen extends ConsumerWidget {
                 leading: const Icon(Icons.store),
                 title: Text(r.shopName),
                 subtitle: Text(r.shopAddress),
-                trailing: IconButton(
-                  icon: const Icon(Icons.directions),
-                  onPressed: () => openDirections(r.shopLatitude, r.shopLongitude),
-                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/shop/${r.shopId}'),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: ContactActions(phone: r.shopPhone, latitude: r.shopLatitude, longitude: r.shopLongitude, message: r.number),
             ),
             if (r.isOpen)
               Padding(
@@ -192,11 +192,13 @@ class OrderDetailScreen extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(Icons.store),
                 title: Text(o.shopName),
-                trailing: o.shopPhone.isEmpty
-                    ? null
-                    : IconButton(icon: const Icon(Icons.call), onPressed: () => launchUrl(Uri.parse('tel:${o.shopPhone}'))),
+                trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/shop/${o.shopId}'),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: ContactActions(phone: o.shopPhone, latitude: o.shopLatitude, longitude: o.shopLongitude, message: o.number),
             ),
             if (o.status == 'pending_payment' || o.status == 'pending')
               Padding(

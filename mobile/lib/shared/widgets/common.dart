@@ -197,6 +197,7 @@ class StatTile extends StatelessWidget {
     this.format,
     this.icon,
     this.color = const Color(0xFF16A34A),
+    this.onTap,
   });
 
   final String label;
@@ -205,10 +206,13 @@ class StatTile extends StatelessWidget {
   final IconData? icon;
   final Color color;
 
+  /// Opens the related screen; tiles with an action show a small arrow.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
+    final tile = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.card,
@@ -225,6 +229,7 @@ class StatTile extends StatelessWidget {
             ),
           const SizedBox(width: 8),
           Expanded(child: Text(label, style: theme.textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis)),
+          if (onTap != null) Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.muted),
         ]),
         CountUp(
           value: value,
@@ -233,5 +238,6 @@ class StatTile extends StatelessWidget {
         ),
       ]),
     );
+    return onTap == null ? tile : Pressable(onTap: onTap, child: tile);
   }
 }

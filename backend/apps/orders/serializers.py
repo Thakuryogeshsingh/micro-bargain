@@ -48,13 +48,15 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
     shop_phone = serializers.CharField(source="shop.phone", read_only=True)
+    shop_latitude = serializers.FloatField(source="shop.latitude", read_only=True)
+    shop_longitude = serializers.FloatField(source="shop.longitude", read_only=True)
     coupon_code = serializers.CharField(source="coupon.code", read_only=True, default=None)
 
     class Meta:
         model = Order
         fields = [
             "id", "order_number", "status", "fulfilment", "payment_method", "payment_status",
-            "shop", "shop_name", "shop_phone", "items",
+            "shop", "shop_name", "shop_phone", "shop_latitude", "shop_longitude", "items",
             "subtotal", "savings", "coupon_code", "coupon_discount", "delivery_fee", "total_amount", "refunded_amount",
             "delivery_address", "delivery_latitude", "delivery_longitude", "pickup_code", "note",
             "expires_at", "confirmed_at", "ready_at", "completed_at", "cancelled_at", "cancel_reason", "created_at",

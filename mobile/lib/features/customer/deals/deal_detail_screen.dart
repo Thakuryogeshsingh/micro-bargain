@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/contact_actions.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../cart/cart.dart';
@@ -243,13 +244,19 @@ class _DealBodyState extends ConsumerState<_DealBody> {
                             Row(children: [Stars(deal.shop.rating, size: 14), Text('  ${deal.shop.rating.toStringAsFixed(1)}')]),
                         ]),
                       ),
-                      IconButton.filledTonal(
-                        tooltip: tr('रास्ता देखें'),
-                        icon: const Icon(Icons.directions_rounded),
-                        onPressed: () => openDirections(deal.shop.latitude, deal.shop.longitude),
-                      ),
+                      Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
                     ]),
                   ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              FadeSlideIn(
+                index: 5,
+                child: ContactActions(
+                  phone: deal.shop.phone,
+                  latitude: deal.shop.latitude,
+                  longitude: deal.shop.longitude,
+                  message: '${deal.productName} — Micro Bargain',
                 ),
               ),
               if (deal.isLive) ...[
