@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/app_theme.dart';
@@ -132,4 +134,94 @@ class _AutoRefreshState extends State<AutoRefresh> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// Delivery map: the shop, the delivery point and the route between them, with where the order is now.
+class OrderMap extends StatelessWidget {
+  const OrderMap({
+    super.key,
+    required this.shopLatitude,
+    required this.shopLongitude,
+    required this.toLatitude,
+    required this.toLongitude,
+    required this.status,
+  });
+
+  final double shopLatitude;
+  final double shopLongitude;
+  final double toLatitude;
+  final double toLongitude;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final shop = ll.LatLng(shopLatitude, shopLongitude);
+    final home = ll.LatLng(toLatitude, toLongitude);
+    final (label, icon) = switch (status) {
+      'out_for_delivery' => (tr('रास्ते में है'), Icons.delivery_dining_rounded),
+      'completed' => (tr('पहुंच गया'), Icons.home_rounded),
+      'cancelled' || 'refunded' => (tr('रद्द'), Icons.block_rounded),
+      _ => (tr('दुकान पर तैयार हो रहा है'), Icons.storefront_rounded),
+    };
+    return Container(
+      height: 190,
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), boxShadow: AppTheme.softShadow(0.06)),
+      child: Stack(children: [
+        FlutterMap(
+          options: MapOptions(
+            initialCameraFit: CameraFit.bounds(bounds: LatLngBounds(shop, home), padding: const EdgeInsets.all(44)),
+            interactionOptions: const InteractionOptions(flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag),
+          ),
+          children: [
+            TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.microbargain.micro_bargain'),
+            PolylineLayer(polylines: [
+              Polyline(points: [shop, home], strokeWidth: 4, color: AppTheme.ink, pattern: StrokePattern.dashed(segments: const [10, 8])),
+            ]),
+            MarkerLayer(markers: [
+              Marker(point: shop, width: 38, height: 38, child: _Pin(icon: Icons.storefront_rounded, color: AppTheme.ink)),
+              Marker(
+                point: home,
+                width: 38,
+                height: 38,
+                child: _Pin(icon: Icons.home_rounded, color: AppTheme.minimal ? const Color(0xFF00C853) : AppTheme.primary),
+              ),
+            ]),
+          ],
+        ),
+        Positioned(
+          left: 10,
+          top: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(color: const Color(0xFF111111), borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 16, color: AppTheme.accent),
+              const SizedBox(width: 6),
+              Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _Pin extends StatelessWidget {
+  const _Pin({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+        ),
+        child: Icon(icon, size: 18, color: Colors.white),
+      );
 }

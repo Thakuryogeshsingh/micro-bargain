@@ -46,6 +46,8 @@ String? routeFor(AppNotification n, {required bool merchant}) {
   if (d['complaint_id'] != null) return '/support/${d['complaint_id']}';
   if (d['shop_id'] != null || n.kind == 'merchant_approved') return merchant ? '/merchant/onboarding' : null;
   if (n.kind == 'cashback') return '/wallet';
+  if (d['chat_id'] != null) return '/chat/${d['chat_id']}';
+  if (d['daily_id'] != null) return merchant ? '/merchant/daily' : '/daily';
   if (d['review_id'] != null) return '/merchant/reviews';
   return null;
 }

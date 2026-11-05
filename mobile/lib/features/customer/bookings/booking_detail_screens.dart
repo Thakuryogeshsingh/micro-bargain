@@ -263,6 +263,14 @@ class OrderDetailScreen extends ConsumerWidget {
                   ),
                   trailing: StatusChip(o.status),
                 ),
+                if (o.isDelivery && o.deliveryLatitude != null && o.shopLatitude != 0)
+                  OrderMap(
+                    shopLatitude: o.shopLatitude,
+                    shopLongitude: o.shopLongitude,
+                    toLatitude: o.deliveryLatitude!,
+                    toLongitude: o.deliveryLongitude!,
+                    status: o.status,
+                  ),
                 TrackingTimeline(
                   failed: ['cancelled', 'refunded'].contains(o.status),
                   failedText:

@@ -148,6 +148,17 @@ class ProfileScreen extends ConsumerWidget {
           onTap: () => context.push('/refunds'),
         ),
         ListTile(
+          leading: const Icon(Icons.event_repeat_rounded, color: Color(0xFF0EA5E9)),
+          title: Text(tr('रोज़ाना डिलीवरी')),
+          subtitle: Text(tr('दूध, ब्रेड — हर सुबह अपने आप')),
+          onTap: () => context.push('/daily'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF7C3AED)),
+          title: Text(tr('मैसेज')),
+          onTap: () => context.push('/chats'),
+        ),
+        ListTile(
           leading: const Icon(Icons.storefront),
           title: Text(tr('अपनी दुकान जोड़ें')),
           subtitle: Text(tr('दुकानदार हैं? अपनी डील यहां बेचें')),

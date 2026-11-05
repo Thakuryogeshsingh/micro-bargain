@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/auth/session.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/payments/checkout.dart';
 import '../../../core/utils/format.dart';
@@ -42,6 +44,22 @@ class MoreScreen extends ConsumerWidget {
         item(Icons.bar_chart, tr('बिक्री और कमीशन'), '/merchant/earnings'),
         item(Icons.star_outline, tr('ग्राहकों के रिव्यू'), '/merchant/reviews'),
         item(Icons.verified_outlined, tr('क्वालिटी शिकायतें'), '/merchant/complaints'),
+        item(Icons.menu_book_rounded, tr('उधार खाता'), '/merchant/khata', subtitle: tr('किसे कितना उधार दिया — सब हिसाब')),
+        item(Icons.event_repeat_rounded, tr('रोज़ाना डिलीवरी'), '/merchant/daily', subtitle: tr('आज किसे दूध / ब्रेड पहुंचाना है')),
+        item(Icons.chat_bubble_outline_rounded, tr('ग्राहकों के मैसेज'), '/chats'),
+        ListTile(
+          leading: const Icon(Icons.qr_code_2_rounded),
+          title: Text(tr('QR पोस्टर')),
+          subtitle: Text(tr('प्रिंट करके दुकान पर लगाएं — ग्राहक स्कैन करके डील देखेंगे')),
+          onTap: () async {
+            final shop = await ref.read(myShopProvider.future);
+            if (shop == null || shop['status'] != 'approved') {
+              if (context.mounted) showMessage(context, tr('दुकान अप्रूव होने के बाद QR पोस्टर मिलेगा'), error: true);
+              return;
+            }
+            launchUrl(Uri.parse('${AppConfig.siteUrl}/s/${shop['id']}/poster/'), mode: LaunchMode.externalApplication);
+          },
+        ),
         item(Icons.checklist_rounded, tr('दुकान सेटअप और दस्तावेज़'), '/merchant/onboarding'),
         ListTile(
           leading: const Icon(Icons.account_balance_outlined),

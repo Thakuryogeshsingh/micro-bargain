@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/format.dart';
@@ -12,6 +13,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/shop_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../../../shared/widgets/visuals.dart';
+import '../../../core/config/app_config.dart';
+import '../../chat/chat_screens.dart';
+import '../daily/daily_screens.dart';
 import '../customer_providers.dart';
 import '../cart/cart_bar.dart';
 import '../home/home_screen.dart';
@@ -54,6 +58,14 @@ class ShopScreen extends ConsumerWidget {
                   icon: Icon(shop.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                       color: shop.isFavorite ? const Color(0xFFFF4D6D) : Colors.white),
                   onPressed: toggleFavorite,
+                ),
+                IconButton(
+                  tooltip: tr('WhatsApp पर शेयर'),
+                  icon: const Icon(Icons.share_rounded, color: Colors.white),
+                  onPressed: () => launchUrl(
+                    Uri.parse('https://wa.me/?text=${Uri.encodeComponent('${shop.name} — ${tr('आज की ताज़ा डील')}\n${AppConfig.siteUrl}/s/${shop.id}/')}'),
+                    mode: LaunchMode.externalApplication,
+                  ),
                 ),
                 const CartIconButton(color: Colors.white),
               ],
@@ -106,6 +118,26 @@ class ShopScreen extends ConsumerWidget {
                   ]),
                   const SizedBox(height: 14),
                   ContactActions(phone: shop.phone, latitude: shop.latitude, longitude: shop.longitude),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: const StadiumBorder()),
+                        onPressed: () => startChat(context, ref, shop.id),
+                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                        label: Text(tr('चैट करें')),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(46)),
+                        onPressed: () => showSubscribeSheet(context, shop),
+                        icon: const Icon(Icons.event_repeat_rounded, size: 18),
+                        label: Text(tr('रोज़ मंगवाएं')),
+                      ),
+                    ),
+                  ]),
                 ]),
               ),
             ),

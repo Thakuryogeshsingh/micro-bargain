@@ -302,6 +302,8 @@ class Order {
     this.customerName = '',
     this.customerPhone = '',
     this.recipientName = '',
+    this.deliveryLatitude,
+    this.deliveryLongitude,
     this.recipientPhone = '',
   });
 
@@ -336,6 +338,8 @@ class Order {
         customerName: j['customer_name'] ?? '',
         customerPhone: j['customer_phone'] ?? '',
         recipientName: j['recipient_name'] ?? '',
+        deliveryLatitude: j['delivery_latitude'] == null ? null : _d(j['delivery_latitude']),
+        deliveryLongitude: j['delivery_longitude'] == null ? null : _d(j['delivery_longitude']),
         recipientPhone: j['recipient_phone'] ?? '',
       );
 
@@ -369,6 +373,8 @@ class Order {
   final String customerName;
   final String customerPhone;
   final String recipientName;
+  final double? deliveryLatitude;
+  final double? deliveryLongitude;
   final String recipientPhone;
 
   bool get isDelivery => fulfilment == 'delivery';

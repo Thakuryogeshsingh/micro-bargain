@@ -198,31 +198,54 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             onChanged: (v) => setState(() => _useWallet = v),
           ),
         const SizedBox(height: 12),
-        _row(tr('सामान'), rupees(subtotal)),
-        if (_discount > 0) _row(tr('कूपन छूट'), '- ${rupees(_discount)}'),
-        if (fee > 0) _row(tr('डिलीवरी'), rupees(fee)),
-        if (walletUse > 0) _row(tr('वॉलेट से'), '- ${rupees(walletUse)}'),
-        _row(tr('कुल'), rupees(total), bold: true),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(tr('आप {0} बचा रहे हैं 🎉', [rupees(savings + _discount)]), style: TextStyle(color: Colors.green.shade700)),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(20), boxShadow: AppTheme.softShadow(0.05)),
+          child: Column(children: [
+            _row(tr('सामान'), rupees(subtotal)),
+            if (_discount > 0) _row(tr('कूपन छूट'), '- ${rupees(_discount)}', good: true),
+            if (fee > 0) _row(tr('डिलीवरी'), rupees(fee)),
+            if (walletUse > 0) _row(tr('वॉलेट से'), '- ${rupees(walletUse)}', good: true),
+            const Divider(height: 18, indent: 16, endIndent: 16),
+            _row(tr('कुल'), rupees(total), bold: true),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppTheme.minimal ? AppTheme.accent.withValues(alpha: 0.18) : Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(tr('आप {0} बचा रहे हैं 🎉', [rupees(savings + _discount)]),
+                style: TextStyle(color: AppTheme.minimal ? const Color(0xFF0A7A34) : Colors.green.shade800, fontWeight: FontWeight.w800)),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: FilledButton(
+          child: FilledButton.icon(
             onPressed: _busy ? null : () => _placeOrder(lines),
-            child: Text(_payment == 'online' ? tr('पेमेंट करें {0}', [rupees(total)]) : tr('ऑर्डर करें')),
+            icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+            label: Text(_payment == 'online' ? tr('पेमेंट करें {0}', [rupees(total)]) : tr('ऑर्डर करें')),
           ),
         ),
       ]),
     );
   }
 
-  Widget _row(String label, String value, {bool bold = false}) {
-    final style = bold ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16) : null;
+  Widget _row(String label, String value, {bool bold = false, bool good = false}) {
+    final style = bold
+        ? TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.4, color: AppTheme.ink)
+        : TextStyle(fontSize: 15, color: good ? const Color(0xFF15803D) : AppTheme.ink);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-      child: Row(children: [Text(label, style: style), const Spacer(), Text(value, style: style)]),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(children: [
+        Text(label, style: bold ? style : TextStyle(fontSize: 15, color: AppTheme.muted)),
+        const Spacer(),
+        Text(value, style: style),
+      ]),
     );
   }
 }

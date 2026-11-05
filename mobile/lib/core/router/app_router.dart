@@ -14,7 +14,12 @@ import '../../features/customer/deals/deal_detail_screen.dart';
 import '../../features/customer/offers/offers.dart';
 import '../../features/customer/plus/plus_screens.dart';
 import '../../features/customer/profile/profile_screens.dart';
+import '../../features/chat/chat_screens.dart';
+import '../../features/customer/daily/daily_screens.dart';
 import '../../features/customer/map/shops_map_screen.dart';
+import '../../features/customer/search/search_screen.dart';
+import '../../features/merchant/daily/merchant_daily_screen.dart';
+import '../../features/merchant/khata/khata_screens.dart';
 import '../../features/customer/quality/quality_screens.dart';
 import '../../features/merchant/onboarding/onboarding_screen.dart';
 import '../../features/merchant/quality/complaints_screen.dart';
@@ -59,7 +64,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: _SessionListenable(ref),
     redirect: (context, state) {
       final here = state.matchedLocation;
-      if (here.startsWith('/deal/') && ref.read(sessionProvider).status != SessionStatus.signedIn) _pendingLink = here;
+      if ((here.startsWith('/deal/') || here.startsWith('/shop/')) && ref.read(sessionProvider).status != SessionStatus.signedIn) {
+        _pendingLink = here;
+      }
       // First launch: pick a language before anything else.
       if (ref.read(languageProvider) == null) return here == '/language' ? null : '/language';
       // Then the welcome slides, once.
@@ -139,6 +146,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/wallet', builder: (_, _) => const WalletScreen()),
       GoRoute(path: '/refunds', builder: (_, _) => const RefundsScreen()),
       GoRoute(path: '/refund-policy', builder: (_, _) => const RefundPolicyScreen()),
+      GoRoute(path: '/search', builder: (_, state) => SearchScreen(initial: state.extra as String? ?? '')),
+      GoRoute(path: '/daily', builder: (_, _) => const MyDailyScreen()),
+      GoRoute(path: '/chats', builder: (_, _) => const ChatListScreen()),
+      GoRoute(path: '/chat/:id', builder: (_, state) => ChatScreen(id: _id(state))),
       GoRoute(path: '/map', builder: (_, _) => const ShopsMapScreen()),
       GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
       GoRoute(path: '/addresses/new', builder: (_, _) => const AddressFormScreen()),
@@ -154,6 +165,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/merchant/incoming', builder: (_, _) => const IncomingOrdersScreen()),
       GoRoute(path: '/merchant/onboarding', builder: (_, _) => const ShopSetupScreen()),
       GoRoute(path: '/merchant/complaints', builder: (_, _) => const MerchantComplaintsScreen()),
+      GoRoute(path: '/merchant/khata', builder: (_, _) => const KhataScreen()),
+      GoRoute(path: '/merchant/khata/:id', builder: (_, state) => KhataCustomerScreen(id: _id(state))),
+      GoRoute(path: '/merchant/daily', builder: (_, _) => const MerchantDailyScreen()),
       GoRoute(path: '/merchant/inventory', builder: (_, _) => const InventoryScreen()),
       GoRoute(path: '/merchant/plans', builder: (_, _) => const PlansScreen()),
       GoRoute(path: '/merchant/promotions', builder: (_, _) => const PromotionsScreen()),

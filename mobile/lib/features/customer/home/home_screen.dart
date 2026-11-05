@@ -241,7 +241,9 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
         child: TextField(
           controller: _controller,
           textInputAction: TextInputAction.search,
-          onSubmitted: _search,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) context.push('/search', extra: value.trim());
+          },
           decoration: InputDecoration(
             hintText: tr('सब्ज़ी, फल, दूध, दुकान खोजें…'),
             filled: true,
@@ -258,8 +260,7 @@ class _SearchBarState extends ConsumerState<_SearchBar> {
                 onPressed: () async {
                   final text = await listenOnce(context, hint: tr('जैसे: "टमाटर" या "दूध"'));
                   if (text == null || !mounted) return;
-                  _controller.text = text;
-                  _search(text);
+                  if (context.mounted) context.push('/search', extra: text);
                 },
               ),
               IconButton(
