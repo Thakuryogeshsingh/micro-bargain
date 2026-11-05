@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<void> showReviewSheet(BuildContext context, WidgetRef ref, {int? reservationId, int? orderId, required String shopName}) {
   return showModalBottomSheet(
@@ -34,7 +35,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
           if (widget.orderId != null) 'order': widget.orderId,
           'rating': _rating,
           'comment': _comment.text.trim(),
-        }), success: 'धन्यवाद! आपकी रेटिंग सेव हो गई');
+        }), success: tr('धन्यवाद! आपकी रेटिंग सेव हो गई'));
     if (ok && mounted) Navigator.pop(context);
   }
 
@@ -43,7 +44,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text('${widget.shopName} कैसी लगी?', style: Theme.of(context).textTheme.titleLarge),
+        Text(tr('{0} कैसी लगी?', [widget.shopName]), style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           for (var i = 1; i <= 5; i++)
@@ -57,9 +58,9 @@ class _ReviewSheetState extends State<_ReviewSheet> {
           controller: _comment,
           maxLines: 3,
           maxLength: 1000,
-          decoration: const InputDecoration(hintText: 'सामान की ताज़गी, दुकानदार का व्यवहार… (ज़रूरी नहीं)'),
+          decoration: InputDecoration(hintText: tr('सामान की ताज़गी, दुकानदार का व्यवहार… (ज़रूरी नहीं)')),
         ),
-        FilledButton(onPressed: _submit, child: const Text('भेजें')),
+        FilledButton(onPressed: _submit, child: Text(tr('भेजें'))),
       ]),
     );
   }

@@ -10,13 +10,16 @@ import '../../../core/network/api_client.dart';
 import '../../../shared/widgets/common.dart';
 import '../../customer/customer_providers.dart';
 import '../merchant_providers.dart';
+import '../../../core/i18n/i18n.dart';
 
+// i18n:off (translated where used)
 const _docTypes = {
   'shop_photo': 'दुकान की फोटो',
   'id_proof': 'मालिक का ID (आधार/PAN)',
   'fssai': 'FSSAI लाइसेंस',
   'gst': 'GST सर्टिफिकेट',
 };
+// i18n:on
 
 /// Create the shop, or edit it once it exists. Location comes from the phone's GPS (stand inside the shop).
 class ShopFormScreen extends ConsumerWidget {
@@ -25,7 +28,7 @@ class ShopFormScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('मेरी दुकान')),
+      appBar: AppBar(title: Text(tr('मेरी दुकान'))),
       body: AsyncView(
         value: ref.watch(myShopProvider),
         onRetry: () => ref.invalidate(myShopProvider),
@@ -62,7 +65,7 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
     final here = await currentLocation();
     if (!mounted) return;
     if (here.isFallback) {
-      showMessage(context, 'लोकेशन नहीं मिली। फ़ोन की लोकेशन (GPS) चालू करें।');
+      showMessage(context, tr('लोकेशन नहीं मिली। फ़ोन की लोकेशन (GPS) चालू करें।'));
       return;
     }
     setState(() => _location = here);
@@ -71,7 +74,7 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
   Future<void> _save() async {
     if (!_form.currentState!.validate() || _category == null) return;
     if (_isNew && _location == null) {
-      showMessage(context, 'पहले "दुकान की लोकेशन लें" दबाएं');
+      showMessage(context, tr('पहले "दुकान की लोकेशन लें" दबाएं'));
       return;
     }
     setState(() => _busy = true);
@@ -88,7 +91,7 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
     final ok = await runAction(
       context,
       () => _isNew ? api.post('/merchants/shop/create/', body) : api.patch('/merchants/shop/update/${widget.shop!['id']}/', body),
-      success: _isNew ? 'दुकान जुड़ गई! अब वेरिफिकेशन के लिए दस्तावेज़ अपलोड करें।' : 'सेव हो गया',
+      success: _isNew ? tr('दुकान जुड़ गई! अब वेरिफिकेशन के लिए दस्तावेज़ अपलोड करें।') : tr('सेव हो गया'),
     );
     if (!mounted) return;
     setState(() => _busy = false);
@@ -102,8 +105,8 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
   Future<void> _uploadDocument() async {
     final type = await showDialog<String>(
       context: context,
-      builder: (_) => SimpleDialog(title: const Text('कौन सा दस्तावेज़?'), children: [
-        for (final e in _docTypes.entries) SimpleDialogOption(onPressed: () => Navigator.pop(context, e.key), child: Text(e.value)),
+      builder: (_) => SimpleDialog(title: Text(tr('कौन सा दस्तावेज़?')), children: [
+        for (final e in _docTypes.entries) SimpleDialogOption(onPressed: () => Navigator.pop(context, e.key), child: Text(tr(e.value))),
       ]),
     );
     if (type == null) return;
@@ -114,12 +117,12 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
         'doc_type': type,
         'file': await MultipartFile.fromFile(photo.path, filename: photo.name),
       }));
-    }, success: '${_docTypes[type]} अपलोड हो गया');
+    }, success: tr('{0} अपलोड हो गया', [tr(_docTypes[type]!)]));
   }
 
   @override
   Widget build(BuildContext context) {
-    String? required(String? v) => (v == null || v.trim().isEmpty) ? 'ज़रूरी है' : null;
+    String? required(String? v) => (v == null || v.trim().isEmpty) ? tr('ज़रूरी है') : null;
     final categories = ref.watch(categoriesProvider).value ?? [];
     return Form(
       key: _form,
@@ -128,19 +131,19 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
           Card(
             color: Colors.orange.shade50,
             child: ListTile(
-              title: Text(widget.shop!['status'] == 'rejected' ? 'अप्रूव नहीं हुई: ${widget.shop!['rejection_reason']}' : 'वेरिफिकेशन बाकी'),
-              subtitle: const Text('दुकान की फोटो और ID अपलोड करें'),
-              trailing: FilledButton.tonal(onPressed: _uploadDocument, child: const Text('अपलोड')),
+              title: Text(widget.shop!['status'] == 'rejected' ? tr('अप्रूव नहीं हुई: {0}', [widget.shop!['rejection_reason']]) : tr('वेरिफिकेशन बाकी')),
+              subtitle: Text(tr('दुकान की फोटो और ID अपलोड करें')),
+              trailing: FilledButton.tonal(onPressed: _uploadDocument, child: Text(tr('अपलोड'))),
             ),
           ),
-        TextFormField(controller: _text['name'], decoration: const InputDecoration(labelText: 'दुकान का नाम'), validator: required),
+        TextFormField(controller: _text['name'], decoration: InputDecoration(labelText: tr('दुकान का नाम')), validator: required),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
           initialValue: _category,
-          decoration: const InputDecoration(labelText: 'दुकान का प्रकार'),
-          items: [for (final c in categories) DropdownMenuItem(value: c.id, child: Text(c.nameHi))],
+          decoration: InputDecoration(labelText: tr('दुकान का प्रकार')),
+          items: [for (final c in categories) DropdownMenuItem(value: c.id, child: Text(c.label))],
           onChanged: (v) => setState(() => _category = v),
-          validator: (v) => v == null ? 'चुनें' : null,
+          validator: (v) => v == null ? tr('चुनें') : null,
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -148,14 +151,14 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
           keyboardType: TextInputType.phone,
           maxLength: 10,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(labelText: 'दुकान का फ़ोन (ग्राहक कॉल कर सकें)'),
+          decoration: InputDecoration(labelText: tr('दुकान का फ़ोन (ग्राहक कॉल कर सकें)')),
         ),
-        TextFormField(controller: _text['address_line'], decoration: const InputDecoration(labelText: 'पता'), validator: required),
+        TextFormField(controller: _text['address_line'], decoration: InputDecoration(labelText: tr('पता')), validator: required),
         const SizedBox(height: 12),
-        TextFormField(controller: _text['landmark'], decoration: const InputDecoration(labelText: 'लैंडमार्क')),
+        TextFormField(controller: _text['landmark'], decoration: InputDecoration(labelText: tr('लैंडमार्क'))),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: TextFormField(controller: _text['city'], decoration: const InputDecoration(labelText: 'शहर'), validator: required)),
+          Expanded(child: TextFormField(controller: _text['city'], decoration: InputDecoration(labelText: tr('शहर')), validator: required)),
           const SizedBox(width: 12),
           Expanded(
             child: TextFormField(
@@ -163,30 +166,30 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
               keyboardType: TextInputType.number,
               maxLength: 6,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(labelText: 'पिनकोड'),
-              validator: (v) => (v ?? '').length == 6 ? null : '6 अंक',
+              decoration: InputDecoration(labelText: tr('पिनकोड')),
+              validator: (v) => (v ?? '').length == 6 ? null : tr('6 अंक'),
             ),
           ),
         ]),
-        TextFormField(controller: _text['description'], maxLines: 2, decoration: const InputDecoration(labelText: 'दुकान के बारे में')),
+        TextFormField(controller: _text['description'], maxLines: 2, decoration: InputDecoration(labelText: tr('दुकान के बारे में'))),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _locate,
           icon: Icon(_location == null ? Icons.my_location : Icons.check_circle, color: _location == null ? null : Colors.green),
           label: Text(_location == null
-              ? (_isNew ? 'दुकान की लोकेशन लें (दुकान में खड़े होकर)' : 'लोकेशन बदलें')
-              : 'लोकेशन मिल गई (${_location!.latitude.toStringAsFixed(4)}, ${_location!.longitude.toStringAsFixed(4)})'),
+              ? (_isNew ? tr('दुकान की लोकेशन लें (दुकान में खड़े होकर)') : tr('लोकेशन बदलें'))
+              : tr('लोकेशन मिल गई ({0}, {1})', [_location!.latitude.toStringAsFixed(4), _location!.longitude.toStringAsFixed(4)])),
         ),
-        SwitchListTile(title: const Text('होम डिलीवरी करते हैं'), value: _delivery, onChanged: (v) => setState(() => _delivery = v)),
+        SwitchListTile(title: Text(tr('होम डिलीवरी करते हैं')), value: _delivery, onChanged: (v) => setState(() => _delivery = v)),
         if (!_isNew)
           SwitchListTile(
-            title: const Text('दुकान अभी बंद है'),
-            subtitle: const Text('चालू करने पर आपकी डील ग्राहकों को नहीं दिखेंगी'),
+            title: Text(tr('दुकान अभी बंद है')),
+            subtitle: Text(tr('चालू करने पर आपकी डील ग्राहकों को नहीं दिखेंगी')),
             value: _closed,
             onChanged: (v) => setState(() => _closed = v),
           ),
         const SizedBox(height: 12),
-        FilledButton(onPressed: _busy ? null : _save, child: Text(_isNew ? 'दुकान जोड़ें' : 'सेव करें')),
+        FilledButton(onPressed: _busy ? null : _save, child: Text(_isNew ? tr('दुकान जोड़ें') : tr('सेव करें'))),
       ]),
     );
   }

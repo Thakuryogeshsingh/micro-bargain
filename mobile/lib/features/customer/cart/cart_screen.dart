@@ -7,7 +7,9 @@ import '../../../core/payments/checkout.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
 import '../customer_providers.dart';
+import '../offers/offers.dart';
 import 'cart.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -36,12 +38,12 @@ class _CartScreenState extends ConsumerState<CartScreen> {
         'subtotal': subtotal.toStringAsFixed(2),
       });
       setState(() => _discount = double.parse(data['discount'].toString()));
-    }, success: 'कूपन लग गया');
+    }, success: tr('कूपन लग गया'));
   }
 
   Future<void> _placeOrder(List<CartLine> lines) async {
     if (_fulfilment == 'delivery' && _addressId == null) {
-      showMessage(context, 'डिलीवरी का पता चुनें');
+      showMessage(context, tr('डिलीवरी का पता चुनें'));
       return;
     }
     setState(() => _busy = true);
@@ -64,10 +66,10 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     if (order!['status'] == 'pending_payment') {
       final paid = await runAction(context, () async {
         if (!await payOnline(context, api, purpose: 'order', id: order!['id'])) {
-          throw ApiException('पेमेंट पूरा नहीं हुआ। ऑर्डर में जाकर 15 मिनट के अंदर दोबारा पेमेंट करें।');
+          throw ApiException(tr('पेमेंट पूरा नहीं हुआ। ऑर्डर में जाकर 15 मिनट के अंदर दोबारा पेमेंट करें।'));
         }
       });
-      if (paid && mounted) showMessage(context, 'पेमेंट हो गया ✅');
+      if (paid && mounted) showMessage(context, tr('पेमेंट हो गया ✅'));
     }
     ref.invalidate(myOrdersProvider);
     if (mounted) context.pushReplacement('/order/${order!['id']}');
@@ -79,8 +81,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     final theme = Theme.of(context);
     if (lines.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('कार्ट')),
-        body: const EmptyView(icon: Icons.shopping_cart_outlined, message: 'कार्ट खाली है'),
+        appBar: AppBar(title: Text(tr('कार्ट'))),
+        body: EmptyView(icon: Icons.shopping_cart_outlined, message: tr('कार्ट खाली है')),
       );
     }
     final shop = lines.first.deal.shop;
@@ -93,7 +95,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     final total = subtotal - _discount + fee;
 
     return Scaffold(
-      appBar: AppBar(title: Text('कार्ट · ${shop.name}')),
+      appBar: AppBar(title: Text(tr('कार्ट · {0}', [shop.name]))),
       body: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
         for (final l in lines)
           ListTile(
@@ -108,28 +110,28 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             ]),
           ),
         const Divider(),
-        const SectionTitle('कैसे लेंगे?'),
+        SectionTitle(tr('कैसे लेंगे?')),
         RadioGroup<String>(
           groupValue: _fulfilment,
           onChanged: (v) => setState(() => _fulfilment = v!),
           child: Column(children: [
-            RadioListTile(value: 'pickup', enabled: canPickup, title: const Text('दुकान से पिकअप')),
+            RadioListTile(value: 'pickup', enabled: canPickup, title: Text(tr('दुकान से पिकअप'))),
             RadioListTile(
               value: 'delivery',
               enabled: canDeliver,
-              title: const Text('होम डिलीवरी'),
-              subtitle: Text(canDeliver ? '${rupees(_freeDeliveryAbove)} से ऊपर फ्री, वरना ${rupees(_deliveryFee)}' : 'यह दुकान डिलीवरी नहीं करती'),
+              title: Text(tr('होम डिलीवरी')),
+              subtitle: Text(canDeliver ? tr('{0} से ऊपर फ्री, वरना {1}', [rupees(_freeDeliveryAbove), rupees(_deliveryFee)]) : tr('यह दुकान डिलीवरी नहीं करती')),
             ),
           ]),
         ),
         if (_fulfilment == 'delivery') _AddressPicker(selected: _addressId, onSelect: (id) => setState(() => _addressId = id)),
-        const SectionTitle('पेमेंट'),
+        SectionTitle(tr('पेमेंट')),
         RadioGroup<String>(
           groupValue: _payment,
           onChanged: (v) => setState(() => _payment = v!),
           child: Column(children: [
-            const RadioListTile(value: 'online', title: Text('UPI / कार्ड / नेट बैंकिंग')),
-            RadioListTile(value: 'cash', title: Text(_fulfilment == 'delivery' ? 'कैश ऑन डिलीवरी' : 'दुकान पर कैश')),
+            RadioListTile(value: 'online', title: Text(tr('UPI / कार्ड / नेट बैंकिंग'))),
+            RadioListTile(value: 'cash', title: Text(_fulfilment == 'delivery' ? tr('कैश ऑन डिलीवरी') : tr('दुकान पर कैश'))),
           ]),
         ),
         Padding(
@@ -139,27 +141,40 @@ class _CartScreenState extends ConsumerState<CartScreen> {
               child: TextField(
                 controller: _coupon,
                 textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(labelText: 'कूपन कोड', isDense: true),
+                decoration: InputDecoration(labelText: tr('कूपन कोड'), isDense: true),
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton(onPressed: () => _applyCoupon(subtotal, shop.id), child: const Text('लगाएं')),
+            OutlinedButton(onPressed: () => _applyCoupon(subtotal, shop.id), child: Text(tr('लगाएं'))),
           ]),
         ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: TextButton.icon(
+            onPressed: () async {
+              final code = await pickOffer(context, shop.id);
+              if (code == null || !mounted) return;
+              _coupon.text = code;
+              await _applyCoupon(subtotal, shop.id);
+            },
+            icon: const Icon(Icons.local_offer_rounded),
+            label: Text(tr('ऑफ़र देखें')),
+          ),
+        ),
         const SizedBox(height: 12),
-        _row('सामान', rupees(subtotal)),
-        if (_discount > 0) _row('कूपन छूट', '- ${rupees(_discount)}'),
-        if (fee > 0) _row('डिलीवरी', rupees(fee)),
-        _row('कुल', rupees(total), bold: true),
+        _row(tr('सामान'), rupees(subtotal)),
+        if (_discount > 0) _row(tr('कूपन छूट'), '- ${rupees(_discount)}'),
+        if (fee > 0) _row(tr('डिलीवरी'), rupees(fee)),
+        _row(tr('कुल'), rupees(total), bold: true),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('आप ${rupees(savings + _discount)} बचा रहे हैं 🎉', style: TextStyle(color: Colors.green.shade700)),
+          child: Text(tr('आप {0} बचा रहे हैं 🎉', [rupees(savings + _discount)]), style: TextStyle(color: Colors.green.shade700)),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
             onPressed: _busy ? null : () => _placeOrder(lines),
-            child: Text(_payment == 'online' ? 'पेमेंट करें ${rupees(total)}' : 'ऑर्डर करें'),
+            child: Text(_payment == 'online' ? tr('पेमेंट करें {0}', [rupees(total)]) : tr('ऑर्डर करें')),
           ),
         ),
       ]),
@@ -205,7 +220,7 @@ class _AddressPicker extends ConsumerWidget {
               ref.invalidate(addressesProvider);
             },
             icon: const Icon(Icons.add_location_alt),
-            label: const Text('नया पता जोड़ें'),
+            label: Text(tr('नया पता जोड़ें')),
           ),
         ]);
       },

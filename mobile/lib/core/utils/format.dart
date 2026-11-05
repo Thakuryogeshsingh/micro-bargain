@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../i18n/i18n.dart';
+
 final _rupee = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 final _rupeePaise = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
 
@@ -12,6 +14,7 @@ String qty(num value) {
   return text.contains('.') ? text.replaceFirst(RegExp(r'\.?0+$'), '') : text;
 }
 
+// i18n:off (translated where used)
 const unitLabels = {
   'kg': 'किलो',
   'g': 'ग्राम',
@@ -21,33 +24,35 @@ const unitLabels = {
   'dozen': 'दर्जन',
   'box': 'डिब्बा',
 };
+// i18n:on
 
-String unitLabel(String unit) => unitLabels[unit] ?? unit;
+String unitLabel(String unit) => tr(unitLabels[unit] ?? unit);
 
 String distance(int? meters) {
   if (meters == null) return '';
-  return meters < 1000 ? '$meters मी.' : '${(meters / 1000).toStringAsFixed(1)} कि.मी.';
+  return meters < 1000 ? tr('{0} मी.', [meters]) : tr('{0} कि.मी.', [(meters / 1000).toStringAsFixed(1)]);
 }
 
 /// "1 घंटा 20 मिनट बाकी" style countdown text.
 String timeLeft(DateTime until) {
   final left = until.difference(DateTime.now());
-  if (left.isNegative) return 'समय खत्म';
-  if (left.inHours >= 1) return '${left.inHours} घं ${left.inMinutes % 60} मि बाकी';
-  if (left.inMinutes >= 1) return '${left.inMinutes} मि ${left.inSeconds % 60} से बाकी';
-  return '${left.inSeconds} सेकंड बाकी';
+  if (left.isNegative) return tr('समय खत्म');
+  if (left.inHours >= 1) return tr('{0} घं {1} मि बाकी', [left.inHours, left.inMinutes % 60]);
+  if (left.inMinutes >= 1) return tr('{0} मि {1} से बाकी', [left.inMinutes, left.inSeconds % 60]);
+  return tr('{0} सेकंड बाकी', [left.inSeconds]);
 }
 
 String dateTime(DateTime value) => DateFormat('d MMM, h:mm a').format(value);
 String timeOnly(DateTime value) => DateFormat('h:mm a').format(value);
 
+// i18n:off (translated where used)
 const statusLabels = {
   // reservations
   'pending': 'दुकान के जवाब का इंतज़ार',
-  'confirmed': 'कन्फर्म',
+  'confirmed': 'कन्फर्म हुआ',
   'completed': 'पूरा हुआ',
-  'rejected': 'अस्वीकार',
-  'cancelled': 'रद्द',
+  'rejected': 'अस्वीकार हुआ',
+  'cancelled': 'रद्द हुआ',
   'expired': 'समय खत्म',
   // orders
   'pending_payment': 'पेमेंट बाकी',
@@ -61,5 +66,6 @@ const statusLabels = {
   'sold_out': 'खत्म (बिक गई)',
   'ended': 'बंद',
 };
+// i18n:on
 
-String statusLabel(String status) => statusLabels[status] ?? status;
+String statusLabel(String status) => tr(statusLabels[status] ?? status);

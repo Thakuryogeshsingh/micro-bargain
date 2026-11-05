@@ -82,9 +82,11 @@ void main() {
   testWidgets('deal card shows price, discount and featured badge', (tester) async {
     final deal = Deal.fromJson(dealJson(featured: true));
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: DealCard(deal: deal, onTap: () {}))));
+    await tester.pump(const Duration(seconds: 1)); // entrance animation
     expect(find.text('सेब (शिमला)'), findsOneWidget);
     expect(find.text('40% OFF'), findsOneWidget);
-    expect(find.text('₹60/किलो'), findsOneWidget);
+    expect(find.text('₹60'), findsOneWidget);
+    expect(find.text('/किलो'), findsOneWidget);
     expect(find.textContaining('फीचर्ड'), findsOneWidget);
   });
 }

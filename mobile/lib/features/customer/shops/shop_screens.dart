@@ -9,6 +9,7 @@ import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../customer_providers.dart';
 import '../deals/deal_detail_screen.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ShopScreen extends ConsumerWidget {
   const ShopScreen({super.key, required this.id});
@@ -23,13 +24,13 @@ class ShopScreen extends ConsumerWidget {
       data: (shop) => Scaffold(
         appBar: AppBar(title: Text(shop.name), actions: [
           IconButton(
-            tooltip: 'पसंदीदा',
+            tooltip: tr('पसंदीदा'),
             icon: Icon(shop.isFavorite ? Icons.favorite : Icons.favorite_border, color: Colors.red),
             onPressed: () async {
               final api = ref.read(apiProvider);
               final ok = await runAction(context, () async {
                 shop.isFavorite ? await api.delete('/shops/$id/favorite/') : await api.post('/shops/$id/favorite/');
-              }, success: shop.isFavorite ? 'पसंदीदा से हटाया' : 'पसंदीदा में जोड़ा — नई डील पर सूचना मिलेगी');
+              }, success: shop.isFavorite ? tr('पसंदीदा से हटाया') : tr('पसंदीदा में जोड़ा — नई डील पर सूचना मिलेगी'));
               if (ok) {
                 ref.invalidate(shopProvider(id));
                 ref.invalidate(favoritesProvider);
@@ -50,26 +51,26 @@ class ShopScreen extends ConsumerWidget {
           if (shop.ratingCount > 0)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: [Stars(shop.rating), Text('  ${shop.rating.toStringAsFixed(1)} (${shop.ratingCount} रिव्यू)')]),
+              child: Row(children: [Stars(shop.rating), Text(tr('  {0} ({1} रिव्यू)', [shop.rating.toStringAsFixed(1), shop.ratingCount]))]),
             ),
-          const SectionTitle('अभी की डील'),
+          SectionTitle(tr('अभी की डील')),
           AsyncView(
             value: ref.watch(shopDealsProvider(id)),
             data: (deals) => deals.isEmpty
-                ? const Padding(padding: EdgeInsets.all(16), child: Text('अभी कोई लाइव डील नहीं।'))
+                ? Padding(padding: const EdgeInsets.all(16), child: Text(tr('अभी कोई लाइव डील नहीं।')))
                 : Column(children: [for (final d in deals) DealCard(deal: d, onTap: () => context.push('/deal/${d.id}'))]),
           ),
-          const SectionTitle('रिव्यू'),
+          SectionTitle(tr('रिव्यू')),
           AsyncView(
             value: ref.watch(shopReviewsProvider(id)),
             data: (reviews) => reviews.isEmpty
-                ? const Padding(padding: EdgeInsets.all(16), child: Text('अभी कोई रिव्यू नहीं।'))
+                ? Padding(padding: const EdgeInsets.all(16), child: Text(tr('अभी कोई रिव्यू नहीं।')))
                 : Column(children: [
                     for (final r in reviews)
                       ListTile(
                         leading: Stars(r.rating, size: 14),
                         title: Text(r.comment.isEmpty ? '—' : r.comment),
-                        subtitle: Text('${r.customerName} · ${dateTime(r.createdAt)}${r.reply.isEmpty ? '' : '\nदुकान: ${r.reply}'}'),
+                        subtitle: Text('${r.customerName} · ${dateTime(r.createdAt)}${r.reply.isEmpty ? '' : tr('\nदुकान: {0}', [r.reply])}'),
                       ),
                   ]),
           ),
@@ -86,16 +87,16 @@ class FavoritesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('पसंदीदा दुकानें')),
+      appBar: AppBar(title: Text(tr('पसंदीदा दुकानें'))),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(favoritesProvider.future),
         child: AsyncView(
           value: ref.watch(favoritesProvider),
           onRetry: () => ref.invalidate(favoritesProvider),
           data: (shops) => shops.isEmpty
-              ? ListView(children: const [
-                  SizedBox(height: 120),
-                  EmptyView(icon: Icons.favorite_border, message: 'दुकान पेज पर ♥ दबाएं — उनकी नई डील की सूचना सबसे पहले मिलेगी'),
+              ? ListView(children: [
+                  const SizedBox(height: 120),
+                  EmptyView(icon: Icons.favorite_border, message: tr('दुकान पेज पर ♥ दबाएं — उनकी नई डील की सूचना सबसे पहले मिलेगी')),
                 ])
               : ListView(children: [
                   for (final s in shops)

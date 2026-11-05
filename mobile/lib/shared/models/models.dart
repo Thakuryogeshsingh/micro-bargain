@@ -1,3 +1,5 @@
+import '../../core/i18n/i18n.dart';
+
 // Typed views of the API's JSON. Money and quantities arrive as strings ("60.00") and are parsed to double
 // for display only; anything sent back to the server is sent as a string again.
 
@@ -14,6 +16,9 @@ class Category {
   final String name;
   final String nameHi;
   final String icon;
+
+  /// Category names come from the server in Hindi; other languages translate them in the catalogue.
+  String get label => tr(nameHi);
 }
 
 class ShopSummary {
@@ -158,6 +163,7 @@ class Reservation {
     required this.expiresAt,
     required this.createdAt,
     this.pickupCode,
+    this.pickupAt,
     this.closedReason = '',
     this.customerName = '',
     this.customerPhone = '',
@@ -182,6 +188,7 @@ class Reservation {
         expiresAt: _t(j['expires_at'])!,
         createdAt: _t(j['created_at'])!,
         pickupCode: j['pickup_code'],
+        pickupAt: _t(j['pickup_at']),
         closedReason: j['closed_reason'] ?? '',
         customerName: j['customer_name'] ?? '',
         customerPhone: j['customer_phone'] ?? '',
@@ -205,6 +212,7 @@ class Reservation {
   final DateTime expiresAt;
   final DateTime createdAt;
   final String? pickupCode; // customer only
+  final DateTime? pickupAt; // chosen pickup time, if any
   final String closedReason;
   final String customerName; // merchant only
   final String customerPhone; // merchant only

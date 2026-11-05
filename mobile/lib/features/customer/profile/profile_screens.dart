@@ -11,10 +11,12 @@ import '../../../core/network/api_client.dart';
 import '../../../core/push/push_service.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/widgets/common.dart';
+import '../../settings/language_screen.dart';
 import '../customer_providers.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<void> editName(BuildContext context, WidgetRef ref) async {
-  final name = await askText(context, 'आपका नाम');
+  final name = await askText(context, tr('आपका नाम'));
   if (name == null || name.isEmpty || !context.mounted) return;
   if (await runAction(context, () => ref.read(apiProvider).patch('/auth/profile/update/', {'name': name}))) {
     await ref.read(sessionProvider.notifier).reloadUser();
@@ -23,9 +25,9 @@ Future<void> editName(BuildContext context, WidgetRef ref) async {
 
 /// Play Store requires apps with login to let users delete their account from inside the app.
 Future<void> deleteAccount(BuildContext context, WidgetRef ref) async {
-  final sure = await confirm(context, 'अकाउंट हमेशा के लिए डिलीट करें?',
-      message: 'आपका नाम, नंबर, पते और पसंदीदा हट जाएंगे। पुराने ऑर्डर का हिसाब (बिना आपकी पहचान के) रखा जाएगा।',
-      ok: 'डिलीट करें');
+  final sure = await confirm(context, tr('अकाउंट हमेशा के लिए डिलीट करें?'),
+      message: tr('आपका नाम, नंबर, पते और पसंदीदा हट जाएंगे। पुराने ऑर्डर का हिसाब (बिना आपकी पहचान के) रखा जाएगा।'),
+      ok: tr('डिलीट करें'));
   if (!sure || !context.mounted) return;
   if (await runAction(context, () => ref.read(apiProvider).post('/auth/delete-account/', {}))) {
     await ref.read(sessionProvider.notifier).signOutLocally();
@@ -34,7 +36,7 @@ Future<void> deleteAccount(BuildContext context, WidgetRef ref) async {
 
 /// Privacy policy, terms and refund policy links (opened in the browser).
 List<Widget> legalTiles() => [
-      for (final page in const {'privacy': 'प्राइवेसी पॉलिसी', 'terms': 'नियम और शर्तें', 'refunds': 'रिफंड पॉलिसी'}.entries)
+      for (final page in {'privacy': tr('प्राइवेसी पॉलिसी'), 'terms': tr('नियम और शर्तें'), 'refunds': tr('रिफंड पॉलिसी')}.entries)
         ListTile(
           dense: true,
           leading: const Icon(Icons.description_outlined),
@@ -44,7 +46,7 @@ List<Widget> legalTiles() => [
     ];
 
 Future<void> logout(BuildContext context, WidgetRef ref) async {
-  if (await confirm(context, 'लॉग आउट करें?')) {
+  if (await confirm(context, tr('लॉग आउट करें?'))) {
     await ref.read(sessionProvider.notifier).signOut(deviceToken: PushService.token);
   }
 }
@@ -67,7 +69,7 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('प्रोफाइल')),
+      appBar: AppBar(title: Text(tr('प्रोफाइल'))),
       body: ListView(children: [
         ListTile(
           leading: const CircleAvatar(child: Icon(Icons.person)),
@@ -78,37 +80,37 @@ class ProfileScreen extends ConsumerWidget {
         ),
         ListTile(
           leading: const Icon(Icons.location_on_outlined),
-          title: const Text('मेरे पते'),
+          title: Text(tr('मेरे पते')),
           onTap: () => context.push('/addresses'),
         ),
         ListTile(
           leading: const Icon(Icons.favorite_border),
-          title: const Text('पसंदीदा दुकानें'),
+          title: Text(tr('पसंदीदा दुकानें')),
           onTap: () => context.push('/favorites'),
         ),
-        const SectionTitle('डील सेटिंग्स'),
+        SectionTitle(tr('डील सेटिंग्स')),
         AsyncView(
           value: profile,
           data: (p) => Column(children: [
             ListTile(
-              title: const Text('डील कितनी दूर तक दिखाएं'),
+              title: Text(tr('डील कितनी दूर तक दिखाएं')),
               subtitle: Wrap(spacing: 6, children: [
                 for (final r in AppConfig.searchRadiiMeters)
                   ChoiceChip(label: Text(distance(r)), selected: p['search_radius_m'] == r, onSelected: (_) => setPref('search_radius_m', r)),
               ]),
             ),
             SwitchListTile(
-              title: const Text('पास की नई डील की सूचना'),
+              title: Text(tr('पास की नई डील की सूचना')),
               value: p['notify_nearby_deals'] == true,
               onChanged: (v) => setPref('notify_nearby_deals', v),
             ),
             SwitchListTile(
-              title: const Text('पसंदीदा दुकान की नई डील'),
+              title: Text(tr('पसंदीदा दुकान की नई डील')),
               value: p['notify_favorite_shops'] == true,
               onChanged: (v) => setPref('notify_favorite_shops', v),
             ),
             SwitchListTile(
-              title: const Text('ऑर्डर / रिज़र्वेशन अपडेट'),
+              title: Text(tr('ऑर्डर / रिज़र्वेशन अपडेट')),
               value: p['notify_order_updates'] == true,
               onChanged: (v) => setPref('notify_order_updates', v),
             ),
@@ -116,26 +118,33 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const Divider(),
         ListTile(
+          leading: const Icon(Icons.card_giftcard_rounded, color: Color(0xFF7C3AED)),
+          title: Text(tr('दोस्तों को बुलाएं')),
+          subtitle: Text(tr('दोस्त को बुलाएं, दोनों पाएं ₹{0}', [50])),
+          onTap: () => context.push('/referral'),
+        ),
+        const LanguageTile(),
+        ListTile(
           leading: const Icon(Icons.support_agent),
-          title: const Text('मदद और शिकायत'),
+          title: Text(tr('मदद और शिकायत')),
           onTap: () => context.push('/support'),
         ),
         ListTile(
           leading: const Icon(Icons.storefront),
-          title: const Text('अपनी दुकान जोड़ें'),
-          subtitle: const Text('दुकानदार हैं? अपनी डील यहां बेचें'),
+          title: Text(tr('अपनी दुकान जोड़ें')),
+          subtitle: Text(tr('दुकानदार हैं? अपनी डील यहां बेचें')),
           onTap: () => context.push('/become-merchant'),
         ),
         ListTile(
           leading: const Icon(Icons.logout),
-          title: const Text('लॉग आउट'),
+          title: Text(tr('लॉग आउट')),
           onTap: () => logout(context, ref),
         ),
         ...legalTiles(),
         ListTile(
           dense: true,
           leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
-          title: const Text('अकाउंट डिलीट करें', style: TextStyle(color: Colors.red)),
+          title: Text(tr('अकाउंट डिलीट करें'), style: const TextStyle(color: Colors.red)),
           onTap: () => deleteAccount(context, ref),
         ),
       ]),
@@ -149,30 +158,30 @@ class AddressesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('मेरे पते')),
+      appBar: AppBar(title: Text(tr('मेरे पते'))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await context.push('/addresses/new');
           ref.invalidate(addressesProvider);
         },
         icon: const Icon(Icons.add),
-        label: const Text('नया पता'),
+        label: Text(tr('नया पता')),
       ),
       body: AsyncView(
         value: ref.watch(addressesProvider),
         onRetry: () => ref.invalidate(addressesProvider),
         data: (list) => list.isEmpty
-            ? const EmptyView(icon: Icons.location_off, message: 'अभी कोई पता नहीं')
+            ? EmptyView(icon: Icons.location_off, message: tr('अभी कोई पता नहीं'))
             : ListView(children: [
                 for (final a in list)
                   ListTile(
                     leading: Icon(a.isDefault ? Icons.home : Icons.location_on_outlined),
-                    title: Text(a.label + (a.isDefault ? ' (डिफ़ॉल्ट)' : '')),
+                    title: Text(a.label + (a.isDefault ? tr(' (डिफ़ॉल्ट)') : '')),
                     subtitle: Text('${a.line}, ${a.city} ${a.pincode}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () async {
-                        if (!await confirm(context, 'यह पता हटाएं?')) return;
+                        if (!await confirm(context, tr('यह पता हटाएं?'))) return;
                         if (context.mounted && await runAction(context, () => ref.read(apiProvider).delete('/customers/addresses/${a.id}/'))) {
                           ref.invalidate(addressesProvider);
                         }
@@ -194,7 +203,7 @@ class AddressFormScreen extends ConsumerStatefulWidget {
 
 class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
   final _form = GlobalKey<FormState>();
-  final _label = TextEditingController(text: 'घर');
+  final _label = TextEditingController(text: tr('घर'));
   final _line = TextEditingController();
   final _landmark = TextEditingController();
   final _city = TextEditingController(text: 'Bharatpur');
@@ -208,7 +217,7 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
     final here = await currentLocation();
     if (!mounted) return;
     if (here.isFallback &&
-        !await confirm(context, 'लोकेशन नहीं मिली', message: 'डिलीवरी के लिए सही लोकेशन ज़रूरी है। फिर भी शहर के केंद्र से सेव करें?')) {
+        !await confirm(context, tr('लोकेशन नहीं मिली'), message: tr('डिलीवरी के लिए सही लोकेशन ज़रूरी है। फिर भी शहर के केंद्र से सेव करें?'))) {
       setState(() => _busy = false);
       return;
     }
@@ -223,7 +232,7 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
           'latitude': here.latitude.toStringAsFixed(6),
           'longitude': here.longitude.toStringAsFixed(6),
           'is_default': _default,
-        }), success: 'पता सेव हो गया');
+        }), success: tr('पता सेव हो गया'));
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) context.pop();
@@ -231,33 +240,33 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String? required(String? v) => (v == null || v.trim().isEmpty) ? 'ज़रूरी है' : null;
+    String? required(String? v) => (v == null || v.trim().isEmpty) ? tr('ज़रूरी है') : null;
     return Scaffold(
-      appBar: AppBar(title: const Text('नया पता')),
+      appBar: AppBar(title: Text(tr('नया पता'))),
       body: Form(
         key: _form,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          const Text('📍 पता सेव करते समय आपकी अभी की लोकेशन ली जाएगी — घर पर रहकर सेव करें।'),
+          Text(tr('📍 पता सेव करते समय आपकी अभी की लोकेशन ली जाएगी — घर पर रहकर सेव करें।')),
           const SizedBox(height: 16),
-          TextFormField(controller: _label, decoration: const InputDecoration(labelText: 'नाम (घर / ऑफिस)'), validator: required),
+          TextFormField(controller: _label, decoration: InputDecoration(labelText: tr('नाम (घर / ऑफिस)')), validator: required),
           const SizedBox(height: 12),
-          TextFormField(controller: _line, decoration: const InputDecoration(labelText: 'मकान नं., गली, मोहल्ला'), validator: required),
+          TextFormField(controller: _line, decoration: InputDecoration(labelText: tr('मकान नं., गली, मोहल्ला')), validator: required),
           const SizedBox(height: 12),
-          TextFormField(controller: _landmark, decoration: const InputDecoration(labelText: 'पास में (लैंडमार्क)')),
+          TextFormField(controller: _landmark, decoration: InputDecoration(labelText: tr('पास में (लैंडमार्क)'))),
           const SizedBox(height: 12),
-          TextFormField(controller: _city, decoration: const InputDecoration(labelText: 'शहर'), validator: required),
+          TextFormField(controller: _city, decoration: InputDecoration(labelText: tr('शहर')), validator: required),
           const SizedBox(height: 12),
           TextFormField(
             controller: _pincode,
             keyboardType: TextInputType.number,
             maxLength: 6,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(labelText: 'पिनकोड'),
-            validator: (v) => (v ?? '').length == 6 ? null : '6 अंकों का पिनकोड',
+            decoration: InputDecoration(labelText: tr('पिनकोड')),
+            validator: (v) => (v ?? '').length == 6 ? null : tr('6 अंकों का पिनकोड'),
           ),
-          SwitchListTile(title: const Text('डिफ़ॉल्ट पता'), value: _default, onChanged: (v) => setState(() => _default = v)),
+          SwitchListTile(title: Text(tr('डिफ़ॉल्ट पता')), value: _default, onChanged: (v) => setState(() => _default = v)),
           const SizedBox(height: 12),
-          FilledButton(onPressed: _busy ? null : _save, child: const Text('सेव करें')),
+          FilledButton(onPressed: _busy ? null : _save, child: Text(tr('सेव करें'))),
         ]),
       ),
     );

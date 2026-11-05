@@ -10,6 +10,7 @@ import '../../features/customer/bookings/booking_detail_screens.dart';
 import '../../features/customer/cart/cart_screen.dart';
 import '../../features/customer/customer_shell.dart';
 import '../../features/customer/deals/deal_detail_screen.dart';
+import '../../features/customer/offers/offers.dart';
 import '../../features/customer/profile/profile_screens.dart';
 import '../../features/customer/shops/shop_screens.dart';
 import '../../features/merchant/bookings/merchant_bookings_screen.dart';
@@ -22,12 +23,15 @@ import '../../features/merchant/shop/shop_form_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
 import '../../features/support/support_screens.dart';
 import '../../shared/models/models.dart';
+import '../../features/settings/language_screen.dart';
 import '../auth/session.dart';
+import '../i18n/i18n.dart';
 
 /// Bridges the Riverpod session to go_router so redirects re-run on login/logout.
 class _SessionListenable extends ChangeNotifier {
   _SessionListenable(Ref ref) {
     ref.listen(sessionProvider, (_, _) => notifyListeners());
+    ref.listen(languageProvider, (_, _) => notifyListeners());
   }
 }
 
@@ -38,8 +42,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     refreshListenable: _SessionListenable(ref),
     redirect: (context, state) {
-      final session = ref.read(sessionProvider);
       final here = state.matchedLocation;
+      // First launch: pick a language before anything else.
+      if (ref.read(languageProvider) == null) return here == '/language' ? null : '/language';
+      final session = ref.read(sessionProvider);
       final onAuth = here == '/login' || here == '/otp';
       switch (session.status) {
         case SessionStatus.unknown:
@@ -49,6 +55,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         case SessionStatus.signedIn:
           if (session.isAdmin) return here == '/admin-account' ? null : '/admin-account';
           final home = session.isMerchant ? '/merchant' : '/customer';
+          if (onAuth && !session.isMerchant && ref.read(loginRoleProvider) == 'merchant') {
+            return '/become-merchant'; // chose "shop owner" on the login screen
+          }
           if (onAuth || here == '/splash') return home;
           // Becoming a merchant switches apps.
           if (session.isMerchant && (here == '/customer' || here == '/become-merchant')) return home;
@@ -59,8 +68,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(path: '/language', builder: (_, _) => const LanguageScreen()),
       GoRoute(path: '/admin-account', builder: (_, _) => const AdminAccountScreen()),
-      GoRoute(path: '/otp', builder: (_, state) => OtpScreen(phone: state.extra as String)),
+      GoRoute(
+        path: '/otp',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return OtpScreen(phone: extra['phone'] as String, testOtp: extra['otp'] as String?);
+        },
+      ),
 
       // Shared
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
@@ -79,6 +95,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/reservation/:id', builder: (_, state) => ReservationDetailScreen(id: _id(state))),
       GoRoute(path: '/order/:id', builder: (_, state) => OrderDetailScreen(id: _id(state))),
       GoRoute(path: '/favorites', builder: (_, _) => const FavoritesScreen()),
+      GoRoute(path: '/referral', builder: (_, _) => const ReferralScreen()),
       GoRoute(path: '/addresses', builder: (_, _) => const AddressesScreen()),
       GoRoute(path: '/addresses/new', builder: (_, _) => const AddressFormScreen()),
       GoRoute(path: '/become-merchant', builder: (_, _) => const MerchantRegisterScreen()),

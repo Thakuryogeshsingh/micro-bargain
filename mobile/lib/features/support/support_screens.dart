@@ -6,7 +6,9 @@ import '../../core/network/api_client.dart';
 import '../../core/utils/format.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/common.dart';
+import '../../core/i18n/i18n.dart';
 
+// i18n:off (translated where used)
 const _categories = {
   'order': 'ऑर्डर',
   'reservation': 'रिज़र्वेशन / पिकअप',
@@ -16,6 +18,7 @@ const _categories = {
   'app': 'ऐप में दिक्कत',
   'other': 'अन्य',
 };
+// i18n:on
 
 final ticketsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   return (await ref.watch(apiProvider).get('/support/') as List).cast<Map<String, dynamic>>();
@@ -31,26 +34,26 @@ class SupportListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('मदद और शिकायत')),
+      appBar: AppBar(title: Text(tr('मदद और शिकायत'))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await context.push('/support/new');
           ref.invalidate(ticketsProvider);
         },
         icon: const Icon(Icons.add),
-        label: const Text('नई शिकायत'),
+        label: Text(tr('नई शिकायत')),
       ),
       body: AsyncView(
         value: ref.watch(ticketsProvider),
         onRetry: () => ref.invalidate(ticketsProvider),
         data: (tickets) => tickets.isEmpty
-            ? const EmptyView(icon: Icons.support_agent, message: 'कोई समस्या? नीचे बटन से हमें बताएं।')
+            ? EmptyView(icon: Icons.support_agent, message: tr('कोई समस्या? नीचे बटन से हमें बताएं।'))
             : ListView(children: [
                 for (final t in tickets)
                   ListTile(
                     title: Text(t['subject']),
-                    subtitle: Text('${t['ticket_number']} · ${_categories[t['category']] ?? t['category']}'),
-                    trailing: Chip(label: Text(t['status'] == 'resolved' ? 'हल हुई' : t['status'] == 'closed' ? 'बंद' : 'खुली')),
+                    subtitle: Text('${t['ticket_number']} · ${tr(_categories[t['category']] ?? t['category'])}'),
+                    trailing: Chip(label: Text(t['status'] == 'resolved' ? tr('हल हुई') : t['status'] == 'closed' ? tr('बंद') : tr('खुली'))),
                     onTap: () => context.push('/support/${t['id']}'),
                   ),
               ]),
@@ -76,7 +79,7 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
   Future<void> _submit() async {
     if (_subject.text.trim().isEmpty || _message.text.trim().isEmpty) {
-      showMessage(context, 'विषय और पूरी बात लिखें');
+      showMessage(context, tr('विषय और पूरी बात लिखें'));
       return;
     }
     final ok = await runAction(context, () => ref.read(apiProvider).post('/support/', {
@@ -85,26 +88,26 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
           'message': _message.text.trim(),
           if (widget.link['order'] != null) 'order': widget.link['order'],
           if (widget.link['reservation'] != null) 'reservation': widget.link['reservation'],
-        }), success: 'शिकायत दर्ज हो गई। जल्द जवाब मिलेगा।');
+        }), success: tr('शिकायत दर्ज हो गई। जल्द जवाब मिलेगा।'));
     if (ok && mounted) context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('नई शिकायत')),
+      appBar: AppBar(title: Text(tr('नई शिकायत'))),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         DropdownButtonFormField<String>(
           initialValue: _category,
-          decoration: const InputDecoration(labelText: 'किस बारे में?'),
-          items: [for (final e in _categories.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
+          decoration: InputDecoration(labelText: tr('किस बारे में?')),
+          items: [for (final e in _categories.entries) DropdownMenuItem(value: e.key, child: Text(tr(e.value)))],
           onChanged: (v) => setState(() => _category = v!),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _subject, maxLength: 150, decoration: const InputDecoration(labelText: 'विषय')),
-        TextField(controller: _message, maxLines: 5, maxLength: 2000, decoration: const InputDecoration(labelText: 'पूरी बात लिखें')),
+        TextField(controller: _subject, maxLength: 150, decoration: InputDecoration(labelText: tr('विषय'))),
+        TextField(controller: _message, maxLines: 5, maxLength: 2000, decoration: InputDecoration(labelText: tr('पूरी बात लिखें'))),
         const SizedBox(height: 12),
-        FilledButton(onPressed: _submit, child: const Text('भेजें')),
+        FilledButton(onPressed: _submit, child: Text(tr('भेजें'))),
       ]),
     );
   }
@@ -135,12 +138,12 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('शिकायत')),
+      appBar: AppBar(title: Text(tr('शिकायत'))),
       body: AsyncView(
         value: ref.watch(ticketProvider(widget.id)),
         onRetry: () => ref.invalidate(ticketProvider(widget.id)),
         data: (t) => Column(children: [
-          ListTile(title: Text(t['subject']), subtitle: Text('${t['ticket_number']} · ${_categories[t['category']]}')),
+          ListTile(title: Text(t['subject']), subtitle: Text('${t['ticket_number']} · ${tr(_categories[t['category']] ?? t['category'])}')),
           Expanded(
             child: ListView(padding: const EdgeInsets.all(12), children: [
               for (final m in (t['messages'] as List))
@@ -155,7 +158,7 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      if (m['is_staff_reply'] == true) const Text('सपोर्ट टीम', style: TextStyle(fontWeight: FontWeight.bold)),
+                      if (m['is_staff_reply'] == true) Text(tr('सपोर्ट टीम'), style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text(m['message']),
                       Text(dateTime(parseTime(m['created_at'])!), style: Theme.of(context).textTheme.bodySmall),
                     ]),
@@ -168,7 +171,7 @@ class _TicketScreenState extends ConsumerState<TicketScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: Row(children: [
-                  Expanded(child: TextField(controller: _reply, decoration: const InputDecoration(hintText: 'जवाब लिखें…', isDense: true))),
+                  Expanded(child: TextField(controller: _reply, decoration: InputDecoration(hintText: tr('जवाब लिखें…'), isDense: true))),
                   IconButton.filled(onPressed: _send, icon: const Icon(Icons.send)),
                 ]),
               ),

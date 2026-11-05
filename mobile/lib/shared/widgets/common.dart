@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/i18n/i18n.dart';
 import '../../core/network/api_client.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/format.dart';
+import 'motion.dart';
 
 /// Loading / error-with-retry / data for an AsyncValue.
 class AsyncView<T> extends StatelessWidget {
@@ -41,7 +44,7 @@ class ErrorView extends StatelessWidget {
           Text(message, textAlign: TextAlign.center),
           if (onRetry != null) ...[
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text('फिर से कोशिश करें')),
+            OutlinedButton(onPressed: onRetry, child: Text(tr('फिर से कोशिश करें'))),
           ],
         ]),
       ),
@@ -134,15 +137,15 @@ Future<bool> runAction(BuildContext context, Future<void> Function() action, {St
   }
 }
 
-Future<bool> confirm(BuildContext context, String title, {String? message, String ok = 'हाँ'}) async {
+Future<bool> confirm(BuildContext context, String title, {String? message, String? ok}) async {
   final result = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
       title: Text(title),
       content: message == null ? null : Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('नहीं')),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(ok)),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('नहीं'))),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(ok ?? tr('हाँ'))),
       ],
     ),
   );
@@ -165,8 +168,8 @@ Future<String?> askText(BuildContext context, String title,
         decoration: InputDecoration(hintText: hint),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('रद्द')),
-        FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('ठीक है')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(tr('रद्द'))),
+        FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: Text(tr('ठीक है'))),
       ],
     ),
   );
@@ -185,29 +188,50 @@ class SectionTitle extends StatelessWidget {
       );
 }
 
+/// Dashboard figure: coloured icon bubble, label and a number that counts up when it appears.
 class StatTile extends StatelessWidget {
-  const StatTile({super.key, required this.label, required this.value, this.icon});
+  const StatTile({
+    super.key,
+    required this.label,
+    required this.value,
+    this.format,
+    this.icon,
+    this.color = const Color(0xFF16A34A),
+  });
 
   final String label;
-  final String value;
+  final double value;
+  final String Function(double)? format;
   final IconData? icon;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            if (icon != null) ...[Icon(icon, size: 16, color: theme.colorScheme.primary), const SizedBox(width: 6)],
-            Expanded(child: Text(label, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
-          ]),
-          const SizedBox(height: 6),
-          Text(value, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-        ]),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, 6))],
       ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Row(children: [
+          if (icon != null)
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 18, color: color),
+            ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label, style: theme.textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis)),
+        ]),
+        CountUp(
+          value: value,
+          format: format ?? (v) => '${v.round()}',
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: AppTheme.ink),
+        ),
+      ]),
     );
   }
 }

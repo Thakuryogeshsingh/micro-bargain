@@ -8,6 +8,7 @@ import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../merchant_providers.dart';
+import '../../../core/i18n/i18n.dart';
 
 class MerchantDealsScreen extends ConsumerWidget {
   const MerchantDealsScreen({super.key});
@@ -21,8 +22,8 @@ class MerchantDealsScreen extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('मेरी डील'),
-          bottom: const TabBar(tabs: [Tab(text: 'लाइव'), Tab(text: 'ड्राफ्ट / रुकी'), Tab(text: 'पुरानी')]),
+          title: Text(tr('मेरी डील')),
+          bottom: TabBar(tabs: [Tab(text: tr('लाइव')), Tab(text: tr('ड्राफ्ट / रुकी')), Tab(text: tr('पुरानी'))]),
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
@@ -30,7 +31,7 @@ class MerchantDealsScreen extends ConsumerWidget {
             ref.invalidate(merchantDealsProvider);
           },
           icon: const Icon(Icons.add),
-          label: const Text('नई डील'),
+          label: Text(tr('नई डील')),
         ),
         body: AsyncView(
           value: deals,
@@ -54,16 +55,16 @@ class _DealList extends ConsumerWidget {
   Future<void> _act(BuildContext context, WidgetRef ref, Deal deal, String action) async {
     final api = ref.read(apiProvider);
     if (action == 'update-stock') {
-      final value = await askText(context, 'कुल स्टॉक (${unitLabel(deal.unit)})', keyboard: const TextInputType.numberWithOptions(decimal: true));
+      final value = await askText(context, tr('कुल स्टॉक ({0})', [unitLabel(deal.unit)]), keyboard: const TextInputType.numberWithOptions(decimal: true));
       if (value == null || value.isEmpty || !context.mounted) return;
-      if (await runAction(context, () => api.post('/deals/${deal.id}/update-stock/', {'quantity_total': value}), success: 'स्टॉक अपडेट')) {
+      if (await runAction(context, () => api.post('/deals/${deal.id}/update-stock/', {'quantity_total': value}), success: tr('स्टॉक अपडेट'))) {
         ref.invalidate(merchantDealsProvider);
       }
       return;
     }
-    if (action == 'end' && !await confirm(context, 'डील बंद करें?', message: 'बंद डील दोबारा चालू नहीं होगी।')) return;
+    if (action == 'end' && !await confirm(context, tr('डील बंद करें?'), message: tr('बंद डील दोबारा चालू नहीं होगी।'))) return;
     if (!context.mounted) return;
-    const done = {'publish': 'डील लाइव हो गई 🎉', 'pause': 'डील रोकी गई', 'sold-out': 'बिक गई मार्क किया', 'end': 'डील बंद', 'duplicate': 'कॉपी ड्राफ्ट में बनी'};
+    final done = {'publish': tr('डील लाइव हो गई 🎉'), 'pause': tr('डील रोकी गई'), 'sold-out': tr('बिक गई मार्क किया'), 'end': tr('डील बंद'), 'duplicate': tr('कॉपी ड्राफ्ट में बनी')};
     if (await runAction(context, () => api.post('/deals/${deal.id}/$action/', {}), success: done[action])) {
       ref.invalidate(merchantDealsProvider);
       ref.invalidate(dashboardProvider);
@@ -72,7 +73,7 @@ class _DealList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (deals.isEmpty) return const EmptyView(icon: Icons.local_offer_outlined, message: 'यहां कोई डील नहीं');
+    if (deals.isEmpty) return EmptyView(icon: Icons.local_offer_outlined, message: tr('यहां कोई डील नहीं'));
     return RefreshIndicator(
       onRefresh: () => ref.refresh(merchantDealsProvider.future),
       child: ListView.builder(
@@ -81,12 +82,12 @@ class _DealList extends ConsumerWidget {
         itemBuilder: (context, i) {
           final d = deals[i];
           final actions = <String, String>{
-            if (d.status == 'draft' || d.status == 'paused') 'publish': 'लाइव करें',
-            if (d.status == 'active') 'pause': 'रोकें',
-            if (d.status == 'active' || d.status == 'paused') 'sold-out': 'बिक गई',
-            if (!{'expired', 'ended'}.contains(d.status)) 'update-stock': 'स्टॉक बदलें',
-            if (!{'expired', 'ended'}.contains(d.status)) 'end': 'बंद करें',
-            'duplicate': 'दोबारा लगाएं (कॉपी)',
+            if (d.status == 'draft' || d.status == 'paused') 'publish': tr('लाइव करें'),
+            if (d.status == 'active') 'pause': tr('रोकें'),
+            if (d.status == 'active' || d.status == 'paused') 'sold-out': tr('बिक गई'),
+            if (!{'expired', 'ended'}.contains(d.status)) 'update-stock': tr('स्टॉक बदलें'),
+            if (!{'expired', 'ended'}.contains(d.status)) 'end': tr('बंद करें'),
+            'duplicate': tr('दोबारा लगाएं (कॉपी)'),
           };
           return Card(
             child: ListTile(
@@ -94,7 +95,7 @@ class _DealList extends ConsumerWidget {
               title: Text(d.productName),
               subtitle: Text(
                 '${rupees(d.offerPrice)} (${rupees(d.normalPrice)}) · ${d.discountPercent.round()}% off\n'
-                'बिका ${qty(d.quantitySold ?? 0)} · रिज़र्व ${qty(d.quantityReserved ?? 0)} · बचा ${qty(d.quantityAvailable)} ${unitLabel(d.unit)}\n'
+                '${tr('बिका {0} · रिज़र्व {1} · बचा {2} {3}', [qty(d.quantitySold ?? 0), qty(d.quantityReserved ?? 0), qty(d.quantityAvailable), unitLabel(d.unit)])}\n'
                 '${d.status == 'active' ? timeLeft(d.expiresAt) : statusLabel(d.status)}',
               ),
               isThreeLine: true,
@@ -129,7 +130,9 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
   bool _publish = true;
   bool _busy = false;
 
+  // i18n:off (translated where used)
   static const _durations = {60: '1 घंटा', 120: '2 घंटे', 240: '4 घंटे', 480: '8 घंटे', 1440: '1 दिन'};
+  // i18n:on
 
   double get _discount {
     final normal = double.tryParse(_normal.text) ?? 0;
@@ -153,7 +156,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
         'description': _description.text.trim(),
         'publish': _publish,
       });
-    }, success: _publish ? 'डील लाइव हो गई! पास के ग्राहकों को सूचना भेजी जा रही है।' : 'ड्राफ्ट सेव हुआ');
+    }, success: _publish ? tr('डील लाइव हो गई! पास के ग्राहकों को सूचना भेजी जा रही है।') : tr('ड्राफ्ट सेव हुआ'));
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) {
@@ -168,7 +171,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
     final products = ref.watch(merchantProductsProvider);
     final shop = ref.watch(myShopProvider).value;
     return Scaffold(
-      appBar: AppBar(title: const Text('नई डील')),
+      appBar: AppBar(title: Text(tr('नई डील'))),
       body: AsyncView(
         value: products,
         onRetry: () => ref.invalidate(merchantProductsProvider),
@@ -177,13 +180,13 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
           if (active.isEmpty) {
             return EmptyView(
               icon: Icons.inventory_2_outlined,
-              message: 'डील बनाने से पहले प्रोडक्ट जोड़ें',
+              message: tr('डील बनाने से पहले प्रोडक्ट जोड़ें'),
               action: FilledButton(
                 onPressed: () async {
                   await context.push('/merchant/product-form');
                   ref.invalidate(merchantProductsProvider);
                 },
-                child: const Text('प्रोडक्ट जोड़ें'),
+                child: Text(tr('प्रोडक्ट जोड़ें')),
               ),
             );
           }
@@ -193,13 +196,13 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
             child: ListView(padding: const EdgeInsets.all(16), children: [
               DropdownButtonFormField<Product>(
                 initialValue: _product,
-                decoration: const InputDecoration(labelText: 'प्रोडक्ट'),
+                decoration: InputDecoration(labelText: tr('प्रोडक्ट')),
                 items: [for (final p in active) DropdownMenuItem(value: p, child: Text('${p.name} (${unitLabel(p.unit)})'))],
                 onChanged: (p) => setState(() {
                   _product = p;
                   _normal.text = qty(p!.standardPrice);
                 }),
-                validator: (p) => p == null ? 'चुनें' : null,
+                validator: (p) => p == null ? tr('चुनें') : null,
               ),
               const SizedBox(height: 12),
               Row(children: [
@@ -207,8 +210,8 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   child: TextFormField(
                     controller: _normal,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'सामान्य दाम', prefixText: '₹ '),
-                    validator: (v) => (double.tryParse(v ?? '') ?? 0) > 0 ? null : 'दाम डालें',
+                    decoration: InputDecoration(labelText: tr('सामान्य दाम'), prefixText: '₹ '),
+                    validator: (v) => (double.tryParse(v ?? '') ?? 0) > 0 ? null : tr('दाम डालें'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -216,11 +219,11 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
                   child: TextFormField(
                     controller: _offer,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'ऑफर दाम', prefixText: '₹ '),
+                    decoration: InputDecoration(labelText: tr('ऑफर दाम'), prefixText: '₹ '),
                     validator: (v) {
                       final offer = double.tryParse(v ?? '') ?? 0;
                       final normal = double.tryParse(_normal.text) ?? 0;
-                      return offer > 0 && offer < normal ? null : 'सामान्य दाम से कम';
+                      return offer > 0 && offer < normal ? null : tr('सामान्य दाम से कम');
                     },
                   ),
                 ),
@@ -228,39 +231,39 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
               if (_discount > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text('ग्राहक को ${_discount.round()}% छूट दिखेगी', style: TextStyle(color: Colors.green.shade700)),
+                  child: Text(tr('ग्राहक को {0}% छूट दिखेगी', [_discount.round()]), style: TextStyle(color: Colors.green.shade700)),
                 ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _quantity,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: 'कितना बेचना है', suffixText: _product == null ? '' : unitLabel(_product!.unit)),
-                validator: (v) => (double.tryParse(v ?? '') ?? 0) > 0 ? null : 'मात्रा डालें',
+                decoration: InputDecoration(labelText: tr('कितना बेचना है'), suffixText: _product == null ? '' : unitLabel(_product!.unit)),
+                validator: (v) => (double.tryParse(v ?? '') ?? 0) > 0 ? null : tr('मात्रा डालें'),
               ),
-              const SectionTitle('डील कब तक चलेगी?'),
+              SectionTitle(tr('डील कब तक चलेगी?')),
               Wrap(spacing: 6, children: [
                 for (final e in _durations.entries)
-                  ChoiceChip(label: Text(e.value), selected: _minutes == e.key, onSelected: (_) => setState(() => _minutes = e.key)),
+                  ChoiceChip(label: Text(tr(e.value)), selected: _minutes == e.key, onSelected: (_) => setState(() => _minutes = e.key)),
               ]),
-              const SectionTitle('ग्राहक कैसे लेगा?'),
+              SectionTitle(tr('ग्राहक कैसे लेगा?')),
               SegmentedButton<String>(
                 segments: [
-                  const ButtonSegment(value: 'pickup', label: Text('पिकअप')),
-                  if (shop?['offers_delivery'] == true) const ButtonSegment(value: 'delivery', label: Text('डिलीवरी')),
-                  if (shop?['offers_delivery'] == true) const ButtonSegment(value: 'both', label: Text('दोनों')),
+                  ButtonSegment(value: 'pickup', label: Text(tr('पिकअप'))),
+                  if (shop?['offers_delivery'] == true) ButtonSegment(value: 'delivery', label: Text(tr('डिलीवरी'))),
+                  if (shop?['offers_delivery'] == true) ButtonSegment(value: 'both', label: Text(tr('दोनों'))),
                 ],
                 selected: {_fulfilment},
                 onSelectionChanged: (s) => setState(() => _fulfilment = s.first),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _description, maxLines: 2, decoration: const InputDecoration(labelText: 'विवरण (जैसे: आज की ताज़ा खेप)')),
+              TextFormField(controller: _description, maxLines: 2, decoration: InputDecoration(labelText: tr('विवरण (जैसे: आज की ताज़ा खेप)'))),
               SwitchListTile(
-                title: const Text('अभी लाइव करें'),
-                subtitle: const Text('पास के ग्राहकों को तुरंत सूचना जाएगी'),
+                title: Text(tr('अभी लाइव करें')),
+                subtitle: Text(tr('पास के ग्राहकों को तुरंत सूचना जाएगी')),
                 value: _publish,
                 onChanged: (v) => setState(() => _publish = v),
               ),
-              FilledButton(onPressed: _busy ? null : _save, child: Text(_publish ? 'डील लाइव करें' : 'ड्राफ्ट सेव करें')),
+              FilledButton(onPressed: _busy ? null : _save, child: Text(_publish ? tr('डील लाइव करें') : tr('ड्राफ्ट सेव करें'))),
             ]),
           );
         },

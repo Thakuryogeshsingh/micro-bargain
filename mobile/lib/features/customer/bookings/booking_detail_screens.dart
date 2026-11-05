@@ -10,6 +10,7 @@ import '../../../shared/widgets/common.dart';
 import '../customer_providers.dart';
 import '../deals/deal_detail_screen.dart';
 import '../reviews/review_sheet.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Big code the customer shows or tells at the shop / to the delivery person.
 class PickupCodeCard extends StatelessWidget {
@@ -58,7 +59,7 @@ class ReservationDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('रिज़र्वेशन')),
+      appBar: AppBar(title: Text(tr('रिज़र्वेशन'))),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(reservationProvider(id).future),
         child: AsyncView(
@@ -74,14 +75,16 @@ class ReservationDetailScreen extends ConsumerWidget {
               PickupCodeCard(
                 code: r.pickupCode!,
                 hint: r.status == 'pending'
-                    ? 'दुकान के कन्फर्म करने का इंतज़ार है। दुकान पर यह कोड बताएं।'
-                    : '${timeOnly(r.expiresAt)} तक दुकान पहुंचें और यह कोड बताएं',
+                    ? tr('दुकान के कन्फर्म करने का इंतज़ार है। दुकान पर यह कोड बताएं।')
+                    : r.pickupAt != null
+                        ? tr('पिकअप का समय: {0}। दुकान पर यह कोड बताएं', [timeOnly(r.pickupAt!)])
+                        : tr('{0} तक दुकान पहुंचें और यह कोड बताएं', [timeOnly(r.expiresAt)]),
               ),
             if (r.closedReason.isNotEmpty && !r.isOpen)
               Padding(padding: const EdgeInsets.all(16), child: Text(r.closedReason)),
             _line('${r.productName} (${qty(r.quantity)} ${unitLabel(r.unit)})', rupees(r.total), bold: true),
-            _line('आपकी बचत', rupees(r.savings)),
-            _line('पेमेंट', 'दुकान पर'),
+            _line(tr('आपकी बचत'), rupees(r.savings)),
+            _line(tr('पेमेंट'), tr('दुकान पर')),
             Card(
               child: ListTile(
                 leading: const Icon(Icons.store),
@@ -99,13 +102,13 @@ class ReservationDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: OutlinedButton(
                   onPressed: () async {
-                    if (!await confirm(context, 'रिज़र्वेशन रद्द करें?')) return;
+                    if (!await confirm(context, tr('रिज़र्वेशन रद्द करें?'))) return;
                     if (context.mounted &&
-                        await runAction(context, () => api.post('/reservations/${r.id}/cancel/', {}), success: 'रद्द किया गया')) {
+                        await runAction(context, () => api.post('/reservations/${r.id}/cancel/', {}), success: tr('रद्द किया गया'))) {
                       reload();
                     }
                   },
-                  child: const Text('रिज़र्वेशन रद्द करें'),
+                  child: Text(tr('रिज़र्वेशन रद्द करें')),
                 ),
               ),
             if (r.status == 'completed')
@@ -114,13 +117,13 @@ class ReservationDetailScreen extends ConsumerWidget {
                 child: FilledButton.icon(
                   onPressed: () => showReviewSheet(context, ref, reservationId: r.id, shopName: r.shopName),
                   icon: const Icon(Icons.star_outline),
-                  label: const Text('दुकान को रेटिंग दें'),
+                  label: Text(tr('दुकान को रेटिंग दें')),
                 ),
               ),
             TextButton.icon(
               onPressed: () => context.push('/support/new', extra: {'reservation': r.id, 'category': 'reservation'}),
               icon: const Icon(Icons.help_outline),
-              label: const Text('मदद चाहिए?'),
+              label: Text(tr('मदद चाहिए?')),
             ),
           ]),
         ),
@@ -143,7 +146,7 @@ class OrderDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ऑर्डर')),
+      appBar: AppBar(title: Text(tr('ऑर्डर'))),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(orderProvider(id).future),
         child: AsyncView(
@@ -152,7 +155,7 @@ class OrderDetailScreen extends ConsumerWidget {
           data: (o) => ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
             ListTile(
               title: Text(o.number, style: Theme.of(context).textTheme.titleLarge),
-              subtitle: Text('${dateTime(o.createdAt)} · ${o.isDelivery ? 'होम डिलीवरी' : 'दुकान से पिकअप'}'),
+              subtitle: Text('${dateTime(o.createdAt)} · ${o.isDelivery ? tr('होम डिलीवरी') : tr('दुकान से पिकअप')}'),
               trailing: StatusChip(o.status),
             ),
             if (o.status == 'pending_payment')
@@ -161,30 +164,30 @@ class OrderDetailScreen extends ConsumerWidget {
                 child: FilledButton(
                   onPressed: () async {
                     final ok = await runAction(context, () async {
-                      if (!await payOnline(context, api, purpose: 'order', id: o.id)) throw ApiException('पेमेंट पूरा नहीं हुआ');
-                    }, success: 'पेमेंट हो गया ✅');
+                      if (!await payOnline(context, api, purpose: 'order', id: o.id)) throw ApiException(tr('पेमेंट पूरा नहीं हुआ'));
+                    }, success: tr('पेमेंट हो गया ✅'));
                     if (ok) reload();
                   },
-                  child: Text('अभी पेमेंट करें ${rupees(o.total)}'),
+                  child: Text(tr('अभी पेमेंट करें {0}', [rupees(o.total)])),
                 ),
               ),
             if (['confirmed', 'ready', 'out_for_delivery'].contains(o.status) && o.pickupCode != null)
               PickupCodeCard(
                 code: o.pickupCode!,
-                hint: o.isDelivery ? 'डिलीवरी लेते समय यह कोड बताएं' : 'दुकान पर यह कोड बताकर सामान लें',
+                hint: o.isDelivery ? tr('डिलीवरी लेते समय यह कोड बताएं') : tr('दुकान पर यह कोड बताकर सामान लें'),
               ),
             if (o.cancelReason.isNotEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(o.cancelReason)),
             for (final item in o.items)
               _line('${item.productName} (${qty(item.quantity)} ${unitLabel(item.unit)})', rupees(item.lineTotal)),
             const Divider(),
-            _line('सामान', rupees(o.subtotal)),
-            if (o.couponDiscount > 0) _line('कूपन छूट', '- ${rupees(o.couponDiscount)}'),
-            if (o.deliveryFee > 0) _line('डिलीवरी', rupees(o.deliveryFee)),
-            _line('कुल', rupees(o.total), bold: true),
-            _line('पेमेंट', '${o.paymentMethod == 'online' ? 'ऑनलाइन' : 'कैश'} · ${statusLabel(o.paymentStatus)}'),
-            if (o.refunded > 0) _line('रिफंड', rupees(o.refunded)),
-            _line('आपकी बचत', rupees(o.savings + o.couponDiscount)),
-            if (o.isDelivery) Padding(padding: const EdgeInsets.all(16), child: Text('पता: ${o.deliveryAddress}')),
+            _line(tr('सामान'), rupees(o.subtotal)),
+            if (o.couponDiscount > 0) _line(tr('कूपन छूट'), '- ${rupees(o.couponDiscount)}'),
+            if (o.deliveryFee > 0) _line(tr('डिलीवरी'), rupees(o.deliveryFee)),
+            _line(tr('कुल'), rupees(o.total), bold: true),
+            _line(tr('पेमेंट'), '${o.paymentMethod == 'online' ? tr('ऑनलाइन') : tr('कैश')} · ${statusLabel(o.paymentStatus)}'),
+            if (o.refunded > 0) _line(tr('रिफंड'), rupees(o.refunded)),
+            _line(tr('आपकी बचत'), rupees(o.savings + o.couponDiscount)),
+            if (o.isDelivery) Padding(padding: const EdgeInsets.all(16), child: Text(tr('पता: {0}', [o.deliveryAddress]))),
             Card(
               child: ListTile(
                 leading: const Icon(Icons.store),
@@ -200,13 +203,13 @@ class OrderDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 child: OutlinedButton(
                   onPressed: () async {
-                    if (!await confirm(context, 'ऑर्डर रद्द करें?', message: o.paymentStatus == 'paid' ? 'पूरा पैसा वापस आ जाएगा।' : null)) return;
+                    if (!await confirm(context, tr('ऑर्डर रद्द करें?'), message: o.paymentStatus == 'paid' ? tr('पूरा पैसा वापस आ जाएगा।') : null)) return;
                     if (context.mounted &&
-                        await runAction(context, () => api.post('/orders/${o.id}/cancel/', {}), success: 'ऑर्डर रद्द किया गया')) {
+                        await runAction(context, () => api.post('/orders/${o.id}/cancel/', {}), success: tr('ऑर्डर रद्द किया गया'))) {
                       reload();
                     }
                   },
-                  child: const Text('ऑर्डर रद्द करें'),
+                  child: Text(tr('ऑर्डर रद्द करें')),
                 ),
               ),
             if (o.status == 'completed')
@@ -215,13 +218,13 @@ class OrderDetailScreen extends ConsumerWidget {
                 child: FilledButton.icon(
                   onPressed: () => showReviewSheet(context, ref, orderId: o.id, shopName: o.shopName),
                   icon: const Icon(Icons.star_outline),
-                  label: const Text('दुकान को रेटिंग दें'),
+                  label: Text(tr('दुकान को रेटिंग दें')),
                 ),
               ),
             TextButton.icon(
               onPressed: () => context.push('/support/new', extra: {'order': o.id, 'category': 'order'}),
               icon: const Icon(Icons.help_outline),
-              label: const Text('ऑर्डर में समस्या? मदद लें'),
+              label: Text(tr('ऑर्डर में समस्या? मदद लें')),
             ),
           ]),
         ),

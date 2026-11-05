@@ -6,7 +6,7 @@ import '../../core/network/api_client.dart';
 import '../../shared/models/models.dart';
 
 class DealFilters {
-  const DealFilters({this.radius = AppConfig.defaultSearchRadiusMeters, this.category, this.sort = 'distance', this.query = ''});
+  DealFilters({this.radius = AppConfig.defaultSearchRadiusMeters, this.category, this.sort = 'distance', this.query = ''});
 
   final int radius;
   final int? category;
@@ -23,7 +23,7 @@ class DealFilters {
 
 class DealFiltersController extends Notifier<DealFilters> {
   @override
-  DealFilters build() => const DealFilters();
+  DealFilters build() => DealFilters();
 
   void update(DealFilters Function(DealFilters) change) => state = change(state);
 }

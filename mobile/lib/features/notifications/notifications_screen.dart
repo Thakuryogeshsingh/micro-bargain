@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/utils/format.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/common.dart';
+import '../../core/i18n/i18n.dart';
 
 final unreadCountProvider = FutureProvider.autoDispose<int>((ref) async {
   final data = await ref.watch(apiProvider).get('/notifications/unread-count/');
@@ -25,7 +26,7 @@ class NotificationBell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final unread = ref.watch(unreadCountProvider).value ?? 0;
     return IconButton(
-      tooltip: 'सूचनाएं',
+      tooltip: tr('सूचनाएं'),
       onPressed: () async {
         await context.push('/notifications');
         ref.invalidate(unreadCountProvider);
@@ -53,13 +54,13 @@ class NotificationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final merchant = ref.watch(sessionProvider).isMerchant;
     return Scaffold(
-      appBar: AppBar(title: const Text('सूचनाएं'), actions: [
+      appBar: AppBar(title: Text(tr('सूचनाएं')), actions: [
         TextButton(
           onPressed: () async {
             await ref.read(apiProvider).post('/notifications/read-all/');
             ref.invalidate(notificationsProvider);
           },
-          child: const Text('सब पढ़ा हुआ'),
+          child: Text(tr('सब पढ़ा हुआ')),
         ),
       ]),
       body: RefreshIndicator(
@@ -68,7 +69,7 @@ class NotificationsScreen extends ConsumerWidget {
           value: ref.watch(notificationsProvider),
           onRetry: () => ref.invalidate(notificationsProvider),
           data: (items) => items.isEmpty
-              ? ListView(children: const [SizedBox(height: 120), EmptyView(icon: Icons.notifications_none, message: 'अभी कोई सूचना नहीं')])
+              ? ListView(children: [const SizedBox(height: 120), EmptyView(icon: Icons.notifications_none, message: tr('अभी कोई सूचना नहीं'))])
               : ListView.separated(
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),

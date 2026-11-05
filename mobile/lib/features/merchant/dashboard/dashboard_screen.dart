@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/session.dart';
+import '../../../core/i18n/i18n.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../shared/widgets/motion.dart';
 import '../../notifications/notifications_screen.dart';
 import '../merchant_providers.dart';
 
@@ -16,55 +19,138 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(sessionProvider).user;
     return Scaffold(
-      appBar: AppBar(title: Text('नमस्ते, ${user?.displayName ?? ''}'), actions: const [NotificationBell()]),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'new-deal-fab',
         onPressed: () async {
           await context.push('/merchant/deal-form');
           ref.invalidate(dashboardProvider);
         },
-        icon: const Icon(Icons.add),
-        label: const Text('नई डील'),
+        icon: const Icon(Icons.add_rounded),
+        label: Text(tr('नई डील'), style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: RefreshIndicator(
+        edgeOffset: 140,
         onRefresh: () => ref.refresh(dashboardProvider.future),
-        child: AsyncView(
-          value: ref.watch(dashboardProvider),
-          onRetry: () => ref.invalidate(dashboardProvider),
-          data: (s) => ListView(padding: const EdgeInsets.only(bottom: 88), children: [
-            _ShopStatusBanner(stats: s),
-            if ((s['pending_reservations'] ?? 0) > 0 || (s['pending_orders'] ?? 0) > 0)
-              Card(
-                color: Colors.orange.shade50,
-                child: ListTile(
-                  leading: const Icon(Icons.notification_important, color: Colors.orange),
-                  title: Text('${s['pending_reservations']} रिज़र्वेशन और ${s['pending_orders']} ऑर्डर आपके जवाब का इंतज़ार कर रहे हैं'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/merchant/bookings'),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.9,
-                children: [
-                  StatTile(label: 'लाइव डील', value: '${s['active_deals']}', icon: Icons.local_offer),
-                  StatTile(label: 'कुल बिक्री', value: rupees(parseNum(s['revenue'])), icon: Icons.currency_rupee),
-                  StatTile(label: 'पूरे हुए पिकअप', value: '${s['completed_orders']}', icon: Icons.check_circle),
-                  StatTile(label: 'चल रहे ऑर्डर', value: '${s['open_orders']}', icon: Icons.delivery_dining),
-                  StatTile(label: 'बचा स्टॉक', value: qty(parseNum(s['remaining_stock'])), icon: Icons.inventory_2),
-                  StatTile(label: 'रेटिंग', value: '★ ${parseNum(s['rating_avg']).toStringAsFixed(1)}', icon: Icons.star),
-                  StatTile(label: 'खत्म हुई डील', value: '${s['expired_deals']}', icon: Icons.timer_off),
-                  StatTile(label: 'पूरी बिकी डील', value: '${s['sold_out_deals']}', icon: Icons.done_all),
-                ],
+        child: CustomScrollView(slivers: [
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 168,
+            backgroundColor: AppTheme.primaryDark,
+            foregroundColor: Colors.white,
+            title: Text(tr('डैशबोर्ड'), style: const TextStyle(color: Colors.white)),
+            actions: const [IconTheme(data: IconThemeData(color: Colors.white), child: NotificationBell())],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+                alignment: Alignment.bottomLeft,
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${tr('नमस्ते, {0}', [user?.displayName ?? ''])} 👋',
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text(tr('अपनी दुकान की डील डालें और पास के ग्राहकों तक पहुंचें'),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85))),
+                ]),
               ),
             ),
-          ]),
-        ),
+          ),
+          SliverToBoxAdapter(
+            child: AsyncView(
+              value: ref.watch(dashboardProvider),
+              onRetry: () => ref.invalidate(dashboardProvider),
+              data: (s) {
+                final tiles = [
+                  (tr('लाइव डील'), parseNum(s['active_deals']), Icons.local_offer_rounded, null, AppTheme.primary),
+                  (tr('कुल बिक्री'), parseNum(s['revenue']), Icons.currency_rupee_rounded, rupees, AppTheme.deal),
+                  (tr('पूरे हुए पिकअप'), parseNum(s['completed_orders']), Icons.check_circle_rounded, null, const Color(0xFF2563EB)),
+                  (tr('चल रहे ऑर्डर'), parseNum(s['open_orders']), Icons.delivery_dining_rounded, null, const Color(0xFF7C3AED)),
+                  (tr('बचा स्टॉक'), parseNum(s['remaining_stock']), Icons.inventory_2_rounded, qty, const Color(0xFF0891B2)),
+                  (tr('रेटिंग'), parseNum(s['rating_avg']), Icons.star_rounded, (double v) => '★ ${v.toStringAsFixed(1)}', AppTheme.featured),
+                  (tr('खत्म हुई डील'), parseNum(s['expired_deals']), Icons.timer_off_rounded, null, Colors.blueGrey),
+                  (tr('पूरी बिकी डील'), parseNum(s['sold_out_deals']), Icons.done_all_rounded, null, const Color(0xFFDB2777)),
+                ];
+                return Column(children: [
+                  const SizedBox(height: 8),
+                  FadeSlideIn(child: _ShopStatusBanner(stats: s)),
+                  if ((s['pending_reservations'] ?? 0) > 0 || (s['pending_orders'] ?? 0) > 0)
+                    FadeSlideIn(
+                      index: 1,
+                      child: _PulseCard(
+                        onTap: () => context.push('/merchant/bookings'),
+                        text: tr('{0} रिज़र्वेशन और {1} ऑर्डर आपके जवाब का इंतज़ार कर रहे हैं',
+                            [s['pending_reservations'], s['pending_orders']]),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 96),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 1.55,
+                      children: [
+                        for (var i = 0; i < tiles.length; i++)
+                          FadeSlideIn(
+                            index: i + 2,
+                            child: StatTile(
+                              label: tiles[i].$1,
+                              value: tiles[i].$2,
+                              icon: tiles[i].$3,
+                              format: tiles[i].$4,
+                              color: tiles[i].$5,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ]);
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Orange "customers are waiting" card with a gently pulsing bell.
+class _PulseCard extends StatefulWidget {
+  const _PulseCard({required this.text, required this.onTap});
+
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  State<_PulseCard> createState() => _PulseCardState();
+}
+
+class _PulseCardState extends State<_PulseCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 900), lowerBound: 0.9, upperBound: 1.1)
+        ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: widget.onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(gradient: AppTheme.dealGradient, borderRadius: AppTheme.radius, boxShadow: AppTheme.softShadow(0.15)),
+        child: Row(children: [
+          ScaleTransition(scale: _controller, child: const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 30)),
+          const SizedBox(width: 12),
+          Expanded(child: Text(widget.text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+          const Icon(Icons.chevron_right_rounded, color: Colors.white),
+        ]),
       ),
     );
   }
@@ -80,18 +166,19 @@ class _ShopStatusBanner extends StatelessWidget {
     final status = stats['shop_status'];
     if (status == 'approved') return const SizedBox.shrink();
     final (color, icon, title, subtitle, action) = switch (status) {
-      null => (Colors.blue, Icons.add_business, 'अपनी दुकान की जानकारी जोड़ें', 'दुकान का पता और लोकेशन डालें, फिर डील बनाएं', 'दुकान जोड़ें'),
-      'pending' => (Colors.orange, Icons.hourglass_top, 'दुकान वेरिफिकेशन में है', 'टीम जल्द जांच करेगी। दुकान की फोटो और ID अपलोड करने से जल्दी होगा।', 'दस्तावेज़'),
-      'rejected' => (Colors.red, Icons.error_outline, 'दुकान अप्रूव नहीं हुई', '${stats['shop_rejection_reason'] ?? ''}', 'ठीक करें'),
-      _ => (Colors.grey, Icons.block, 'दुकान अभी बंद है', 'सपोर्ट से संपर्क करें', 'मदद'),
+      null => (Colors.blue, Icons.add_business_rounded, tr('अपनी दुकान की जानकारी जोड़ें'), tr('दुकान का पता और लोकेशन डालें, फिर डील बनाएं'), tr('दुकान जोड़ें')),
+      'pending' => (Colors.orange, Icons.hourglass_top_rounded, tr('दुकान वेरिफिकेशन में है'), tr('टीम जल्द जांच करेगी। दुकान की फोटो और ID अपलोड करने से जल्दी होगा।'), tr('दस्तावेज़')),
+      'rejected' => (Colors.red, Icons.error_outline_rounded, tr('दुकान अप्रूव नहीं हुई'), '${stats['shop_rejection_reason'] ?? ''}', tr('ठीक करें')),
+      _ => (Colors.grey, Icons.block_rounded, tr('दुकान अभी बंद है'), tr('सपोर्ट से संपर्क करें'), tr('मदद')),
     };
     return Card(
-      color: color.withValues(alpha: 0.1),
+      color: color.withValues(alpha: 0.08),
       child: ListTile(
-        leading: Icon(icon, color: color),
-        title: Text(title),
+        leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.15), child: Icon(icon, color: color)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(subtitle),
-        trailing: TextButton(
+        trailing: FilledButton.tonal(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
           onPressed: () => context.push(status == null || status == 'pending' || status == 'rejected' ? '/merchant/shop-form' : '/support'),
           child: Text(action),
         ),

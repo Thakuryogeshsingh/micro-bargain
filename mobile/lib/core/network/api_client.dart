@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../auth/session.dart';
 import '../config/app_config.dart';
+import '../../core/i18n/i18n.dart';
 
 /// An error from the API, already unwrapped from {"error": {code, message, details}}.
 class ApiException implements Exception {
@@ -123,16 +124,16 @@ class ApiClient {
       if (data is Map && data['error'] is Map) {
         final error = data['error'] as Map;
         throw ApiException(
-          error['message']?.toString() ?? 'कुछ गड़बड़ हुई',
+          error['message']?.toString() ?? tr('कुछ गड़बड़ हुई'),
           code: error['code']?.toString() ?? 'error',
           status: e.response?.statusCode,
           details: error['details'],
         );
       }
       if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
-        throw ApiException('इंटरनेट कनेक्शन चेक करें', code: 'network');
+        throw ApiException(tr('इंटरनेट कनेक्शन चेक करें'), code: 'network');
       }
-      throw ApiException('सर्वर से जवाब नहीं मिला (${e.response?.statusCode ?? '-'})', status: e.response?.statusCode);
+      throw ApiException(tr('सर्वर से जवाब नहीं मिला ({0})', [e.response?.statusCode ?? '-']), status: e.response?.statusCode);
     }
   }
 }
