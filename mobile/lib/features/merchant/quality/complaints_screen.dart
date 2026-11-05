@@ -115,7 +115,7 @@ class _Actions extends ConsumerWidget {
           Expanded(
             child: FilledButton(
               onPressed: () async {
-                if (await confirm(context, tr('{0} पूरा रिफंड दें?', [rupees(paid)]))) {
+                if (await confirm(context, tr('{0} पूरा रिफंड दें?', [rupees(paid)]), icon: Icons.currency_rupee_rounded)) {
                   if (context.mounted) await _respond(context, ref, {'accept': true}, tr('रिफंड ग्राहक के वॉलेट में भेज दिया'));
                 }
               },

@@ -90,7 +90,7 @@ class _DealBodyState extends ConsumerState<_DealBody> {
     final cart = ref.read(cartProvider.notifier);
     if (!cart.add(deal, _qty)) {
       final replace = await confirm(context, tr('कार्ट में दूसरी दुकान का सामान है'),
-          message: tr('एक ऑर्डर में एक ही दुकान का सामान आ सकता है। पुराना कार्ट हटा कर यह डालें?'), ok: tr('हाँ, बदलें'));
+          message: tr('एक ऑर्डर में एक ही दुकान का सामान आ सकता है। पुराना कार्ट हटा कर यह डालें?'), ok: tr('हाँ, बदलें'), icon: Icons.shopping_bag_outlined);
       if (!replace) return;
       cart.replaceWith(deal, _qty);
     }

@@ -75,7 +75,7 @@ class _DealList extends ConsumerWidget {
       }
       return;
     }
-    if (action == 'end' && !await confirm(context, tr('डील बंद करें?'), message: tr('बंद डील दोबारा चालू नहीं होगी।'))) return;
+    if (action == 'end' && !await confirm(context, tr('डील बंद करें?'), message: tr('बंद डील दोबारा चालू नहीं होगी।'), icon: Icons.block_rounded, danger: true)) return;
     if (!context.mounted) return;
     final done = {'publish': tr('डील लाइव हो गई 🎉'), 'pause': tr('डील रोकी गई'), 'sold-out': tr('बिक गई मार्क किया'), 'end': tr('डील बंद'), 'duplicate': tr('कॉपी ड्राफ्ट में बनी')};
     if (await runAction(context, () => api.post('/deals/${deal.id}/$action/', {}), success: done[action])) {
@@ -344,7 +344,7 @@ class _DealFormScreenState extends ConsumerState<DealFormScreen> {
 
 /// Puts all of yesterday's deals live again.
 Future<void> repeatYesterday(BuildContext context, WidgetRef ref) async {
-  if (!await confirm(context, tr('कल वाली सभी डील दोबारा लाइव करें?'))) return;
+  if (!await confirm(context, tr('कल वाली सभी डील दोबारा लाइव करें?'), icon: Icons.replay_rounded)) return;
   if (!context.mounted) return;
   Map<String, dynamic>? result;
   final ok = await runAction(context, () async {

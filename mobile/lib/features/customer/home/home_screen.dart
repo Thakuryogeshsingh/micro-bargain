@@ -51,7 +51,7 @@ Future<void> quickAdd(BuildContext context, WidgetRef ref, Deal deal) async {
   }
   if (!cart.add(deal, quantity)) {
     final replace = await confirm(context, tr('कार्ट में दूसरी दुकान का सामान है'),
-        message: tr('एक ऑर्डर में एक ही दुकान का सामान आ सकता है। पुराना कार्ट हटा कर यह डालें?'), ok: tr('हाँ, बदलें'));
+        message: tr('एक ऑर्डर में एक ही दुकान का सामान आ सकता है। पुराना कार्ट हटा कर यह डालें?'), ok: tr('हाँ, बदलें'), icon: Icons.shopping_bag_outlined);
     if (!replace) return;
     cart.replaceWith(deal, step);
   }

@@ -30,7 +30,7 @@ Future<void> editName(BuildContext context, WidgetRef ref) async {
 Future<void> deleteAccount(BuildContext context, WidgetRef ref) async {
   final sure = await confirm(context, tr('अकाउंट हमेशा के लिए डिलीट करें?'),
       message: tr('आपका नाम, नंबर, पते और पसंदीदा हट जाएंगे। पुराने ऑर्डर का हिसाब (बिना आपकी पहचान के) रखा जाएगा।'),
-      ok: tr('डिलीट करें'));
+      ok: tr('डिलीट करें'), icon: Icons.delete_forever_rounded, danger: true);
   if (!sure || !context.mounted) return;
   if (await runAction(context, () => ref.read(apiProvider).post('/auth/delete-account/', {}))) {
     await ref.read(sessionProvider.notifier).signOutLocally();
@@ -49,7 +49,7 @@ List<Widget> legalTiles() => [
     ];
 
 Future<void> logout(BuildContext context, WidgetRef ref) async {
-  if (await confirm(context, tr('लॉग आउट करें?'))) {
+  if (await confirm(context, tr('लॉग आउट करें?'), icon: Icons.logout_rounded)) {
     await ref.read(sessionProvider.notifier).signOut(deviceToken: PushService.token);
   }
 }
@@ -199,7 +199,7 @@ class AddressesScreen extends ConsumerWidget {
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () async {
-                        if (!await confirm(context, tr('यह पता हटाएं?'))) return;
+                        if (!await confirm(context, tr('यह पता हटाएं?'), icon: Icons.wrong_location_outlined, danger: true)) return;
                         if (context.mounted && await runAction(context, () => ref.read(apiProvider).delete('/customers/addresses/${a.id}/'))) {
                           ref.invalidate(addressesProvider);
                         }
@@ -254,7 +254,7 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
     final here = _place == null ? await currentLocation() : LatLng(_place!.latitude, _place!.longitude);
     if (!mounted) return;
     if (here.isFallback &&
-        !await confirm(context, tr('लोकेशन नहीं मिली'), message: tr('डिलीवरी के लिए सही लोकेशन ज़रूरी है। फिर भी शहर के केंद्र से सेव करें?'))) {
+        !await confirm(context, tr('लोकेशन नहीं मिली'), message: tr('डिलीवरी के लिए सही लोकेशन ज़रूरी है। फिर भी शहर के केंद्र से सेव करें?'), icon: Icons.location_off_outlined)) {
       setState(() => _busy = false);
       return;
     }

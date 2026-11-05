@@ -119,10 +119,32 @@ class _TickerState extends State<Ticker> {
   Widget build(BuildContext context) => widget.builder(context);
 }
 
-void showMessage(BuildContext context, String message) {
+/// Floating message pill at the bottom: a check for normal news, a warning for errors.
+void showMessage(BuildContext context, String message, {bool error = false}) {
+  final color = error ? const Color(0xFFFF5A5F) : AppTheme.accent;
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
+    ..showSnackBar(SnackBar(
+      elevation: 0,
+      backgroundColor: const Color(0xFF111111),
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      duration: Duration(milliseconds: error ? 4000 : 2600),
+      content: Row(children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.18), shape: BoxShape.circle),
+          child: Icon(error ? Icons.priority_high_rounded : Icons.check_rounded, size: 18, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 1.3)),
+        ),
+      ]),
+    ));
 }
 
 /// Runs an API action, shows the server's message on failure, and returns whether it worked.
@@ -132,7 +154,7 @@ Future<bool> runAction(BuildContext context, Future<void> Function() action, {St
     if (success != null && context.mounted) showMessage(context, success);
     return true;
   } on ApiException catch (e) {
-    if (context.mounted) showMessage(context, e.friendly);
+    if (context.mounted) showMessage(context, e.friendly, error: true);
     return false;
   }
 }
@@ -140,16 +162,104 @@ Future<bool> runAction(BuildContext context, Future<void> Function() action, {St
 /// Popup buttons keep their natural width (the theme makes page buttons full-width, which stacked them).
 final dialogButtonStyle = FilledButton.styleFrom(minimumSize: const Size(96, 46));
 
-Future<bool> confirm(BuildContext context, String title, {String? message, String? ok}) async {
+/// The app's popup: icon on top, bold title, soft message, optional [body], and two equal buttons.
+class AppDialog extends StatelessWidget {
+  const AppDialog({
+    super.key,
+    required this.title,
+    this.message,
+    this.body,
+    this.icon = Icons.help_outline_rounded,
+    this.danger = false,
+    required this.okLabel,
+    this.cancelLabel,
+    required this.onOk,
+    this.onCancel,
+  });
+
+  final String title;
+  final String? message;
+  final Widget? body;
+  final IconData icon;
+  final bool danger;
+  final String okLabel;
+  final String? cancelLabel;
+  final VoidCallback onOk;
+  final VoidCallback? onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = danger ? const Color(0xFFE5484D) : AppTheme.primary;
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 26, 22, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.6, end: 1),
+            duration: const Duration(milliseconds: 380),
+            curve: Curves.easeOutBack,
+            builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(color: tint.withValues(alpha: 0.12), shape: BoxShape.circle),
+              child: Icon(icon, size: 30, color: tint),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 19, height: 1.25, fontWeight: FontWeight.w900, letterSpacing: -0.3, color: AppTheme.ink)),
+          if (message != null) ...[
+            const SizedBox(height: 8),
+            Text(message!, textAlign: TextAlign.center, style: TextStyle(fontSize: 14.5, height: 1.45, color: AppTheme.muted)),
+          ],
+          if (body != null) ...[const SizedBox(height: 16), body!],
+          const SizedBox(height: 22),
+          Row(children: [
+            if (cancelLabel != null) ...[
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    shape: const StadiumBorder(),
+                    side: BorderSide(color: AppTheme.ink.withValues(alpha: 0.15)),
+                    foregroundColor: AppTheme.ink,
+                  ),
+                  onPressed: onCancel ?? () => Navigator.pop(context),
+                  child: Text(cancelLabel!, style: const TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: FilledButton(
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50), backgroundColor: danger ? tint : null),
+                onPressed: onOk,
+                child: Text(okLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+Future<bool> confirm(BuildContext context, String title,
+    {String? message, String? ok, IconData icon = Icons.help_outline_rounded, bool danger = false}) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (_) => AlertDialog(
-      title: Text(title),
-      content: message == null ? null : Text(message),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('नहीं'))),
-        FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(context, true), child: Text(ok ?? tr('हाँ'))),
-      ],
+    builder: (dialog) => AppDialog(
+      title: title,
+      message: message,
+      icon: icon,
+      danger: danger,
+      okLabel: ok ?? tr('हाँ'),
+      cancelLabel: tr('नहीं'),
+      onOk: () => Navigator.pop(dialog, true),
+      onCancel: () => Navigator.pop(dialog, false),
     ),
   );
   return result == true;
@@ -157,23 +267,24 @@ Future<bool> confirm(BuildContext context, String title, {String? message, Strin
 
 /// Asks for one line of text (e.g. a reason or the 4-digit pickup code).
 Future<String?> askText(BuildContext context, String title,
-    {String hint = '', TextInputType keyboard = TextInputType.text, int? maxLength}) async {
+    {String hint = '', TextInputType keyboard = TextInputType.text, int? maxLength, IconData icon = Icons.edit_note_rounded}) async {
   final controller = TextEditingController();
   final result = await showDialog<String>(
     context: context,
-    builder: (_) => AlertDialog(
-      title: Text(title),
-      content: TextField(
+    builder: (dialog) => AppDialog(
+      title: title,
+      icon: icon,
+      body: TextField(
         controller: controller,
         autofocus: true,
         keyboardType: keyboard,
         maxLength: maxLength,
-        decoration: InputDecoration(hintText: hint),
+        textAlign: keyboard == TextInputType.number ? TextAlign.center : TextAlign.start,
+        decoration: InputDecoration(hintText: hint, filled: true, fillColor: AppTheme.chip),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(tr('रद्द'))),
-        FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(context, controller.text.trim()), child: Text(tr('ठीक है'))),
-      ],
+      okLabel: tr('ठीक है'),
+      cancelLabel: tr('रद्द'),
+      onOk: () => Navigator.pop(dialog, controller.text.trim()),
     ),
   );
   return result;

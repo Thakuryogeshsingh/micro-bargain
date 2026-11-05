@@ -106,7 +106,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }
 
   Future<void> _delete() async {
-    if (!await confirm(context, tr('प्रोडक्ट हटाएं?'), message: tr('अगर इस पर डील बनी है तो इसे सिर्फ बंद किया जाएगा।'))) return;
+    if (!await confirm(context, tr('प्रोडक्ट हटाएं?'), message: tr('अगर इस पर डील बनी है तो इसे सिर्फ बंद किया जाएगा।'), icon: Icons.delete_outline_rounded, danger: true)) return;
     if (!mounted) return;
     if (await runAction(context, () => ref.read(apiProvider).delete('/products/delete/${widget.product!.id}/'))) {
       if (mounted) context.pop();

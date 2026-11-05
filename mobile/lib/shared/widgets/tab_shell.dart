@@ -67,7 +67,7 @@ class _TabShellState extends State<TabShell> {
       return;
     }
     HapticFeedback.mediumImpact();
-    if (await confirm(context, tr('क्या आप ऐप बंद करना चाहते हैं?'), ok: tr('हाँ, बंद करें'))) {
+    if (await confirm(context, tr('क्या आप ऐप बंद करना चाहते हैं?'), ok: tr('हाँ, बंद करें'), icon: Icons.exit_to_app_rounded)) {
       SystemNavigator.pop();
     }
   }
