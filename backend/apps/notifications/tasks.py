@@ -18,3 +18,9 @@ def fan_out_new_deal(deal_id):
     if count:
         logger.info("Deal %s: alerted %s customer(s)", deal_id, count)
     return count
+
+
+
+@shared_task
+def deal_ending_alerts():
+    return services.deal_ending_alerts()

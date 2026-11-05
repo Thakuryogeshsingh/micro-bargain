@@ -112,7 +112,7 @@ def _check_fulfilment(deal, fulfilment):
         raise BusinessRuleError(f"{deal.product.name} is not available for {fulfilment}.", "fulfilment_unavailable")
 
 
-def create_order(customer, items, fulfilment, payment_method, address=None, coupon_code="", note=""):
+def create_order(customer, items, fulfilment, payment_method, address=None, coupon_code="", note="", use_wallet=False):
     """items: [{"deal": id, "quantity": Decimal}] from one shop."""
     if not items or len(items) > MAX_ITEMS:
         raise BusinessRuleError(f"An order must have 1 to {MAX_ITEMS} items.", "invalid_items")
@@ -167,10 +167,18 @@ def create_order(customer, items, fulfilment, payment_method, address=None, coup
         if fulfilment == Order.Fulfilment.DELIVERY and subtotal < settings.FREE_DELIVERY_ABOVE and not is_plus:
             delivery_fee = Decimal(settings.DELIVERY_FEE)
         total = subtotal - discount - plus_off + delivery_fee
+        number = _new_order_number()
+        wallet_used = Decimal("0")
+        if use_wallet:
+            from apps.customers.services import use_wallet as spend
+
+            cap = min(total, subtotal * Decimal(settings.WALLET_MAX_PERCENT_OF_ORDER) / 100)
+            wallet_used = spend(customer, _money(cap), number)
+            total -= wallet_used
 
         online = payment_method == Order.PaymentMethod.ONLINE and total > 0
         order = Order.objects.create(
-            order_number=_new_order_number(), customer=customer, shop=shop, fulfilment=fulfilment,
+            order_number=number, customer=customer, wallet_used=wallet_used, shop=shop, fulfilment=fulfilment,
             status=Status.PENDING_PAYMENT if online else Status.PENDING,
             payment_method=payment_method,
             payment_status=Order.PaymentStatus.PAID if total == 0 else Order.PaymentStatus.UNPAID,
@@ -248,6 +256,10 @@ def _cancel(order, reason, actor=None):
     order.cancelled_at = timezone.now()
     order.expires_at = None
     order.save(update_fields=["status", "cancel_reason", "cancelled_at", "expires_at", "updated_at"])
+    if order.wallet_used:
+        from apps.customers.services import return_wallet
+
+        return_wallet(order.customer, order.wallet_used, order.order_number)
     if order.payment_status == Order.PaymentStatus.PAID and order.payment_method == Order.PaymentMethod.ONLINE:
         from apps.payments.services import refund_order
 
@@ -306,6 +318,9 @@ def complete(order, pickup_code):
     from apps.customers.services import reward_referral
 
     reward_referral(order.customer)
+    from apps.customers.services import credit_cashback
+
+    credit_cashback(order.customer, order.subtotal, order.order_number)
     _tell_customer(order, "ऑर्डर पूरा 🎉", f"आपने इस ऑर्डर पर ₹{order.savings + order.coupon_discount} बचाए!")
     return order
 

@@ -28,7 +28,7 @@ class ReviewCreateView(APIView):
             reservation = get_object_or_404(DealReservation.objects.filter(customer=request.user), pk=data["reservation"])
         else:
             order = get_object_or_404(Order.objects.filter(customer=request.user), pk=data["order"])
-        review = services.create_review(request.user, data["rating"], data.get("comment", ""), reservation, order)
+        review = services.create_review(request.user, data["rating"], data.get("comment", ""), reservation, order, data.get("photo"))
         return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
 
 

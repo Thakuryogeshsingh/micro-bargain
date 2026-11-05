@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny
@@ -99,6 +100,23 @@ class NearbyShopsView(generics.ListAPIView):
 
     def get_serializer_context(self):
         return {**super().get_serializer_context(), "favorite_ids": _favorite_ids(self.request)}
+
+
+class LeaderboardView(APIView):
+    """GET /shops/leaderboard/?latitude&longitude: this week's top-saving shops nearby."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(parameters=[NearbyQuerySerializer], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        query = NearbyQuerySerializer(data=request.query_params)
+        query.is_valid(raise_exception=True)
+        rows = services.leaderboard(query.validated_data["latitude"], query.validated_data["longitude"])
+        return Response([
+            {"rank": i + 1, "savings": r["savings"], "purchases": r["purchases"],
+             "shop": PublicShopSerializer(r["shop"], context={"request": request}).data}
+            for i, r in enumerate(rows)
+        ])
 
 
 class ShopDetailView(generics.RetrieveAPIView):

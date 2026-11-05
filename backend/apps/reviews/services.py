@@ -21,7 +21,7 @@ def _refresh_shop_rating(shop_id):
     shop.save(update_fields=["rating_avg", "rating_count", "updated_at"])
 
 
-def create_review(customer, rating, comment="", reservation=None, order=None):
+def create_review(customer, rating, comment="", reservation=None, order=None, photo=None):
     source = reservation or order
     if (reservation is None) == (order is None):
         raise BusinessRuleError("Review either a reservation or an order.", "invalid_source")
@@ -32,7 +32,7 @@ def create_review(customer, rating, comment="", reservation=None, order=None):
     try:
         with transaction.atomic():
             review = Review.objects.create(
-                customer=customer, shop=source.shop, reservation=reservation, order=order, rating=rating, comment=comment
+                customer=customer, shop=source.shop, reservation=reservation, order=order, rating=rating, comment=comment, photo=photo or ""
             )
             _refresh_shop_rating(source.shop_id)
             notifications.notify(

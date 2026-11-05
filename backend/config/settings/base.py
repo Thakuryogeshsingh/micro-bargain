@@ -235,6 +235,7 @@ CELERY_BEAT_SCHEDULE = {
     "expire-subscriptions-and-ads": {"task": "apps.subscriptions.tasks.expire_paid_services", "schedule": 300.0},
     "refresh-demo-deals": {"task": "apps.shops.tasks.refresh_demo_deals", "schedule": 3600.0},
     "happy-hours": {"task": "apps.deals.tasks.run_happy_hours", "schedule": 300.0},
+    "deal-ending-alerts": {"task": "apps.notifications.tasks.deal_ending_alerts", "schedule": 600.0},
 }
 
 # Demo/test servers only: fill the database with sample Bharatpur shops and keep their deals live.
@@ -271,6 +272,11 @@ PLUS_PRICE_RUPEES = 49
 PLUS_DAYS = 30
 PLUS_EXTRA_PERCENT = 5
 PLUS_EXTRA_CAP_RUPEES = 50
+
+# Wallet: cashback on every completed purchase, usable on later orders.
+CASHBACK_PERCENT = 2
+CASHBACK_CAP_RUPEES = 25
+WALLET_MAX_PERCENT_OF_ORDER = 50
 
 # Revenue
 DEFAULT_COMMISSION_PERCENT = 3  # used when no CommissionRule matches (doc: 2-5%)

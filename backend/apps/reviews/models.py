@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Q
 
 from common.models import TimeStampedModel
+from common.validators import validate_image_file
 
 
 class Review(TimeStampedModel):
@@ -17,6 +18,7 @@ class Review(TimeStampedModel):
     order = models.OneToOneField("orders.Order", null=True, blank=True, on_delete=models.CASCADE, related_name="review")
     rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     comment = models.TextField(blank=True, max_length=1000)
+    photo = models.ImageField(upload_to="reviews/", blank=True, validators=[validate_image_file])
     merchant_reply = models.TextField(blank=True, max_length=1000)
     replied_at = models.DateTimeField(null=True, blank=True)
     is_hidden = models.BooleanField(default=False, help_text="Hidden by admin (abusive or fake)")

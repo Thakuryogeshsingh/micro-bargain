@@ -17,6 +17,7 @@ class OrderCreateSerializer(serializers.Serializer):
     address = serializers.IntegerField(required=False, help_text="Address id; required for delivery")
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=20)
     note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    use_wallet = serializers.BooleanField(default=False)
 
 
 class OfferSerializer(serializers.ModelSerializer):
@@ -57,7 +58,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             "id", "order_number", "status", "fulfilment", "payment_method", "payment_status",
             "shop", "shop_name", "shop_phone", "shop_latitude", "shop_longitude", "items",
-            "subtotal", "savings", "coupon_code", "coupon_discount", "plus_discount", "delivery_fee", "total_amount", "refunded_amount",
+            "subtotal", "savings", "coupon_code", "coupon_discount", "plus_discount", "wallet_used", "delivery_fee", "total_amount", "refunded_amount",
             "delivery_address", "delivery_latitude", "delivery_longitude", "pickup_code", "note",
             "expires_at", "confirmed_at", "ready_at", "completed_at", "cancelled_at", "cancel_reason", "created_at",
         ]

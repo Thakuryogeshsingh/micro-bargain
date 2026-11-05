@@ -51,6 +51,23 @@ class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
         services.save_address(serializer, self.request.user)
 
 
+class WalletView(APIView):
+    """GET /customers/wallet/: balance and recent entries."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        entries = request.user.wallet_entries.all()[:50]
+        return Response({
+            "balance": services.wallet_balance(request.user),
+            "cashback_percent": settings.CASHBACK_PERCENT,
+            "entries": [
+                {"kind": e.kind, "amount": e.amount, "reference": e.reference, "created_at": e.created_at} for e in entries
+            ],
+        })
+
+
 class ImpactView(APIView):
     """GET /customers/impact/: money saved and food rescued (for the profile badge)."""
 

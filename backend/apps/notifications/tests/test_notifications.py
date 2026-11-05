@@ -188,7 +188,7 @@ class TestReservationEvents:
     def test_customer_hears_confirm_and_complete(self, reservation):
         reservation_services.confirm(reservation)
         reservation_services.complete(reservation, reservation.pickup_code)
-        assert self.kinds(reservation.customer) == [Kind.RESERVATION_CONFIRMED, Kind.RESERVATION_COMPLETED]
+        assert self.kinds(reservation.customer) == [Kind.RESERVATION_CONFIRMED, Kind.CASHBACK, Kind.RESERVATION_COMPLETED]
         assert "₹80.00" in reservation.customer.notifications.get(kind=Kind.RESERVATION_COMPLETED).body
 
     def test_customer_hears_reject_and_expiry(self, reservation, customer):

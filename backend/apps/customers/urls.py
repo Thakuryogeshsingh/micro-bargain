@@ -10,5 +10,6 @@ urlpatterns = [
     path("addresses/<int:pk>/", views.AddressDetailView.as_view(), name="address-detail"),
     path("referral/", views.ReferralView.as_view(), name="referral"),
     path("impact/", views.ImpactView.as_view(), name="impact"),
+    path("wallet/", views.WalletView.as_view(), name="wallet"),
     path("plus/", views.PlusView.as_view(), name="plus"),
 ]

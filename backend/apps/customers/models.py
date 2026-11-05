@@ -71,3 +71,25 @@ class PlusMembership(TimeStampedModel):
 
     def __str__(self):
         return f"Plus {self.user.phone} ({self.status})"
+
+
+
+class WalletEntry(models.Model):
+    """Money in the customer's wallet: cashback credits, and debits when used on an order."""
+
+    class Kind(models.TextChoices):
+        CASHBACK = "cashback", "Cashback"
+        USED = "used", "Used on an order"
+        RETURNED = "returned", "Returned (order cancelled)"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet_entries")
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Positive = credit, negative = debit")
+    reference = models.CharField(max_length=20, blank=True)  # order / reservation number
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.user.phone} {self.amount:+}"

@@ -46,7 +46,7 @@ class OrderCreateView(APIView):
             address = get_object_or_404(request.user.addresses.all(), pk=data["address"])
         order = services.create_order(
             request.user, data["items"], data["fulfilment"], data["payment_method"], address,
-            data.get("coupon_code", ""), data.get("note", ""),
+            data.get("coupon_code", ""), data.get("note", ""), data.get("use_wallet", False),
         )
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 

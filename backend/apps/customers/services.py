@@ -185,3 +185,57 @@ def impact(user):
         "food_rescued_kg": kg + grams / 1000,
         "purchases": reservations.count() + orders.count(),
     }
+
+
+
+# ---------- wallet ----------
+
+def wallet_balance(user, lock=False):
+    from decimal import Decimal
+
+    from django.db.models import Sum
+
+    from .models import WalletEntry
+
+    qs = WalletEntry.objects.filter(user=user)
+    if lock:
+        # Serialise wallet spending per user (customer profile row as the lock).
+        from .models import CustomerProfile
+
+        CustomerProfile.objects.select_for_update().get_or_create(user=user)
+    return qs.aggregate(s=Sum("amount"))["s"] or Decimal("0")
+
+
+def credit_cashback(user, purchase_amount, reference):
+    """Cashback on a completed purchase. Call inside the completing transaction."""
+    from decimal import ROUND_HALF_UP, Decimal
+
+    from apps.notifications import services as notifications
+
+    from .models import WalletEntry
+
+    amount = min(purchase_amount * Decimal(settings.CASHBACK_PERCENT) / 100, Decimal(settings.CASHBACK_CAP_RUPEES))
+    amount = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amount <= 0:
+        return None
+    entry = WalletEntry.objects.create(user=user, kind=WalletEntry.Kind.CASHBACK, amount=amount, reference=reference)
+    notifications.notify(user, notifications.Kind.CASHBACK, f"💰 ₹{amount} कैशबैक मिला!",
+                         f"अगले ऑर्डर में वॉलेट से इस्तेमाल करें ({reference}).", push=notifications.wants_order_updates(user))
+    return entry
+
+
+def use_wallet(user, wanted, reference):
+    """Debit up to `wanted` from the wallet; returns the amount actually used."""
+    from .models import WalletEntry
+
+    used = min(wanted, wallet_balance(user, lock=True))
+    if used > 0:
+        WalletEntry.objects.create(user=user, kind=WalletEntry.Kind.USED, amount=-used, reference=reference)
+    return used
+
+
+def return_wallet(user, amount, reference):
+    from .models import WalletEntry
+
+    if amount > 0:
+        WalletEntry.objects.create(user=user, kind=WalletEntry.Kind.RETURNED, amount=amount, reference=reference)

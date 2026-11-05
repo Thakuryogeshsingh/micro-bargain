@@ -12,7 +12,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.commissions import services as commissions
-from apps.customers.services import reward_referral
+from apps.customers.services import credit_cashback, reward_referral
 from apps.deals import services as deal_services
 from apps.inventory import services as inventory
 from apps.notifications import services as notifications
@@ -136,6 +136,7 @@ def complete(reservation, pickup_code):
     inventory.record_sale(deal.product_id, reservation.quantity, reservation.reservation_number)
     commissions.record_for_reservation(reservation)
     reward_referral(reservation.customer)
+    credit_cashback(reservation.customer, reservation.total_amount, reservation.reservation_number)
     reservation.status = Status.COMPLETED
     reservation.completed_at = timezone.now()
     reservation.save(update_fields=["status", "completed_at", "updated_at"])

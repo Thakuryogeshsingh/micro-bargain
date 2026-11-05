@@ -234,3 +234,28 @@ def _set_push_status(notification, status, error=""):
     notification.push_status = status
     notification.push_error = error
     notification.save(update_fields=["push_status", "push_error", "updated_at"])
+
+
+
+def deal_ending_alerts():
+    """Tell customers who favourited a shop that one of its deals ends in about half an hour (once per deal)."""
+    from datetime import timedelta
+
+    from apps.deals.services import live_deals
+
+    now = timezone.now()
+    sent = 0
+    for deal in live_deals().filter(expires_at__gt=now + timedelta(minutes=20), expires_at__lte=now + timedelta(minutes=40)):
+        already = Notification.objects.filter(deal=deal, kind=Kind.DEAL_ENDING).values("user_id")
+        fans = User.objects.filter(favorite_shops__shop=deal.shop, is_active=True).exclude(id__in=already)
+        for user in fans:
+            Notification.objects.create(
+                user=user, kind=Kind.DEAL_ENDING, deal=deal,
+                title=f"⏰ {deal.product.name} की डील खत्म होने वाली है",
+                body=f"{deal.shop.name} पर सिर्फ ₹{deal.offer_price}/{deal.unit} — 30 मिनट बाकी।",
+                data={"deal_id": str(deal.id)},
+            )
+            sent += 1
+    pending = Notification.objects.filter(kind=Kind.DEAL_ENDING, push_status=PushStatus.PENDING).values_list("id", flat=True)
+    deliver(list(pending))
+    return sent
