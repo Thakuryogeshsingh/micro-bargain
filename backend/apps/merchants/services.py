@@ -138,3 +138,43 @@ def submit_onboarding(profile):
     profile.save(update_fields=["status", "rejection_reason", "onboarding_submitted_at", "updated_at"])
     record(profile.user, "merchant.onboarding_submitted", profile)
     return onboarding_status(profile)
+
+
+def sales_report(user, days=7):
+    """Completed sales per day (orders + pickups), totals and top products for the last `days` days."""
+    from datetime import timedelta
+    from decimal import Decimal
+
+    from django.db.models.functions import TruncDate
+
+    from apps.orders.models import Order, OrderItem
+    from apps.reservations.models import DealReservation
+
+    today = timezone.localdate()
+    start = today - timedelta(days=days - 1)
+    per_day = {start + timedelta(days=i): {"sales": Decimal(0), "count": 0} for i in range(days)}
+    orders = Order.objects.filter(shop__merchant__user=user, status="completed", completed_at__date__gte=start)
+    pickups = DealReservation.objects.filter(shop__merchant__user=user, status="completed", completed_at__date__gte=start)
+    for qs, field in ((orders, "total_amount"), (pickups, "total_amount")):
+        for row in qs.annotate(day=TruncDate("completed_at")).values("day").annotate(s=Sum(field), n=Count("id")):
+            if row["day"] in per_day:
+                per_day[row["day"]]["sales"] += row["s"] or 0
+                per_day[row["day"]]["count"] += row["n"]
+    products = {}
+    for row in OrderItem.objects.filter(order__in=orders).values("product_name").annotate(q=Sum("quantity"), s=Sum("line_total")):
+        products[row["product_name"]] = [row["q"], row["s"]]
+    for row in pickups.values("deal__product__name").annotate(q=Sum("quantity"), s=Sum("total_amount")):
+        p = products.setdefault(row["deal__product__name"], [Decimal(0), Decimal(0)])
+        p[0] += row["q"]
+        p[1] += row["s"]
+    top = sorted(products.items(), key=lambda kv: kv[1][1], reverse=True)[:5]
+    total = sum((v["sales"] for v in per_day.values()), Decimal(0))
+    count = sum(v["count"] for v in per_day.values())
+    return {
+        "days": days,
+        "total": total,
+        "count": count,
+        "average": (total / count).quantize(Decimal("0.01")) if count else Decimal(0),
+        "series": [{"date": d, "sales": v["sales"], "count": v["count"]} for d, v in sorted(per_day.items())],
+        "top_products": [{"name": n, "quantity": q, "sales": s} for n, (q, s) in top],
+    }

@@ -86,9 +86,11 @@ class WalletEntry(models.Model):
         USED = "used", "Used on an order"
         RETURNED = "returned", "Returned (order cancelled)"
         REFUND = "refund", "Refund (quality complaint)"
+        GROUP_BONUS = "group_bonus", "Mohalla deal bonus"
+        POINTS = "points", "Points redeemed"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet_entries")
-    kind = models.CharField(max_length=10, choices=Kind.choices)
+    kind = models.CharField(max_length=12, choices=Kind.choices)
     amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Positive = credit, negative = debit")
     reference = models.CharField(max_length=20, blank=True)  # order / reservation number
     created_at = models.DateTimeField(auto_now_add=True)

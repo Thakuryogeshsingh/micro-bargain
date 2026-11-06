@@ -15,7 +15,7 @@ class ShopWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
         fields = [
-            "name", "description", "category", "phone", "cover_image",
+            "name", "description", "category", "phone", "gstin", "cover_image",
             "address_line", "landmark", "city", "state", "pincode", "latitude", "longitude",
             "opening_time", "closing_time", "prep_minutes", "happy_hour_enabled", "happy_hour_percent", "happy_hour_minutes",
             "offers_pickup", "offers_delivery", "is_temporarily_closed",
@@ -40,7 +40,7 @@ class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
         fields = [
-            "id", "name", "description", "category", "category_name", "phone", "cover_image",
+            "id", "name", "description", "category", "category_name", "phone", "gstin", "cover_image",
             "address_line", "landmark", "city", "state", "pincode", "latitude", "longitude",
             "opening_time", "closing_time", "prep_minutes", "happy_hour_enabled", "happy_hour_percent", "happy_hour_minutes",
             "offers_pickup", "offers_delivery", "is_temporarily_closed",

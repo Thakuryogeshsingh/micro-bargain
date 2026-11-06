@@ -137,6 +137,10 @@ def complete(reservation, pickup_code):
     commissions.record_for_reservation(reservation)
     reward_referral(reservation.customer)
     credit_cashback(reservation.customer, reservation.total_amount, reservation.reservation_number)
+    from apps.growth.services import on_purchase_completed
+
+    on_purchase_completed(reservation.customer, reservation.total_amount, reservation.reservation_number,
+                          [(reservation.deal_id, reservation.total_amount)])
     reservation.status = Status.COMPLETED
     reservation.completed_at = timezone.now()
     reservation.save(update_fields=["status", "completed_at", "updated_at"])

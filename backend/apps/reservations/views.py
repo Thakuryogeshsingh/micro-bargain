@@ -5,7 +5,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.permissions import IsCustomer, IsMerchant
+from apps.team.models import ShopStaff, staff_job
+from common.permissions import IsCustomer, IsShopWorker
 
 from . import services
 from .models import DealReservation
@@ -27,11 +28,15 @@ def visible_reservations(user):
         return qs.filter(customer=user)
     if user.is_merchant:
         return qs.filter(shop__merchant__user=user)
+    if user.is_shop_staff:
+        job = staff_job(user)
+        return qs.filter(shop=job.shop) if job is not None and job.kind == ShopStaff.Kind.HELPER else qs.none()
     raise PermissionDenied("Only customers and merchants have reservations.")
 
 
 def serializer_for(user):
-    return MerchantReservationSerializer if getattr(user, "is_merchant", False) else ReservationSerializer
+    staff = getattr(user, "is_merchant", False) or getattr(user, "is_shop_staff", False)
+    return MerchantReservationSerializer if staff else ReservationSerializer
 
 
 class ReservationCreateView(APIView):
@@ -67,9 +72,9 @@ class ReservationDetailView(generics.RetrieveAPIView):
 
 
 class MerchantReservationActionView(APIView):
-    """confirm / reject / complete, for the shop that owns the reservation."""
+    """confirm / reject / complete, for the shop that owns the reservation (and its helpers)."""
 
-    permission_classes = [IsMerchant]
+    permission_classes = [IsShopWorker]
     action = None
 
     @extend_schema(

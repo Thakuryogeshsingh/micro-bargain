@@ -33,6 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         CUSTOMER = "customer", "Customer"
         MERCHANT = "merchant", "Merchant"
         ADMIN = "admin", "Admin"
+        STAFF = "staff", "Shop staff"
 
     phone = models.CharField(max_length=10, unique=True, validators=[phone_validator])
     name = models.CharField(max_length=150, blank=True)
@@ -62,6 +63,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_merchant(self):
         return self.role == self.Role.MERCHANT
+
+    @property
+    def is_shop_staff(self):
+        return self.role == self.Role.STAFF
 
 
 class PhoneOTP(models.Model):

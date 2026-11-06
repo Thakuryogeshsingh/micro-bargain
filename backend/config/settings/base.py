@@ -61,6 +61,8 @@ LOCAL_APPS = [
     "apps.khata",
     "apps.daily",
     "apps.chat",
+    "apps.growth",
+    "apps.team",
     "apps.advertisements",
     "apps.subscriptions",
     "apps.commissions",
@@ -250,6 +252,8 @@ CELERY_BEAT_SCHEDULE = {
     "deal-ending-alerts": {"task": "apps.notifications.tasks.deal_ending_alerts", "schedule": 600.0},
     "quality-auto-refunds": {"task": "apps.quality.tasks.auto_refund_unanswered", "schedule": 1800.0},
     "quality-scores": {"task": "apps.quality.tasks.refresh_quality_scores", "schedule": 21600.0},
+    "price-alerts": {"task": "apps.growth.tasks.check_price_alerts", "schedule": 600.0},
+    "campaigns": {"task": "apps.growth.tasks.run_campaigns", "schedule": 300.0},
 }
 
 # Demo/test servers only: fill the database with sample Bharatpur shops and keep their deals live.

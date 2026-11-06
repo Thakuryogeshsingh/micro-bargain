@@ -60,6 +60,11 @@ class Notification(TimeStampedModel):
         MERCHANT_APPROVED = "merchant_approved", "Merchant account approved"
         NEW_MESSAGE = "new_message", "Chat message"
         DAILY_ORDER = "daily_order", "New daily subscription"
+        PRICE_ALERT = "price_alert", "Price alert"
+        GROUP_DEAL = "group_deal", "Mohalla deal"
+        ANNOUNCEMENT = "announcement", "Announcement"
+        LOW_STOCK = "low_stock", "Low stock"
+        DELIVERY = "delivery", "Delivery assigned"
 
     DEAL_KINDS = (Kind.NEARBY_DEAL, Kind.FAVORITE_SHOP_DEAL)
 

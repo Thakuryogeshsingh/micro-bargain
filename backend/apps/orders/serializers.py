@@ -52,6 +52,9 @@ class OrderSerializer(serializers.ModelSerializer):
     shop_latitude = serializers.FloatField(source="shop.latitude", read_only=True)
     shop_longitude = serializers.FloatField(source="shop.longitude", read_only=True)
     coupon_code = serializers.CharField(source="coupon.code", read_only=True, default=None)
+    delivery_partner_name = serializers.CharField(source="delivery_partner.name", read_only=True, default="")
+    delivery_partner_phone = serializers.CharField(source="delivery_partner.phone", read_only=True, default="")
+    bill_token = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -61,7 +64,14 @@ class OrderSerializer(serializers.ModelSerializer):
             "subtotal", "savings", "coupon_code", "coupon_discount", "plus_discount", "wallet_used", "delivery_fee", "total_amount", "refunded_amount",
             "delivery_address", "delivery_latitude", "delivery_longitude", "recipient_name", "recipient_phone", "pickup_code", "note",
             "expires_at", "confirmed_at", "ready_at", "completed_at", "cancelled_at", "cancel_reason", "created_at",
+            "delivery_partner", "delivery_partner_name", "delivery_partner_phone", "rider_latitude", "rider_longitude",
+            "rider_updated_at", "bill_token",
         ]
+
+    def get_bill_token(self, obj) -> str:
+        from django.core import signing
+
+        return signing.dumps(f"o:{obj.pk}", salt="bill")
 
 
 class MerchantOrderSerializer(OrderSerializer):

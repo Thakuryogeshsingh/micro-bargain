@@ -338,6 +338,10 @@ def complete(order, pickup_code):
     from apps.customers.services import credit_cashback
 
     credit_cashback(order.customer, order.subtotal, order.order_number)
+    from apps.growth.services import on_purchase_completed
+
+    on_purchase_completed(order.customer, order.subtotal, order.order_number,
+                          [(item.deal_id, item.line_total) for item in order.items.all()])
     _tell_customer(order, "ऑर्डर पूरा 🎉", f"आपने इस ऑर्डर पर ₹{order.savings + order.coupon_discount} बचाए!")
     return order
 

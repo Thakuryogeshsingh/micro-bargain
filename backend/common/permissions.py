@@ -19,6 +19,15 @@ class IsMerchant(BasePermission):
         return _has_role(request, "merchant")
 
 
+class IsShopWorker(BasePermission):
+    """Shop owners and their staff (helpers / delivery)."""
+
+    message = "Only the shop and its staff can do this."
+
+    def has_permission(self, request, view):
+        return _has_role(request, "merchant") or _has_role(request, "staff")
+
+
 class IsPlatformAdmin(BasePermission):
     def has_permission(self, request, view):
         return _has_role(request, "admin")

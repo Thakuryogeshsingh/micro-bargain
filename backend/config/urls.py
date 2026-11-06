@@ -53,6 +53,37 @@ def shop_share_page(request, pk):
     return render(request, "share/shop.html", {"shop": shop, "deals": deals})
 
 
+def bill_page(request, token):
+    """Printable bill / GST invoice for an order or a pickup, opened from a link the shop or customer shares."""
+    from django.core import signing
+    from django.shortcuts import get_object_or_404
+
+    from apps.orders.models import Order
+    from apps.reservations.models import DealReservation
+
+    try:
+        kind, pk = signing.loads(token, salt="bill").split(":")
+    except (signing.BadSignature, ValueError):
+        raise Http404
+    if kind == "o":
+        order = get_object_or_404(Order.objects.select_related("shop", "customer").prefetch_related("items"), pk=pk)
+        lines = [{"name": i.product_name, "qty": i.quantity, "unit": i.unit, "mrp": i.normal_unit_price, "price": i.unit_price,
+                  "amount": i.line_total} for i in order.items.all()]
+        doc = {"number": order.order_number, "date": order.completed_at or order.created_at, "shop": order.shop,
+               "customer": order.customer, "lines": lines, "subtotal": order.subtotal, "savings": order.savings,
+               "discounts": order.coupon_discount + order.plus_discount, "wallet": order.wallet_used,
+               "delivery": order.delivery_fee, "total": order.total_amount, "payment": order.get_payment_method_display(),
+               "status": order.get_status_display()}
+    else:
+        r = get_object_or_404(DealReservation.objects.select_related("shop", "customer", "deal__product"), pk=pk)
+        lines = [{"name": r.deal.product.name, "qty": r.quantity, "unit": r.unit, "mrp": r.normal_unit_price, "price": r.unit_price,
+                  "amount": r.total_amount}]
+        doc = {"number": r.reservation_number, "date": r.completed_at or r.created_at, "shop": r.shop, "customer": r.customer,
+               "lines": lines, "subtotal": r.total_amount, "savings": r.savings, "discounts": 0, "wallet": 0, "delivery": 0,
+               "total": r.total_amount, "payment": "दुकान पर", "status": r.get_status_display()}
+    return render(request, "share/bill.html", {"doc": doc})
+
+
 def shop_poster_page(request, pk):
     """Printable A4 poster with the shop's QR code (the merchant opens it from the app and prints / saves as PDF)."""
     import segno
@@ -99,6 +130,8 @@ api_v1_patterns = [
     path("khata/", include("apps.khata.urls")),
     path("daily/", include("apps.daily.urls")),
     path("chat/", include("apps.chat.urls")),
+    path("growth/", include("apps.growth.urls")),
+    path("team/", include("apps.team.urls")),
     path("advertisements/", include("apps.advertisements.urls")),
     path("subscriptions/", include("apps.subscriptions.urls")),
     path("commissions/", include("apps.commissions.urls")),
@@ -114,6 +147,7 @@ urlpatterns = [
     path("health/", health_check),
     path("legal/<str:page>/", legal_page, name="legal"),
     path("d/<int:pk>/", deal_share_page, name="deal-share"),
+    path("bill/<str:token>/", bill_page, name="bill"),
     path("s/<int:pk>/", shop_share_page, name="shop-share"),
     path("s/<int:pk>/poster/", shop_poster_page, name="shop-poster"),
     path("api/v1/", include(api_v1_patterns)),

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.core.validators import RegexValidator
 
 from common.models import TimeStampedModel
 from common.validators import phone_validator, pincode_validator, validate_document_file, validate_image_file
@@ -17,6 +18,8 @@ class Shop(TimeStampedModel):
     description = models.TextField(blank=True)
     category = models.ForeignKey("categories.Category", on_delete=models.PROTECT, related_name="shops")
     phone = models.CharField(max_length=10, blank=True, validators=[phone_validator])
+    gstin = models.CharField("GSTIN", max_length=15, blank=True,
+                             validators=[RegexValidator(r"^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$", "Enter a valid 15-character GSTIN")])
     cover_image = models.ImageField(upload_to="shops/covers/", blank=True, validators=[validate_image_file])
 
     address_line = models.CharField(max_length=255)

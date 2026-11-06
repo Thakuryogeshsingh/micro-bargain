@@ -89,6 +89,10 @@ class Order(TimeStampedModel):
     delivery_address = models.CharField(max_length=400, blank=True)
     recipient_name = models.CharField(max_length=120, blank=True)  # someone else receives the delivery
     recipient_phone = models.CharField(max_length=10, blank=True)
+    delivery_partner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="deliveries")
+    rider_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    rider_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    rider_updated_at = models.DateTimeField(null=True, blank=True)
     delivery_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     delivery_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 

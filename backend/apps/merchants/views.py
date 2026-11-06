@@ -29,6 +29,17 @@ class MerchantProfileView(generics.RetrieveAPIView):
         return get_object_or_404(MerchantProfile, user=self.request.user)
 
 
+class SalesView(APIView):
+    """GET ?days=7|30: daily sales, totals and best-selling products for the merchant's shop."""
+
+    permission_classes = [IsMerchant]
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request):
+        days = 30 if request.query_params.get("days") == "30" else 7
+        return Response(services.sales_report(request.user, days))
+
+
 class MerchantDashboardView(APIView):
     permission_classes = [IsMerchant]
 

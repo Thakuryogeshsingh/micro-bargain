@@ -53,4 +53,15 @@ def record_sale(product_id, quantity, reference):
         return None
     change = -min(quantity, inventory.quantity_on_hand)
     note = "" if -change == quantity else f"Sold {quantity}, but only {inventory.quantity_on_hand} was recorded"
-    return _move(inventory, change, Reason.SALE, reference=reference, note=note)
+    before = inventory.quantity_on_hand
+    movement = _move(inventory, change, Reason.SALE, reference=reference, note=note)
+    threshold = inventory.low_stock_threshold
+    if threshold > 0 and before > threshold >= inventory.quantity_on_hand:
+        from apps.notifications import services as notifications
+
+        product = inventory.product
+        notifications.notify(
+            inventory.shop.merchant.user, notifications.Kind.LOW_STOCK, f"📦 {product.name} का स्टॉक कम",
+            f"सिर्फ {inventory.quantity_on_hand:g} {product.unit} बचा है। जल्दी मंगवा लें।", data={"product_id": str(product.id)},
+        )
+    return movement

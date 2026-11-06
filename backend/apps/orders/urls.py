@@ -15,4 +15,6 @@ urlpatterns = [
     path("<int:pk>/complete/", views.MerchantOrderActionView.as_view(action="complete"), name="complete"),
     path("<int:pk>/reject/", views.MerchantOrderActionView.as_view(action="reject"), name="reject"),
     path("<int:pk>/cancel/", views.OrderCancelView.as_view(), name="cancel"),
+    path("<int:pk>/assign/", views.AssignDeliveryView.as_view(), name="assign"),
+    path("<int:pk>/location/", views.RiderLocationView.as_view(), name="location"),
 ]
