@@ -65,6 +65,16 @@ class TestSeedDemo:
         body = client.get("/legal/photo-credits/").content.decode()
         assert "Wikimedia Commons" in body and "CC BY" in body
 
+    def test_festival_banner_with_its_own_coupon(self):
+        from apps.growth.models import Campaign
+
+        call_command("seed_demo")
+        call_command("seed_demo")  # no duplicates
+        diwali = Campaign.objects.get(name="Diwali 2026")
+        assert diwali.coupon.code == "DIWALI20" and diwali.coupon.value == 20
+        assert diwali.coupon.valid_from == diwali.starts_at and diwali.coupon.valid_until == diwali.ends_at
+        assert Campaign.objects.count() == 1
+
     def test_task_only_runs_when_enabled(self, settings):
         settings.SEED_DEMO = False
         refresh_demo_deals()

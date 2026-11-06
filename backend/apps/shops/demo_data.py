@@ -185,3 +185,10 @@ COUPONS = [
     ("CAKE100", "Arora Bakers पर ₹100 छूट (₹500 से ऊपर)", "flat", 100, None, 500, "Arora Bakers", False),
     ("WEEKEND25", "वीकेंड स्पेशल: 25% छूट, ₹75 तक", "percent", 25, 75, 250, None, False),
 ]
+
+# Festival banners: (name, banner title, subtitle, colour, coupon code, % off, max ₹ off, min order ₹, start, end) - IST.
+# Diwali 2026 is on 8 November.
+FESTIVALS = [
+    ("Diwali 2026", "🪔 दिवाली धमाका", "हर ऑर्डर पर 20% छूट (₹100 तक) · कोड DIWALI20", "#C2410C",
+     "DIWALI20", 20, 100, 199, (2026, 11, 6, 0, 0), (2026, 11, 11, 0, 0)),
+]

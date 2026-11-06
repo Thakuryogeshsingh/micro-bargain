@@ -34,7 +34,7 @@ from apps.shops.services import make_point
 from apps.subscriptions.models import MerchantSubscription, Plan
 from common.exceptions import BusinessRuleError
 
-from ...demo_data import COUPONS, CUSTOMERS, REVIEWS, SHOPS
+from ...demo_data import COUPONS, CUSTOMERS, FESTIVALS, REVIEWS, SHOPS
 
 DEAL_HOURS = (2, 4, 6, 8, 12, 18, 24)
 DESCRIPTIONS = (
@@ -68,6 +68,7 @@ class Command(BaseCommand):
                     )
                     created_deals += self._ensure_live_deal(shop, product, price, discount, quantity)
         self._offers()
+        self._festivals()
         self._photos()
         purchases = self._activity()
         self.stdout.write(self.style.SUCCESS(
@@ -130,6 +131,27 @@ class Command(BaseCommand):
             self.stderr.write(f"{shop.name} / {product.name}: {error}")
             return 0
         return 1
+
+    def _festivals(self):
+        """Festival banners with their own coupon, switched on and off by date (see apps.growth.run_campaigns)."""
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from apps.growth.models import Campaign
+
+        ist = ZoneInfo("Asia/Kolkata")
+        for name, title, subtitle, color, code, percent, cap, minimum, start, end in FESTIVALS:
+            starts = datetime(*start, tzinfo=ist)
+            ends = datetime(*end, tzinfo=ist)
+            live = starts <= timezone.now() < ends
+            coupon, _ = Coupon.objects.get_or_create(code=code, defaults={
+                "description": subtitle, "discount_type": "percent", "value": Decimal(percent), "max_discount": Decimal(cap),
+                "min_order_amount": Decimal(minimum), "per_customer_limit": 1, "valid_from": starts, "valid_until": ends,
+                "is_active": live,
+            })
+            Campaign.objects.update_or_create(name=name, defaults={
+                "title": title, "subtitle": subtitle, "color": color, "coupon": coupon, "starts_at": starts, "ends_at": ends,
+            })
 
     def _offers(self):
         """Sample coupons; extended so they never run out on the demo server."""
