@@ -3,15 +3,19 @@
 # because free background workers are not available. Sized for 512 MB RAM.
 set -e
 python manage.py migrate --noinput
-python manage.py collectstatic --noinput >/dev/null
+# Static files are collected in the Docker build (see Dockerfile), so nothing slow runs before the web
+# server opens its port; Render fails the deploy if that takes more than a few minutes.
 
-# Admin login from DJANGO_SUPERUSER_PHONE / DJANGO_SUPERUSER_PASSWORD (created, or password updated).
-python manage.py ensure_admin || true
-
-# Demo server: sample shops and fresh live deals on every start (the free plan restarts after sleeping).
-if [ "$SEED_DEMO" = "True" ]; then
-  python manage.py seed_demo || true
-fi
+# Housekeeping in the background, after the server is up:
+#  - admin login from DJANGO_SUPERUSER_PHONE / DJANGO_SUPERUSER_PASSWORD (created, or password updated)
+#  - demo server: sample shops, photos and fresh live deals (the free plan wipes the disk on restart)
+(
+  sleep 5
+  python manage.py ensure_admin || true
+  if [ "$SEED_DEMO" = "True" ]; then
+    python manage.py seed_demo || true
+  fi
+) &
 
 # Worker + scheduler (deal/order expiry, pushes, refunds) in the background, one process to save memory.
 celery -A config worker -B --pool solo --loglevel warning --schedule /tmp/celerybeat-schedule &
