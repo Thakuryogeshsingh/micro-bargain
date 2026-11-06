@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import DailyDelivery, DailyOrder
 
 
 @admin.register(DailyOrder)
-class DailyOrderAdmin(admin.ModelAdmin):
+class DailyOrderAdmin(ModelAdmin):
     list_display = ["customer", "shop", "product", "quantity", "weekdays", "slot", "status", "created_at"]
     list_filter = ["status", "slot"]
     search_fields = ["customer__phone", "shop__name", "product__name"]
@@ -12,6 +13,6 @@ class DailyOrderAdmin(admin.ModelAdmin):
 
 
 @admin.register(DailyDelivery)
-class DailyDeliveryAdmin(admin.ModelAdmin):
+class DailyDeliveryAdmin(ModelAdmin):
     list_display = ["daily", "date", "status", "amount"]
     list_filter = ["status", "date"]

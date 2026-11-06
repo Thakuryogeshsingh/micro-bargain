@@ -1,9 +1,10 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from .models import Inventory, InventoryMovement
 
 
-class MovementInline(admin.TabularInline):
+class MovementInline(TabularInline):
     model = InventoryMovement
     extra = 0
     can_delete = False
@@ -14,7 +15,7 @@ class MovementInline(admin.TabularInline):
 
 
 @admin.register(Inventory)
-class InventoryAdmin(admin.ModelAdmin):
+class InventoryAdmin(ModelAdmin):
     list_display = ["product", "shop", "quantity_on_hand", "low_stock_threshold", "updated_at"]
     search_fields = ["product__name", "shop__name"]
     raw_id_fields = ["shop", "product"]

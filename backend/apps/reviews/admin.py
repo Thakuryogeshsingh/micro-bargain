@@ -1,11 +1,12 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin
 
 from . import services
 from .models import Review
 
 
 @admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
+class ReviewAdmin(ModelAdmin):
     list_display = ["shop", "customer", "rating", "comment", "is_hidden", "created_at"]
     list_filter = ["rating", "is_hidden"]
     search_fields = ["shop__name", "customer__phone", "comment"]

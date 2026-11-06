@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin, TabularInline
 
 from . import services
 from .models import Coupon, Order, OrderItem
 
 
-class OrderItemInline(admin.TabularInline):
+class OrderItemInline(TabularInline):
     model = OrderItem
     extra = 0
     can_delete = False
@@ -15,7 +16,7 @@ class OrderItemInline(admin.TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(ModelAdmin):
     list_display = ["order_number", "shop", "customer", "status", "fulfilment", "payment_method", "payment_status",
                     "total_amount", "created_at"]
     list_filter = ["status", "fulfilment", "payment_method", "payment_status", "shop__city"]
@@ -45,7 +46,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 @admin.register(Coupon)
-class CouponAdmin(admin.ModelAdmin):
+class CouponAdmin(ModelAdmin):
     list_display = ["code", "shop", "discount_type", "value", "max_discount", "min_order_amount", "valid_until", "is_active"]
     list_filter = ["is_active", "discount_type"]
     search_fields = ["code", "description"]

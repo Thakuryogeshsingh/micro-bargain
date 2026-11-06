@@ -1,11 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from unfold.admin import ModelAdmin
+from unfold.forms import AdminPasswordChangeForm
 
 from .models import PhoneOTP, User
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, ModelAdmin):
+    change_password_form = AdminPasswordChangeForm
     ordering = ["-date_joined"]
     list_display = ["phone", "name", "role", "is_phone_verified", "is_active", "date_joined"]
     list_filter = ["role", "is_active", "is_phone_verified", "is_staff"]
@@ -22,7 +25,7 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(PhoneOTP)
-class PhoneOTPAdmin(admin.ModelAdmin):
+class PhoneOTPAdmin(ModelAdmin):
     list_display = ["phone", "created_at", "expires_at", "attempts", "is_used"]
     search_fields = ["phone"]
     readonly_fields = ["phone", "code_hash", "created_at", "expires_at", "attempts", "is_used"]

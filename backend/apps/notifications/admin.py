@@ -1,10 +1,11 @@
 from django.contrib.gis import admin
+from unfold.admin import ModelAdmin
 
 from .models import Device, Notification
 
 
 @admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(ModelAdmin):
     list_display = ["user", "kind", "title", "push_status", "is_read", "created_at"]
     list_filter = ["kind", "push_status", "is_read"]
     search_fields = ["user__phone", "title", "body"]

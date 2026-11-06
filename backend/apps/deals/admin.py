@@ -1,9 +1,10 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from .models import Deal, DealChangeLog
 
 
-class DealChangeLogInline(admin.TabularInline):
+class DealChangeLogInline(TabularInline):
     model = DealChangeLog
     extra = 0
     can_delete = False
@@ -14,7 +15,7 @@ class DealChangeLogInline(admin.TabularInline):
 
 
 @admin.register(Deal)
-class DealAdmin(admin.ModelAdmin):
+class DealAdmin(ModelAdmin):
     list_display = [
         "product", "shop", "offer_price", "normal_price", "discount_percent",
         "quantity_total", "quantity_reserved", "quantity_sold", "status", "expires_at",

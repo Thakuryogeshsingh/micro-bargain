@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import DealReservation
 
 
 @admin.register(DealReservation)
-class DealReservationAdmin(admin.ModelAdmin):
+class DealReservationAdmin(ModelAdmin):
     list_display = ["reservation_number", "customer", "shop", "deal", "quantity", "total_amount", "status", "expires_at"]
     list_filter = ["status", "shop__city"]
     search_fields = ["reservation_number", "customer__phone", "shop__name"]

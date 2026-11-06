@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.contrib.gis import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from . import services
 from .models import FavoriteShop, Shop, ShopDocument
 
 
-class ShopDocumentInline(admin.TabularInline):
+class ShopDocumentInline(TabularInline):
     model = ShopDocument
     extra = 0
     fields = ["doc_type", "file", "status", "remarks", "created_at"]
@@ -36,6 +37,6 @@ class ShopAdmin(admin.GISModelAdmin):
 
 
 @admin.register(FavoriteShop)
-class FavoriteShopAdmin(admin.ModelAdmin):
+class FavoriteShopAdmin(ModelAdmin):
     list_display = ["user", "shop", "created_at"]
     raw_id_fields = ["user", "shop"]

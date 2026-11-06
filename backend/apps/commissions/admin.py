@@ -1,18 +1,19 @@
 from django.contrib import admin, messages
 from django.utils import timezone
+from unfold.admin import ModelAdmin
 
 from . import services
 from .models import Commission, CommissionRule
 
 
 @admin.register(CommissionRule)
-class CommissionRuleAdmin(admin.ModelAdmin):
+class CommissionRuleAdmin(ModelAdmin):
     list_display = ["__str__", "category", "rate_percent", "is_active"]
     list_editable = ["rate_percent", "is_active"]
 
 
 @admin.register(Commission)
-class CommissionAdmin(admin.ModelAdmin):
+class CommissionAdmin(ModelAdmin):
     list_display = ["shop", "order", "reservation", "transaction_amount", "amount", "status", "settled_at", "created_at"]
     list_filter = ["status", "shop__city"]
     search_fields = ["shop__name", "order__order_number", "reservation__reservation_number", "settlement_reference"]

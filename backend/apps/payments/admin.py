@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin
 
 from . import services
 from .models import Payment, Refund, WebhookEvent
 
 
-class ReadOnlyAdmin(admin.ModelAdmin):
+class ReadOnlyAdmin(ModelAdmin):
     """Money records are written by the payment flow only."""
 
     def has_add_permission(self, request):

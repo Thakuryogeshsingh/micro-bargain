@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin, TabularInline
 
 from . import services
 from .models import Complaint, ComplaintMessage
 
 
-class MessageInline(admin.TabularInline):
+class MessageInline(TabularInline):
     model = ComplaintMessage
     extra = 0
     can_delete = False
@@ -25,7 +26,7 @@ class ReplyForm(forms.ModelForm):
 
 
 @admin.register(Complaint)
-class ComplaintAdmin(admin.ModelAdmin):
+class ComplaintAdmin(ModelAdmin):
     form = ReplyForm
     list_display = ["ticket_number", "user", "category", "subject", "priority", "status", "assigned_to", "created_at"]
     list_filter = ["status", "priority", "category"]

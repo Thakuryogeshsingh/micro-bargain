@@ -21,6 +21,10 @@ GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH", default=None)
 GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH", default=None)
 
 DJANGO_APPS = [
+    # Admin theme; must come before django.contrib.admin.
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -324,3 +328,6 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+# Admin panel look and sidebar (see config/admin_ui.py).
+from config.admin_ui import UNFOLD  # noqa: E402

@@ -1,0 +1,81 @@
+/* Micro Bargain admin - Fresh look on top of django-unfold. Dark mode follows Unfold's html.dark. */
+:root {
+  --mb-ink: #0a0a0a;
+  --mb-muted: #6b6b6b;
+  --mb-line: #ececec;
+  --mb-card: #ffffff;
+  --mb-chip: #f4f4f5;
+  --mb-neon: #00e676;
+  --mb-green: #00a344;
+  --mb-red: #e5484d;
+  --mb-amber: #d97706;
+}
+html.dark {
+  --mb-ink: #f2f2f2;
+  --mb-muted: #a3a3a3;
+  --mb-line: #2a2a2a;
+  --mb-card: #171717;
+  --mb-chip: #222222;
+  --mb-green: #2fd36f;
+}
+
+.mb-home { display: flex; flex-direction: column; gap: 8px; }
+.mb-hello { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.mb-hello h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; color: var(--mb-ink); margin: 0; }
+.mb-hello p { color: var(--mb-muted); margin: 4px 0 0; }
+.mb-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--mb-ink); color: var(--mb-card) !important; padding: 10px 18px; border-radius: 999px; font-weight: 700; text-decoration: none; }
+.mb-btn .material-symbols-outlined { font-size: 20px; }
+
+.mb-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.mb-kpi { background: var(--mb-card); border: 1px solid var(--mb-line); border-radius: 18px; padding: 16px; position: relative; }
+.mb-kpi-icon { position: absolute; right: 14px; top: 14px; width: 34px; height: 34px; border-radius: 50%; background: var(--mb-neon); color: #000; display: flex; align-items: center; justify-content: center; font-size: 19px; }
+.mb-kpi-value { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; color: var(--mb-ink); margin-top: 22px; font-variant-numeric: tabular-nums; }
+.mb-kpi-label { font-size: 13px; color: var(--mb-muted); margin-top: 2px; }
+
+.mb-h2 { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; color: var(--mb-ink); margin: 18px 0 10px; }
+.mb-attention { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.mb-att { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--mb-chip); color: var(--mb-ink) !important; text-decoration: none; border: 1px solid transparent; }
+.mb-att:hover { border-color: var(--mb-line); }
+.mb-att .material-symbols-outlined { color: var(--mb-muted); }
+.mb-att-label { flex: 1; font-weight: 600; }
+.mb-att-count { min-width: 30px; text-align: center; padding: 2px 10px; border-radius: 999px; background: var(--mb-card); font-weight: 800; }
+.mb-att.hot .mb-att-count { background: var(--mb-red); color: #fff; }
+.mb-att.hot .material-symbols-outlined { color: var(--mb-red); }
+
+.mb-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; margin-top: 6px; }
+.mb-panel { background: var(--mb-card); border: 1px solid var(--mb-line); border-radius: 18px; padding: 6px 18px 12px; }
+.mb-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.mb-panel-head a { color: var(--mb-green) !important; font-weight: 700; font-size: 13px; }
+.mb-table { width: 100%; border-collapse: collapse; }
+.mb-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--mb-muted); padding: 8px 6px; border-bottom: 1px solid var(--mb-line); }
+.mb-table td { padding: 10px 6px; border-bottom: 1px solid var(--mb-line); color: var(--mb-ink); vertical-align: top; }
+.mb-table tr:last-child td { border-bottom: 0; }
+.mb-table a { color: var(--mb-ink) !important; font-weight: 700; }
+.mb-table .r { text-align: right; font-variant-numeric: tabular-nums; }
+.mb-sub { font-size: 12px; color: var(--mb-muted); }
+.mb-empty { color: var(--mb-muted); text-align: center; padding: 20px !important; }
+.mb-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--mb-chip); color: var(--mb-ink); }
+.mb-pill.s-completed { background: rgba(0, 230, 118, .2); color: var(--mb-green); }
+.mb-pill.s-cancelled, .mb-pill.s-refunded { background: rgba(229, 72, 77, .12); color: var(--mb-red); }
+.mb-pill.s-pending, .mb-pill.s-pending_payment { background: rgba(217, 119, 6, .14); color: var(--mb-amber); }
+
+/* Business dashboard page (Reports & Excel) */
+.mb-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 18px; padding: 14px; background: var(--mb-chip); border-radius: 16px; }
+.mb-filters label { display: block; font-size: 12px; color: var(--mb-muted); margin-bottom: 4px; }
+.mb-filters input, .mb-filters select { border: 1px solid var(--mb-line); border-radius: 10px; padding: 8px 10px; background: var(--mb-card); color: var(--mb-ink); }
+.mb-filters input[type=submit] { background: var(--mb-ink); color: var(--mb-card); font-weight: 700; border: 0; padding: 9px 20px; border-radius: 999px; cursor: pointer; }
+.mb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.mb-card { background: var(--mb-card); border: 1px solid var(--mb-line); border-radius: 16px; padding: 14px 16px; }
+.mb-card .label { font-size: 12px; color: var(--mb-muted); text-transform: uppercase; letter-spacing: .04em; }
+.mb-card .value { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-top: 6px; color: var(--mb-ink); font-variant-numeric: tabular-nums; }
+.mb-card.money .value::before { content: "₹"; font-weight: 600; margin-right: 2px; }
+.mb-card.alert { border-color: var(--mb-red); }
+.mb-card a { color: var(--mb-green) !important; font-weight: 700; font-size: 13px; }
+.mb-downloads { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; color: var(--mb-muted); }
+.mb-downloads a { padding: 6px 14px; border-radius: 999px; background: var(--mb-chip); color: var(--mb-ink) !important; font-weight: 700; text-decoration: none; }
+.mb-section { font-size: 17px; font-weight: 800; color: var(--mb-ink); margin: 22px 0 10px; }
+.mb-dash-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.mb-dash-cols table { width: 100%; border-collapse: collapse; }
+.mb-dash-cols th { text-align: left; font-size: 12px; color: var(--mb-muted); padding: 8px 6px; border-bottom: 1px solid var(--mb-line); }
+.mb-dash-cols td { padding: 9px 6px; border-bottom: 1px solid var(--mb-line); color: var(--mb-ink); }
+.mb-dash-cols p { color: var(--mb-muted); }

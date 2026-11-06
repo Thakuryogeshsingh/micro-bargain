@@ -1,21 +1,4 @@
 {% extends "admin/base_site.html" %}
-{% block extrastyle %}{{ block.super }}
-<style>
-  .mb-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 20px; }
-  .mb-filters label { display: block; font-size: 12px; color: var(--body-quiet-color); }
-  .mb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 24px; }
-  .mb-card { border: 1px solid var(--hairline-color); border-radius: 8px; padding: 14px; background: var(--body-bg); }
-  .mb-card .label { font-size: 12px; color: var(--body-quiet-color); text-transform: uppercase; letter-spacing: .03em; }
-  .mb-card .value { font-size: 24px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; }
-  .mb-card.money .value::before { content: "₹"; font-weight: 400; margin-right: 2px; }
-  .mb-card.alert { border-color: #d97706; }
-  .mb-section { margin: 28px 0 10px; }
-  .mb-downloads a { margin-right: 14px; }
-  .mb-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-  .mb-cols table { width: 100%; }
-</style>
-{% endblock %}
-{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Home</a> › Business dashboard</div>{% endblock %}
 {% block content %}
 <form method="get" class="mb-filters">
   <div><label>From</label><input type="date" name="date_from" value="{{ filters.date_from|date:'Y-m-d' }}"></div>
@@ -29,7 +12,7 @@
   <div><input type="submit" value="Apply" class="default"></div>
 </form>
 
-<p class="mb-downloads">Excel:
+<p class="mb-downloads">Download Excel:
   {% for kind in reports %}<a href="{% url 'admin-report-download' kind %}?{{ query }}">{{ kind|title }} report</a>{% endfor %}
 </p>
 
@@ -64,7 +47,7 @@
   <div class="mb-card money"><div class="label">Promotions</div><div class="value">{{ metrics.advertisement_revenue }}</div></div>
 </div>
 
-<div class="mb-cols">
+<div class="mb-dash-cols">
   <div>
     <h2 class="mb-section">Top deals (purchased)</h2>
     <table><thead><tr><th>Product</th><th>Shop</th><th>Discount</th><th>Sold</th></tr></thead><tbody>

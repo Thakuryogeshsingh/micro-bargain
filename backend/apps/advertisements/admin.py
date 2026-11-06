@@ -1,11 +1,12 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin
 
 from . import services
 from .models import Advertisement
 
 
 @admin.register(Advertisement)
-class AdvertisementAdmin(admin.ModelAdmin):
+class AdvertisementAdmin(ModelAdmin):
     list_display = ["shop", "placement", "deal", "title", "price", "status", "starts_at", "ends_at", "impressions", "clicks"]
     list_filter = ["placement", "status"]
     search_fields = ["shop__name", "title"]

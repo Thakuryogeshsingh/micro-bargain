@@ -1,5 +1,6 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
+from unfold.admin import ModelAdmin
 
 from common.exceptions import BusinessRuleError
 
@@ -8,7 +9,7 @@ from .models import QualityComplaint
 
 
 @admin.register(QualityComplaint)
-class QualityComplaintAdmin(admin.ModelAdmin):
+class QualityComplaintAdmin(ModelAdmin):
     list_display = ["id", "shop", "customer", "reason", "amount_paid", "status", "refund_amount", "created_at"]
     list_filter = ["status", "reason", "shop__city"]
     search_fields = ["shop__name", "customer__phone", "order__order_number", "reservation__reservation_number"]

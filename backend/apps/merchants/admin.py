@@ -1,11 +1,12 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin
 
 from . import services
 from .models import MerchantProfile
 
 
 @admin.register(MerchantProfile)
-class MerchantProfileAdmin(admin.ModelAdmin):
+class MerchantProfileAdmin(ModelAdmin):
     list_display = ["owner_name", "user", "business_category", "status", "onboarding_submitted_at", "created_at"]
     list_filter = ["status", "business_category"]
     search_fields = ["owner_name", "user__phone"]
