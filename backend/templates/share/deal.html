@@ -26,5 +26,6 @@
   <p>{{ deal.shop.name }} · {{ deal.shop.address_line }}, {{ deal.shop.city }}</p>
   {% if live %}<p class="muted">⏱ {{ deal.expires_at|timeuntil }} बाकी</p>{% else %}<p class="muted">यह डील खत्म हो चुकी है</p>{% endif %}
   <a class="btn" href="microbargain://open/deal/{{ deal.id }}">ऐप में खोलें</a>
+  <a class="btn" style="background:#00e676;color:#000" href="/app/#/deal/{{ deal.id }}">ब्राउज़र में खोलें (बिना ऐप)</a>
 </div></div></body>
 </html>

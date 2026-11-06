@@ -21,6 +21,7 @@
   <h1>{{ shop.name }}</h1>
   <div class="muted">{{ shop.address_line }}, {{ shop.city }}</div>
   <a class="btn" href="microbargain://open/shop/{{ shop.id }}">ऐप में खोलें</a>
+  <a class="btn" style="background:#00e676;color:#000" href="/app/#/shop/{{ shop.id }}">ब्राउज़र में खोलें (बिना ऐप)</a>
   <h3>आज की डील</h3>
   {% for d in deals %}
   <div class="deal">

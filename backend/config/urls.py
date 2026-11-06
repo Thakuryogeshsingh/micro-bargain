@@ -53,6 +53,17 @@ def shop_share_page(request, pk):
     return render(request, "share/shop.html", {"shop": shop, "deals": deals})
 
 
+def web_app(request, path=""):
+    """The customer web app (Flutter web build in backend/webapp), opened from links without installing anything."""
+    root = settings.BASE_DIR / "webapp"
+    target = root / path if path else root / "index.html"
+    if not path or not target.is_file():
+        response = serve(request, "index.html", document_root=root)
+        response["Cache-Control"] = "no-cache"  # new versions show up immediately
+        return response
+    return serve(request, path, document_root=root)
+
+
 def bill_page(request, token):
     """Printable bill / GST invoice for an order or a pickup, opened from a link the shop or customer shares."""
     from django.core import signing
@@ -148,6 +159,7 @@ urlpatterns = [
     path("legal/<str:page>/", legal_page, name="legal"),
     path("d/<int:pk>/", deal_share_page, name="deal-share"),
     path("bill/<str:token>/", bill_page, name="bill"),
+    re_path(r"^app/(?P<path>.*)$", web_app, name="web-app"),
     path("s/<int:pk>/", shop_share_page, name="shop-share"),
     path("s/<int:pk>/poster/", shop_poster_page, name="shop-poster"),
     path("api/v1/", include(api_v1_patterns)),
