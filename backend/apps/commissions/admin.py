@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 from django.utils import timezone
 from unfold.admin import ModelAdmin
+from common.admin_display import status_badge as badge
 
 from . import services
 from .models import Commission, CommissionRule
@@ -14,7 +15,8 @@ class CommissionRuleAdmin(ModelAdmin):
 
 @admin.register(Commission)
 class CommissionAdmin(ModelAdmin):
-    list_display = ["shop", "order", "reservation", "transaction_amount", "amount", "status", "settled_at", "created_at"]
+    status_badge = badge("status", "Status")
+    list_display = ["shop", "order", "reservation", "transaction_amount", "amount", "status_badge", "settled_at", "created_at"]
     list_filter = ["status", "shop__city"]
     search_fields = ["shop__name", "order__order_number", "reservation__reservation_number", "settlement_reference"]
     raw_id_fields = ["shop", "order", "reservation"]

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin, TabularInline
+from common.admin_display import status_badge as badge
 
 from . import services
 from .models import Complaint, ComplaintMessage
@@ -27,8 +28,9 @@ class ReplyForm(forms.ModelForm):
 
 @admin.register(Complaint)
 class ComplaintAdmin(ModelAdmin):
+    status_badge = badge("status", "Status")
     form = ReplyForm
-    list_display = ["ticket_number", "user", "category", "subject", "priority", "status", "assigned_to", "created_at"]
+    list_display = ["ticket_number", "user", "category", "subject", "priority", "status_badge", "assigned_to", "created_at"]
     list_filter = ["status", "priority", "category"]
     search_fields = ["ticket_number", "user__phone", "subject"]
     raw_id_fields = ["order", "reservation"]

@@ -23,7 +23,17 @@ def test_home_dashboard_and_reports(admin_client):
     assert home.status_code == 200
     body = home.content.decode()
     assert "Needs attention" in body and "Latest orders" in body and "Live deals" in body
+    assert "Sales · last 14 days" in body and 'data-type="bar"' in body and 'data-type="line"' in body
     assert admin_client.get(reverse("admin-dashboard")).status_code == 200
+
+
+@pytest.mark.django_db
+def test_lists_show_badges_photos_and_date_filter(admin_client):
+    call_command("seed_demo")
+    shops = admin_client.get(reverse("admin:shops_shop_changelist")).content.decode()
+    assert "Approved" in shops and "/media/shops/" in shops  # status badge + cover photo
+    orders = admin_client.get(reverse("admin:orders_order_changelist")).content.decode()
+    assert "created_at_from" in orders  # date range filter
 
 
 @pytest.mark.django_db

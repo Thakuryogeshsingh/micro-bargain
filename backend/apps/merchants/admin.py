@@ -1,5 +1,6 @@
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin
+from common.admin_display import status_badge as badge
 
 from . import services
 from .models import MerchantProfile
@@ -7,7 +8,8 @@ from .models import MerchantProfile
 
 @admin.register(MerchantProfile)
 class MerchantProfileAdmin(ModelAdmin):
-    list_display = ["owner_name", "user", "business_category", "status", "onboarding_submitted_at", "created_at"]
+    status_badge = badge("status", "Status")
+    list_display = ["owner_name", "user", "business_category", "status_badge", "onboarding_submitted_at", "created_at"]
     list_filter = ["status", "business_category"]
     search_fields = ["owner_name", "user__phone"]
     raw_id_fields = ["user"]

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
+from common.admin_display import status_badge as badge
 
 from .models import PlusMembership, Address, CustomerProfile
 
@@ -26,7 +27,8 @@ class AddressAdmin(ModelAdmin):
 
 @admin.register(PlusMembership)
 class PlusMembershipAdmin(ModelAdmin):
-    list_display = ["user", "status", "amount", "starts_at", "ends_at"]
+    status_badge = badge("status", "Status")
+    list_display = ["user", "status_badge", "amount", "starts_at", "ends_at"]
     list_filter = ["status"]
     search_fields = ["user__phone"]
     raw_id_fields = ["user"]

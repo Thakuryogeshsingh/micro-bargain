@@ -25,6 +25,17 @@
     {% endfor %}
   </div>
 
+  <div class="mb-cols">
+    <div class="mb-panel">
+      <div class="mb-panel-head"><h2 class="mb-h2">Sales · last 14 days</h2><span class="mb-big">{{ sales_14 }}</span></div>
+      {% include "unfold/components/chart/bar.html" with data=sales_chart height=220 %}
+    </div>
+    <div class="mb-panel">
+      <div class="mb-panel-head"><h2 class="mb-h2">New customers · last 14 days</h2></div>
+      {% include "unfold/components/chart/line.html" with data=customers_chart height=220 %}
+    </div>
+  </div>
+
   <h2 class="mb-h2">Needs attention</h2>
   <div class="mb-attention">
     {% for a in attention %}

@@ -1,5 +1,6 @@
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin
+from common.admin_display import status_badge as badge
 
 from . import services
 from .models import Advertisement
@@ -7,7 +8,8 @@ from .models import Advertisement
 
 @admin.register(Advertisement)
 class AdvertisementAdmin(ModelAdmin):
-    list_display = ["shop", "placement", "deal", "title", "price", "status", "starts_at", "ends_at", "impressions", "clicks"]
+    status_badge = badge("status", "Status")
+    list_display = ["shop", "placement", "deal", "title", "price", "status_badge", "starts_at", "ends_at", "impressions", "clicks"]
     list_filter = ["placement", "status"]
     search_fields = ["shop__name", "title"]
     raw_id_fields = ["shop", "deal"]

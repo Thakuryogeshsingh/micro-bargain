@@ -1,5 +1,7 @@
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin, TabularInline
+from common.admin_display import status_badge as badge
+from unfold.contrib.filters.admin import RangeDateTimeFilter
 
 from . import services
 from .models import Coupon, Order, OrderItem
@@ -17,9 +19,12 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ["order_number", "shop", "customer", "status", "fulfilment", "payment_method", "payment_status",
+    status_badge = badge("status", "Status")
+    payment_badge = badge("payment_status", "Payment")
+    list_filter_submit = True
+    list_display = ["order_number", "shop", "customer", "status_badge", "fulfilment", "payment_method", "payment_badge",
                     "total_amount", "created_at"]
-    list_filter = ["status", "fulfilment", "payment_method", "payment_status", "shop__city"]
+    list_filter = ["status", "fulfilment", "payment_method", "payment_status", "shop__city", ("created_at", RangeDateTimeFilter)]
     search_fields = ["order_number", "customer__phone", "shop__name"]
     raw_id_fields = ["customer", "shop", "coupon"]
     date_hierarchy = "created_at"

@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.gis import admin
 from unfold.admin import ModelAdmin, TabularInline
+from common.admin_display import status_badge as badge, thumbnail
 
 from . import services
 from .models import FavoriteShop, Shop, ShopDocument
@@ -15,7 +16,10 @@ class ShopDocumentInline(TabularInline):
 
 @admin.register(Shop)
 class ShopAdmin(admin.GISModelAdmin):
-    list_display = ["name", "merchant", "category", "city", "status", "is_temporarily_closed", "created_at"]
+    status_badge = badge("status", "Status")
+    photo = thumbnail(lambda s: s.cover_image)
+    list_display = [
+        "photo","name", "merchant", "category", "city", "status_badge", "is_temporarily_closed", "created_at"]
     list_filter = ["status", "city", "category", "offers_delivery"]
     search_fields = ["name", "merchant__owner_name", "merchant__user__phone", "pincode"]
     raw_id_fields = ["merchant"]

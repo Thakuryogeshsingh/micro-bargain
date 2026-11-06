@@ -1,6 +1,8 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
+from common.admin_display import status_badge as badge
+from unfold.contrib.filters.admin import RangeDateTimeFilter
 
 from common.exceptions import BusinessRuleError
 
@@ -10,8 +12,10 @@ from .models import QualityComplaint
 
 @admin.register(QualityComplaint)
 class QualityComplaintAdmin(ModelAdmin):
-    list_display = ["id", "shop", "customer", "reason", "amount_paid", "status", "refund_amount", "created_at"]
-    list_filter = ["status", "reason", "shop__city"]
+    status_badge = badge("status", "Status")
+    list_filter_submit = True
+    list_display = ["id", "shop", "customer", "reason", "amount_paid", "status_badge", "refund_amount", "created_at"]
+    list_filter = ["status", "reason", "shop__city", ("created_at", RangeDateTimeFilter)]
     search_fields = ["shop__name", "customer__phone", "order__order_number", "reservation__reservation_number"]
     raw_id_fields = ["customer", "shop", "reservation", "order", "resolved_by"]
     readonly_fields = ["photo_preview", "amount_paid", "refund_amount", "resolved_at", "resolved_by"]

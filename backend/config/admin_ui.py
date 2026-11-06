@@ -1,8 +1,10 @@
 """Admin panel look (django-unfold): Fresh colours, grouped sidebar, and the home page numbers."""
+import json
 from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Count, Sum
+from django.db.models.functions import TruncDate
 from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -27,6 +29,9 @@ UNFOLD = {
     "SHOW_VIEW_ON_SITE": False,
     "SHOW_BACK_BUTTON": True,
     "DASHBOARD_CALLBACK": "config.admin_ui.dashboard",
+    "ENVIRONMENT": "config.admin_ui.environment",
+    # Login page photo: Wikimedia Commons (see /legal/photo-credits/).
+    "LOGIN": {"image": lambda request: static("admin_ui/login.jpg")},
     "STYLES": [lambda request: static("admin_ui/fresh.css")],
     # Fresh: neutral greys, and the brand green (deep enough to read on white, bright in dark mode).
     "COLORS": {
@@ -103,6 +108,42 @@ UNFOLD = {
 }
 
 
+def environment(request):
+    """Badge in the header so nobody mistakes the demo server for the real one."""
+    from django.conf import settings
+
+    return ["Demo data", "warning"] if getattr(settings, "SEED_DEMO", False) else None
+
+
+def _daily_series(days=14):
+    """Sales (₹) and new customers per day for the last `days` days, oldest first."""
+    from apps.accounts.models import User
+    from apps.orders.models import Order
+    from apps.reservations.models import DealReservation
+
+    today = timezone.localdate()
+    start = today - timedelta(days=days - 1)
+    sales = {start + timedelta(days=i): Decimal(0) for i in range(days)}
+    for row in (Order.objects.filter(created_at__date__gte=start).exclude(status__in=["cancelled", "pending_payment"])
+                .annotate(day=TruncDate("created_at")).values("day").annotate(s=Sum("total_amount"))):
+        sales[row["day"]] = sales.get(row["day"], Decimal(0)) + (row["s"] or 0)
+    for row in (DealReservation.objects.filter(status="completed", completed_at__date__gte=start)
+                .annotate(day=TruncDate("completed_at")).values("day").annotate(s=Sum("total_amount"))):
+        sales[row["day"]] = sales.get(row["day"], Decimal(0)) + (row["s"] or 0)
+    joins = {row["day"]: row["n"] for row in (User.objects.filter(role="customer", date_joined__date__gte=start)
+             .annotate(day=TruncDate("date_joined")).values("day").annotate(n=Count("id")))}
+    labels = [d.strftime("%d %b") for d in sorted(sales)]
+    sales_chart = {"labels": labels, "datasets": [{
+        "label": "Sales (₹)", "data": [float(sales[d]) for d in sorted(sales)],
+        "backgroundColor": "#00e676", "borderRadius": 6, "maxBarThickness": 26,
+    }]}
+    customers_chart = {"labels": labels, "datasets": [{
+        "label": "New customers", "data": [joins.get(d, 0) for d in sorted(sales)],
+        "borderColor": "#0a0a0a", "backgroundColor": "rgba(0,230,118,.18)", "fill": True, "tension": 0.35,
+    }]}
+    return json.dumps(sales_chart), json.dumps(customers_chart), float(sum(sales.values()))
+
+
 def dashboard(request, context):
     """Numbers for the admin home page."""
     from apps.accounts.models import User
@@ -126,7 +167,11 @@ def dashboard(request, context):
     open_quality = QualityComplaint.objects.filter(status__in=["open", "disputed"]).count()
     open_support = Complaint.objects.filter(status__in=[Complaint.Status.OPEN, Complaint.Status.IN_PROGRESS]).count()
 
+    sales_chart, customers_chart, sales_14 = _daily_series()
     context.update({
+        "sales_chart": sales_chart,
+        "customers_chart": customers_chart,
+        "sales_14": f"₹{sales_14:,.0f}",
         "kpis": [
             {"label": "Sales today", "value": f"₹{sales_today:,.0f}", "icon": "currency_rupee"},
             {"label": "Orders today", "value": orders_today.count(), "icon": "shopping_bag"},

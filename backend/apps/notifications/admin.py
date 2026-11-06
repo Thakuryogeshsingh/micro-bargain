@@ -1,12 +1,14 @@
 from django.contrib.gis import admin
 from unfold.admin import ModelAdmin
+from common.admin_display import status_badge as badge
 
 from .models import Device, Notification
 
 
 @admin.register(Notification)
 class NotificationAdmin(ModelAdmin):
-    list_display = ["user", "kind", "title", "push_status", "is_read", "created_at"]
+    push_badge = badge("push_status", "Push")
+    list_display = ["user", "kind", "title", "push_badge", "is_read", "created_at"]
     list_filter = ["kind", "push_status", "is_read"]
     search_fields = ["user__phone", "title", "body"]
     raw_id_fields = ["user", "deal"]
