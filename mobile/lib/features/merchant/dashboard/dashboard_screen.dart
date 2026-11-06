@@ -78,7 +78,7 @@ class DashboardScreen extends ConsumerWidget {
                 void open(String route) => context.push(route);
                 final tiles = [
                   (tr('लाइव डील'), parseNum(s['active_deals']), Icons.local_offer_rounded, null, AppTheme.primary, () => goTab?.call(1)),
-                  (tr('कुल बिक्री'), parseNum(s['revenue']), Icons.currency_rupee_rounded, rupees, AppTheme.deal, () => open('/merchant/earnings')),
+                  (tr('कुल बिक्री'), parseNum(s['revenue']), Icons.currency_rupee_rounded, rupees, AppTheme.deal, () => open('/merchant/sales')),
                   (tr('पूरे हुए पिकअप'), parseNum(s['completed_orders']), Icons.check_circle_rounded, null, const Color(0xFF2563EB), () => goTab?.call(2)),
                   (tr('चल रहे ऑर्डर'), parseNum(s['open_orders']), Icons.delivery_dining_rounded, null, const Color(0xFF7C3AED), () => goTab?.call(2)),
                   (tr('बचा स्टॉक'), parseNum(s['remaining_stock']), Icons.inventory_2_rounded, qty, const Color(0xFF0891B2), () => open('/merchant/inventory')),

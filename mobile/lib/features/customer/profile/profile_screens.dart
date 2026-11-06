@@ -154,6 +154,22 @@ class ProfileScreen extends ConsumerWidget {
           onTap: () => context.push('/daily'),
         ),
         ListTile(
+          leading: const Icon(Icons.local_fire_department_rounded, color: Color(0xFFF97316)),
+          title: Text(tr('पॉइंट और स्ट्रीक')),
+          subtitle: Text(tr('हर खरीद पर पॉइंट, वॉलेट में बदलें')),
+          onTap: () => context.push('/loyalty'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.notifications_active_outlined, color: Color(0xFF0EA5E9)),
+          title: Text(tr('दाम अलर्ट')),
+          onTap: () => context.push('/alerts'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.checklist_rounded, color: Color(0xFF15803D)),
+          title: Text(tr('शॉपिंग लिस्ट')),
+          onTap: () => context.push('/shopping-list'),
+        ),
+        ListTile(
           leading: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF7C3AED)),
           title: Text(tr('मैसेज')),
           onTap: () => context.push('/chats'),

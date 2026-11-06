@@ -145,8 +145,13 @@ class OrderMap extends StatelessWidget {
     required this.toLatitude,
     required this.toLongitude,
     required this.status,
+    this.riderLatitude,
+    this.riderLongitude,
   });
 
+  /// The delivery person's last reported position (shown while out for delivery).
+  final double? riderLatitude;
+  final double? riderLongitude;
   final double shopLatitude;
   final double shopLongitude;
   final double toLatitude;
@@ -187,6 +192,13 @@ class OrderMap extends StatelessWidget {
                 height: 38,
                 child: _Pin(icon: Icons.home_rounded, color: AppTheme.minimal ? const Color(0xFF00C853) : AppTheme.primary),
               ),
+              if (riderLatitude != null && status == 'out_for_delivery')
+                Marker(
+                  point: ll.LatLng(riderLatitude!, riderLongitude!),
+                  width: 44,
+                  height: 44,
+                  child: const _Pin(icon: Icons.delivery_dining_rounded, color: Color(0xFFF97316)),
+                ),
             ]),
           ],
         ),

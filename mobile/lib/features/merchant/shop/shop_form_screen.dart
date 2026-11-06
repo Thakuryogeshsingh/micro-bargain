@@ -51,7 +51,7 @@ class _ShopForm extends ConsumerStatefulWidget {
 class _ShopFormState extends ConsumerState<_ShopForm> {
   final _form = GlobalKey<FormState>();
   late final Map<String, TextEditingController> _text = {
-    for (final key in ['name', 'phone', 'address_line', 'landmark', 'city', 'pincode', 'description', 'prep_minutes'])
+    for (final key in ['name', 'phone', 'gstin', 'address_line', 'landmark', 'city', 'pincode', 'description', 'prep_minutes'])
       key: TextEditingController(text: widget.shop?[key]?.toString() ?? {'city': 'Bharatpur', 'prep_minutes': '15'}[key] ?? ''),
   };
   late int? _category = widget.shop?['category'];
@@ -150,6 +150,16 @@ class _ShopFormState extends ConsumerState<_ShopForm> {
             ),
           ),
         TextFormField(controller: _text['name'], decoration: InputDecoration(labelText: tr('दुकान का नाम')), validator: required),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _text['gstin'],
+          textCapitalization: TextCapitalization.characters,
+          maxLength: 15,
+          decoration: InputDecoration(labelText: tr('GSTIN (हो तो — बिल पर छपेगा)'), counterText: ''),
+          validator: (v) => (v ?? '').isEmpty || RegExp(r'^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$').hasMatch(v!.trim().toUpperCase())
+              ? null
+              : tr('सही 15 अक्षर का GSTIN डालें'),
+        ),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
           initialValue: _category,

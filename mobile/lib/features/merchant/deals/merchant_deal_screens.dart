@@ -63,6 +63,10 @@ class _DealList extends ConsumerWidget {
 
   Future<void> _act(BuildContext context, WidgetRef ref, Deal deal, String action) async {
     final api = ref.read(apiProvider);
+    if (action == 'group') {
+      await _startGroup(context, ref, deal);
+      return;
+    }
     if (action == 'share') {
       shareDeal(d: deal);
       return;
@@ -102,6 +106,7 @@ class _DealList extends ConsumerWidget {
             if (!{'expired', 'ended'}.contains(d.status)) 'end': tr('बंद करें'),
             'duplicate': tr('दोबारा लगाएं (कॉपी)'),
             if (d.status == 'active') 'share': tr('WhatsApp पर शेयर'),
+            if (d.status == 'active') 'group': tr('मोहल्ला डील बनाएं'),
           };
           return Card(
             child: ListTile(
@@ -392,4 +397,35 @@ class _SuggestionCard extends StatelessWidget {
       ]),
     );
   }
+}
+
+
+/// Make a deal a mohalla deal: when `target` people join, buyers get extra % back in their wallet.
+Future<void> _startGroup(BuildContext context, WidgetRef ref, Deal deal) async {
+  var target = 5.0, extra = 5.0;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (dialog) => StatefulBuilder(
+      builder: (context, setState) => AppDialog(
+        title: tr('मोहल्ला डील'),
+        icon: Icons.groups_rounded,
+        message: tr('इतने लोग जुड़ें तो खरीदने वालों को इतना % और वापस मिलेगा (आपकी तरफ़ से)।'),
+        body: Column(children: [
+          Text(tr('{0} लोग', [target.round()]), style: const TextStyle(fontWeight: FontWeight.w800)),
+          Slider(value: target, min: 2, max: 20, divisions: 18, onChanged: (v) => setState(() => target = v)),
+          Text(tr('{0}% और छूट', [extra.round()]), style: const TextStyle(fontWeight: FontWeight.w800)),
+          Slider(value: extra, min: 1, max: 20, divisions: 19, onChanged: (v) => setState(() => extra = v)),
+        ]),
+        okLabel: tr('शुरू करें'),
+        cancelLabel: tr('रद्द'),
+        onOk: () => Navigator.pop(dialog, true),
+      ),
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+  await runAction(context, () => ref.read(apiProvider).post('/growth/groups/start/', {
+        'deal': deal.id,
+        'target': target.round(),
+        'extra_percent': extra.round(),
+      }), success: tr('मोहल्ला डील शुरू — ग्राहकों के होम पर दिखेगी'));
 }

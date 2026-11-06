@@ -16,6 +16,7 @@ class SessionState {
 
   bool get isMerchant => user?.role == 'merchant';
   bool get isAdmin => user?.role == 'admin';
+  bool get isStaff => user?.role == 'staff';
 }
 
 /// Who is logged in. The router listens to this to send customers and merchants to their own screens.

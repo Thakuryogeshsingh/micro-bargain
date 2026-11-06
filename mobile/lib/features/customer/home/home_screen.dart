@@ -21,6 +21,7 @@ import '../cart/cart.dart';
 import '../cart/cart_bar.dart';
 import '../customer_providers.dart';
 import '../deals/collection_screen.dart';
+import '../growth/growth_screens.dart';
 import '../offers/offers.dart';
 import '../../../shared/widgets/shop_card.dart';
 import '../../../shared/widgets/visuals.dart';
@@ -88,12 +89,14 @@ class HomeScreen extends ConsumerWidget {
         },
         child: CustomScrollView(slivers: [
           const SliverToBoxAdapter(child: _Header()),
+          const SliverToBoxAdapter(child: CampaignBanner()),
           const SliverToBoxAdapter(child: _OfferBanners()),
           const SliverToBoxAdapter(child: _Banners()),
           SliverToBoxAdapter(child: _SectionTitle(tr('कैटेगरी'))),
           const SliverToBoxAdapter(child: _CategoryPills()),
           SliverToBoxAdapter(child: _SectionTitle(tr('आपके लिए खास'))),
           const SliverToBoxAdapter(child: CollectionTiles()),
+          const SliverToBoxAdapter(child: GroupDealsStrip()),
           const SliverToBoxAdapter(child: _TopDeals()),
           const SliverToBoxAdapter(child: _Leaderboard()),
           const SliverToBoxAdapter(child: _FilterRow()),
@@ -493,6 +496,14 @@ class _FilterRow extends ConsumerWidget {
               avatar: Icon(Icons.map_rounded, size: 18, color: AppTheme.accentInk),
               label: Text(tr('नक्शा')),
               onPressed: () => context.push('/map'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              avatar: Icon(Icons.checklist_rounded, size: 18, color: AppTheme.accentInk),
+              label: Text(tr('शॉपिंग लिस्ट')),
+              onPressed: () => context.push('/shopping-list'),
             ),
           ),
           for (final r in AppConfig.searchRadiiMeters)

@@ -16,6 +16,10 @@ import '../../features/customer/plus/plus_screens.dart';
 import '../../features/customer/profile/profile_screens.dart';
 import '../../features/chat/chat_screens.dart';
 import '../../features/customer/daily/daily_screens.dart';
+import '../../features/customer/growth/growth_screens.dart';
+import '../../features/merchant/sales/sales_screen.dart';
+import '../../features/merchant/team/team_screen.dart';
+import '../../features/staff/staff_screens.dart';
 import '../../features/customer/map/shops_map_screen.dart';
 import '../../features/customer/search/search_screen.dart';
 import '../../features/merchant/daily/merchant_daily_screen.dart';
@@ -80,7 +84,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return onAuth ? null : '/login';
         case SessionStatus.signedIn:
           if (session.isAdmin) return here == '/admin-account' ? null : '/admin-account';
-          final home = session.isMerchant ? '/merchant' : '/customer';
+          final home = session.isMerchant ? '/merchant' : session.isStaff ? '/staff' : '/customer';
           if (onAuth && !session.isMerchant && ref.read(loginRoleProvider) == 'merchant') {
             return '/become-merchant'; // chose "shop owner" on the login screen
           }
@@ -92,6 +96,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Becoming a merchant switches apps.
           if (session.isMerchant && (here == '/customer' || here == '/become-merchant')) return home;
           if (!session.isMerchant && here.startsWith('/merchant')) return home;
+          if (session.isStaff && here != '/staff' && !here.startsWith('/chat')) return home;
+          if (!session.isStaff && here == '/staff') return home;
           return null;
       }
     },
@@ -148,6 +154,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/refund-policy', builder: (_, _) => const RefundPolicyScreen()),
       GoRoute(path: '/search', builder: (_, state) => SearchScreen(initial: state.extra as String? ?? '')),
       GoRoute(path: '/daily', builder: (_, _) => const MyDailyScreen()),
+      GoRoute(path: '/alerts', builder: (_, _) => const PriceAlertsScreen()),
+      GoRoute(path: '/shopping-list', builder: (_, _) => const ShoppingListScreen()),
+      GoRoute(path: '/loyalty', builder: (_, _) => const LoyaltyScreen()),
+      GoRoute(path: '/staff', builder: (_, _) => const StaffShell()),
       GoRoute(path: '/chats', builder: (_, _) => const ChatListScreen()),
       GoRoute(path: '/chat/:id', builder: (_, state) => ChatScreen(id: _id(state))),
       GoRoute(path: '/map', builder: (_, _) => const ShopsMapScreen()),
@@ -168,6 +178,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/merchant/khata', builder: (_, _) => const KhataScreen()),
       GoRoute(path: '/merchant/khata/:id', builder: (_, state) => KhataCustomerScreen(id: _id(state))),
       GoRoute(path: '/merchant/daily', builder: (_, _) => const MerchantDailyScreen()),
+      GoRoute(path: '/merchant/sales', builder: (_, _) => const SalesScreen()),
+      GoRoute(path: '/merchant/team', builder: (_, _) => const TeamScreen()),
       GoRoute(path: '/merchant/inventory', builder: (_, _) => const InventoryScreen()),
       GoRoute(path: '/merchant/plans', builder: (_, _) => const PlansScreen()),
       GoRoute(path: '/merchant/promotions', builder: (_, _) => const PromotionsScreen()),

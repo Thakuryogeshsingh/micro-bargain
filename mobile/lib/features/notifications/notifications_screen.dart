@@ -48,6 +48,7 @@ String? routeFor(AppNotification n, {required bool merchant}) {
   if (n.kind == 'cashback') return '/wallet';
   if (d['chat_id'] != null) return '/chat/${d['chat_id']}';
   if (d['daily_id'] != null) return merchant ? '/merchant/daily' : '/daily';
+  if (d['product_id'] != null) return merchant ? '/merchant/inventory' : null;
   if (d['review_id'] != null) return '/merchant/reviews';
   return null;
 }

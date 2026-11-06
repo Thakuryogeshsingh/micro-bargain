@@ -187,6 +187,7 @@ class Reservation {
     this.pickupCode,
     this.pickupAt,
     this.closedReason = '',
+    this.billToken = '',
     this.confirmedAt,
     this.completedAt,
     this.customerName = '',
@@ -215,6 +216,7 @@ class Reservation {
         pickupCode: j['pickup_code'],
         pickupAt: _t(j['pickup_at']),
         closedReason: j['closed_reason'] ?? '',
+        billToken: j['bill_token'] ?? '',
         confirmedAt: _t(j['confirmed_at']),
         completedAt: _t(j['completed_at']),
         customerName: j['customer_name'] ?? '',
@@ -242,6 +244,7 @@ class Reservation {
   final String? pickupCode; // customer only
   final DateTime? pickupAt; // chosen pickup time, if any
   final String closedReason;
+  final String billToken;
   final DateTime? confirmedAt;
   final DateTime? completedAt;
   final String customerName; // merchant only
@@ -304,6 +307,11 @@ class Order {
     this.recipientName = '',
     this.deliveryLatitude,
     this.deliveryLongitude,
+    this.billToken = '',
+    this.deliveryPartnerName = '',
+    this.deliveryPartnerPhone = '',
+    this.riderLatitude,
+    this.riderLongitude,
     this.recipientPhone = '',
   });
 
@@ -340,6 +348,11 @@ class Order {
         recipientName: j['recipient_name'] ?? '',
         deliveryLatitude: j['delivery_latitude'] == null ? null : _d(j['delivery_latitude']),
         deliveryLongitude: j['delivery_longitude'] == null ? null : _d(j['delivery_longitude']),
+        billToken: j['bill_token'] ?? '',
+        deliveryPartnerName: j['delivery_partner_name'] ?? '',
+        deliveryPartnerPhone: j['delivery_partner_phone'] ?? '',
+        riderLatitude: j['rider_latitude'] == null ? null : _d(j['rider_latitude']),
+        riderLongitude: j['rider_longitude'] == null ? null : _d(j['rider_longitude']),
         recipientPhone: j['recipient_phone'] ?? '',
       );
 
@@ -375,6 +388,11 @@ class Order {
   final String recipientName;
   final double? deliveryLatitude;
   final double? deliveryLongitude;
+  final String billToken;
+  final String deliveryPartnerName;
+  final String deliveryPartnerPhone;
+  final double? riderLatitude;
+  final double? riderLongitude;
   final String recipientPhone;
 
   bool get isDelivery => fulfilment == 'delivery';

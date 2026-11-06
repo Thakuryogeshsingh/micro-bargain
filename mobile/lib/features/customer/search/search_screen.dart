@@ -12,6 +12,7 @@ import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/deal_card.dart';
 import '../../../shared/widgets/motion.dart';
 import '../cart/cart_bar.dart';
+import '../growth/growth_screens.dart';
 import '../home/home_screen.dart';
 
 /// Search results across all nearby shops, cheapest first (key: the search text).
@@ -62,7 +63,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
           ),
         ),
-        actions: const [SizedBox(width: 12)],
+        actions: [
+          IconButton(
+            tooltip: tr('दाम गिरने पर बताएं'),
+            onPressed: () => addPriceAlert(context, ref, query: _query),
+            icon: const Icon(Icons.add_alert_outlined),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: _query.isEmpty
           ? EmptyView(icon: Icons.search_rounded, message: tr('जैसे: paneer, टमाटर, doodh, bread'))

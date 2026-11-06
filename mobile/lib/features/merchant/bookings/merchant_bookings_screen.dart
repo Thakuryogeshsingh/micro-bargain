@@ -6,7 +6,10 @@ import '../../../core/network/api_client.dart';
 import '../../../core/utils/format.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/common.dart';
+import '../../../core/auth/session.dart';
+import '../../../shared/widgets/bill.dart';
 import '../merchant_providers.dart';
+import '../team/team_screen.dart';
 import '../../../core/i18n/i18n.dart';
 
 Future<String?> _askCode(BuildContext context) =>
@@ -99,6 +102,12 @@ class _ReservationsTab extends ConsumerWidget {
                                 ),
                             ]),
                           ),
+                        if (r.status == 'completed' && r.billToken.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () => shareBill(r.billToken, r.number, phone: r.customerPhone),
+                            icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                            label: Text(tr('बिल WhatsApp पर भेजें')),
+                          ),
                       ]),
                     ),
                   );
@@ -179,8 +188,20 @@ class _OrdersTab extends ConsumerWidget {
                           ),
                         if (o.status == 'ready' || o.status == 'out_for_delivery')
                           FilledButton.icon(onPressed: () => _act(context, ref, o, 'complete'), icon: const Icon(Icons.pin), label: Text(tr('कोड डालकर पूरा करें'))),
+                        if (o.isDelivery && o.status == 'confirmed' && !isStaffUser(ref))
+                          OutlinedButton.icon(
+                            onPressed: () => assignDelivery(context, ref, o),
+                            icon: const Icon(Icons.delivery_dining_rounded, size: 18),
+                            label: Text(o.deliveryPartnerName.isEmpty ? tr('डिलीवरी वाले को दें') : tr('भेजा: {0}', [o.deliveryPartnerName])),
+                          ),
                         OutlinedButton(onPressed: () => _act(context, ref, o, 'reject'), child: Text(tr('रद्द करें'))),
                       ]),
+                    if (o.status == 'completed' && o.billToken.isNotEmpty)
+                      TextButton.icon(
+                        onPressed: () => shareBill(o.billToken, o.number, phone: o.customerPhone),
+                        icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                        label: Text(tr('बिल WhatsApp पर भेजें')),
+                      ),
                   ]),
                 ),
               );
@@ -192,3 +213,7 @@ class _OrdersTab extends ConsumerWidget {
   }
 }
 
+
+
+/// Staff (helpers) see the same booking screen; only the owner hands deliveries out.
+bool isStaffUser(WidgetRef ref) => ref.read(sessionProvider).isStaff;

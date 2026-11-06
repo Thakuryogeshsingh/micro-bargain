@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/payments/checkout.dart';
 import '../../../core/utils/format.dart';
+import '../../../shared/widgets/bill.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/contact_actions.dart';
 import '../../../shared/widgets/tracking.dart';
@@ -211,6 +213,8 @@ class ReservationDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 if (canComplain(r.status, r.completedAt)) ComplaintButton(reservationId: r.id, shopName: r.shopName),
+                if (r.status == 'completed' && r.billToken.isNotEmpty)
+                  TextButton.icon(onPressed: () => openBill(r.billToken), icon: const Icon(Icons.receipt_long_outlined), label: Text(tr('बिल देखें'))),
                 TextButton.icon(
                   onPressed: () => context.push(
                     '/support/new',
@@ -270,6 +274,17 @@ class OrderDetailScreen extends ConsumerWidget {
                     toLatitude: o.deliveryLatitude!,
                     toLongitude: o.deliveryLongitude!,
                     status: o.status,
+                    riderLatitude: o.riderLatitude,
+                    riderLongitude: o.riderLongitude,
+                  ),
+                if (o.deliveryPartnerName.isNotEmpty && o.status == 'out_for_delivery')
+                  ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.delivery_dining_rounded)),
+                    title: Text(tr('{0} आपका सामान ला रहे हैं', [o.deliveryPartnerName]), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    trailing: IconButton.filledTonal(
+                      onPressed: () => launchUrl(Uri.parse('tel:${o.deliveryPartnerPhone}')),
+                      icon: const Icon(Icons.call_rounded),
+                    ),
                   ),
                 TrackingTimeline(
                   failed: ['cancelled', 'refunded'].contains(o.status),
@@ -450,6 +465,8 @@ class OrderDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 if (canComplain(o.status, o.completedAt)) ComplaintButton(orderId: o.id, shopName: o.shopName),
+                if (o.status == 'completed' && o.billToken.isNotEmpty)
+                  TextButton.icon(onPressed: () => openBill(o.billToken), icon: const Icon(Icons.receipt_long_outlined), label: Text(tr('बिल देखें'))),
                 TextButton.icon(
                   onPressed: () => context.push(
                     '/support/new',
